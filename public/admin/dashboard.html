@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TalentSync Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .section { display: none; }
+        .section.active { display: block; }
+        .nav-item.active { background-color: #374151; }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="min-h-screen flex">
+        <!-- Sidebar -->
+        <div class="bg-gray-800 text-white w-64 py-7 px-2">
+            <div class="text-white flex items-center space-x-2 px-4 mb-8">
+                <span class="text-2xl font-bold">🎯 TalentSync Admin</span>
+            </div>
+            
+            <nav class="space-y-2">
+                <a href="#" onclick="showSection('overview')" class="nav-item block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 active">
+                    📊 Dashboard Overview
+                </a>
+                <a href="#" onclick="showSection('users')" class="nav-item block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700">
+                    👥 User Management
+                </a>
+                <a href="#" onclick="showSection('companies')" class="nav-item block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700">
+                    🏢 Company Management
+                </a>
+                <a href="#" onclick="showSection('jobs')" class="nav-item block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700">
+                    💼 Job Management
+                </a>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Top bar -->
+            <header class="bg-white shadow-sm border-b">
+                <div class="flex justify-between items-center px-6 py-4">
+                    <h1 id="pageTitle" class="text-2xl font-semibold text-gray-800">Dashboard Overview</h1>
+                    <div class="flex items-center space-x-4">
+                        <span id="adminName" class="text-gray-600">Admin User</span>
+                        <button onclick="logout()" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+                            Logout
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6">
+                
+                <!-- Dashboard Overview Section -->
+                <div id="overview-section" class="section active">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <!-- Stats Cards -->
+                        <div class="bg-white p-6 rounded-lg shadow">
+                            <h3 class="text-lg font-medium text-gray-900">Total Users</h3>
+                            <p id="totalUsers" class="text-3xl font-bold text-blue-600">Loading...</p>
+                            <p class="text-sm text-gray-500">
+                                <span id="pendingUsers" class="text-orange-600">-</span> pending approval
+                            </p>
+                        </div>
+                        
+                        <div class="bg-white p-6 rounded-lg shadow">
+                            <h3 class="text-lg font-medium text-gray-900">Companies</h3>
+                            <p id="totalCompanies" class="text-3xl font-bold text-green-600">Loading...</p>
+                            <p class="text-sm text-gray-500">
+                                <span id="pendingCompanies" class="text-orange-600">-</span> pending review
+                            </p>
+                        </div>
+                        
+                        <div class="bg-white p-6 rounded-lg shadow">
+                            <h3 class="text-lg font-medium text-gray-900">Job Postings</h3>
+                            <p id="totalJobs" class="text-3xl font-bold text-purple-600">Loading...</p>
+                            <p class="text-sm text-gray-500">
+                                <span id="activeJobs" class="text-green-600">-</span> active
+                            </p>
+                        </div>
+                        
+                        <div class="bg-white p-6 rounded-lg shadow">
+                            <h3 class="text-lg font-medium text-gray-900">Applications</h3>
+                            <p id="totalApplications" class="text-3xl font-bold text-indigo-600">Loading...</p>
+                            <p class="text-sm text-gray-500">
+                                <span id="recentRegistrations" class="text-blue-600">-</span> new this week
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <button onclick="showSection('users')" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                                View All Users
+                            </button>
+                            <button onclick="showSection('companies')" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                                Review Companies
+                            </button>
+                            <button onclick="showSection('jobs')" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">
+                                Moderate Jobs
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Users Management Section -->
+                <div id="users-section" class="section">
+                    <div class="bg-white rounded-lg shadow">
+                        <div class="px-6 py-4 border-b border-gray-200">
+                            <div class="flex justify-between items-center">
+                                <h3 class="text-lg font-medium text-gray-900">User Management</h3>
+                                <div class="flex space-x-2">
+                                    <select id="userTypeFilter" onchange="loadUsers()" class="border rounded px-3 py-1">
+                                        <option value="all">All Types</option>
+                                        <option value="job_seeker">Job Seekers</option>
+                                        <option value="employer">Employers</option>
+                                    </select>
+                                    <select id="userStatusFilter" onchange="loadUsers()" class="border rounded px-3 py-1">
+                                        <option value="all">All Status</option>
+                                        <option value="active">Active</option>
+                                        <option value="pending">Pending</option>
+                                        <option value="suspended">Suspended</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Registered</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="usersTableBody" class="bg-white divide-y divide-gray-200">
+                                    <tr>
+                                        <td colspan="5" class="px-6 py-4 text-center text-gray-500">Loading users...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Companies Management Section -->
+                <div id="companies-section" class="section">
+                    <div class="bg-white rounded-lg shadow">
+                        <div class="px-6 py-4 border-b border-gray-200">
+                            <h3 class="text-lg font-medium text-gray-900">Company Management</h3>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Company</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Industry</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Jobs</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="companiesTableBody" class="bg-white divide-y divide-gray-200">
+                                    <tr>
+                                        <td colspan="5" class="px-6 py-4 text-center text-gray-500">Loading companies...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Jobs Management Section -->
+                <div id="jobs-section" class="section">
+                    <div class="bg-white rounded-lg shadow">
+                        <div class="px-6 py-4 border-b border-gray-200">
+                            <h3 class="text-lg font-medium text-gray-900">Job Management</h3>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Job Title</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Company</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Applications</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="jobsTableBody" class="bg-white divide-y divide-gray-200">
+                                    <tr>
+                                        <td colspan="5" class="px-6 py-4 text-center text-gray-500">Loading jobs...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentUser = null;
+        let authToken = localStorage.getItem('adminAuthToken');
+
+        // Check if user is logged in and is admin
+        async function checkAdminAuth() {
+            if (!authToken) {
+                showLogin();
+                return false;
+            }
+
+            try {
+                const response = await fetch('/api/auth/profile', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.user.user_type === 'admin') {
+                        currentUser = data.user;
+                        document.getElementById('adminName').textContent = data.user.first_name || data.user.username;
+                        return true;
+                    }
+                }
+            } catch (error) {
+                console.error('Auth check failed:', error);
+            }
+
+            showLogin();
+            return false;
+        }
+
+        // Show login form if not authenticated
+        function showLogin() {
+            document.body.innerHTML = `
+                <div class="min-h-screen flex items-center justify-center bg-gray-50">
+                    <div class="max-w-md w-full space-y-8">
+                        <div>
+                            <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                                TalentSync Admin Login
+                            </h2>
+                        </div>
+                        <form class="mt-8 space-y-6" onsubmit="adminLogin(event)">
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+                                    <input id="username" name="username" type="text" required 
+                                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                                </div>
+                                <div>
+                                    <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                                    <input id="password" name="password" type="password" required 
+                                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                                </div>
+                            </div>
+                            <div>
+                                <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                    Sign in as Admin
+                                </button>
+                            </div>
+                            <div id="loginError" class="text-red-600 text-sm text-center" style="display: none;"></div>
+                        </form>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Handle admin login
+        async function adminLogin(event) {
+            event.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('loginError');
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.user.user_type === 'admin') {
+                    localStorage.setItem('adminAuthToken', data.token);
+                    location.reload();
+                } else {
+                    errorDiv.textContent = data.error || 'Admin access required';
+                    errorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                errorDiv.textContent = 'Login failed. Please try again.';
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        // Logout function
+        function logout() {
+            localStorage.removeItem('adminAuthToken');
+            location.reload();
+        }
+
+        // Navigation functions
+        function showSection(sectionName) {
+            // Hide all sections
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Remove active class from nav items
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Show selected section
+            document.getElementById(sectionName + '-section').classList.add('active');
+            
+            // Add active class to clicked nav item
+            event.target.classList.add('active');
+            
+            // Update page title
+            const titles = {
+                'overview': 'Dashboard Overview',
+                'users': 'User Management',
+                'companies': 'Company Management',
+                'jobs': 'Job Management'
+            };
+            document.getElementById('pageTitle').textContent = titles[sectionName];
+            
+            // Load section data
+            if (sectionName === 'overview') {
+                loadDashboardStats();
+            } else if (sectionName === 'users') {
+                loadUsers();
+            } else if (sectionName === 'companies') {
+                loadCompanies();
+            } else if (sectionName === 'jobs') {
+                loadJobs();
+            }
+        }
+
+        // API helper function
+        async function apiCall(endpoint, options = {}) {
+            const response = await fetch(endpoint, {
+                headers: {
+                    'Authorization': `Bearer ${authToken}`,
+                    'Content-Type': 'application/json',
+                    ...options.headers
+                },
+                ...options
+            });
+
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    logout();
+                    return;
+                }
+                throw new Error(`API call failed: ${response.status}`);
+            }
+
+            return response.json();
+        }
+
+        // Load dashboard statistics
+        async function loadDashboardStats() {
+            try {
+                const data = await apiCall('/api/admin/dashboard');
+                const stats = data.stats;
+
+                document.getElementById('totalUsers').textContent = stats.totalUsers;
+                document.getElementById('pendingUsers').textContent = stats.pendingUsers;
+                document.getElementById('totalCompanies').textContent = stats.totalCompanies;
+                document.getElementById('pendingCompanies').textContent = stats.pendingCompanies;
+                document.getElementById('totalJobs').textContent = stats.totalJobs;
+                document.getElementById('activeJobs').textContent = stats.activeJobs;
+                document.getElementById('totalApplications').textContent = stats.totalApplications;
+                document.getElementById('recentRegistrations').textContent = stats.recentRegistrations;
+
+            } catch (error) {
+                console.error('Failed to load dashboard stats:', error);
+            }
+        }
+
+        // Status color helper
+        function getStatusColor(status) {
+            const colors = {
+                'active': 'bg-green-100 text-green-800',
+                'pending': 'bg-yellow-100 text-yellow-800',
+                'suspended': 'bg-red-100 text-red-800',
+                'banned': 'bg-gray-100 text-gray-800',
+                'approved': 'bg-green-100 text-green-800',
+                'rejected': 'bg-red-100 text-red-800',
+                'pending_review': 'bg-yellow-100 text-yellow-800'
+            };
+            return colors[status] || 'bg-gray-100 text-gray-800';
+        }
+
+        // Load users
+        async function loadUsers() {
+            try {
+                const userType = document.getElementById('userTypeFilter')?.value || 'all';
+                const status = document.getElementById('userStatusFilter')?.value || 'all';
+                
+                const data = await apiCall(`/api/admin/users?userType=${userType}&status=${status}`);
+                const tbody = document.getElementById('usersTableBody');
+                
+                if (data.users.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">No users found</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = data.users.map(user => `
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div>
+                                <div class="text-sm font-medium text-gray-900">${user.first_name || ''} ${user.last_name || ''}</div>
+                                <div class="text-sm text-gray-500">${user.email}</div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                user.user_type === 'job_seeker' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
+                            }">
+                                ${user.user_type === 'job_seeker' ? 'Job Seeker' : 'Employer'}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(user.status)}">
+                                ${user.status.charAt(0).toUpperCase() + user.status.slice(1)}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            ${new Date(user.created_at).toLocaleDateString()}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <select onchange="updateUserStatus(${user.id}, this.value)" class="border rounded px-2 py-1">
+                                <option value="active" ${user.status === 'active' ? 'selected' : ''}>Active</option>
+                                <option value="pending" ${user.status === 'pending' ? 'selected' : ''}>Pending</option>
+                                <option value="suspended" ${user.status === 'suspended' ? 'selected' : ''}>Suspended</option>
+                                <option value="banned" ${user.status === 'banned' ? 'selected' : ''}>Banned</option>
+                            </select>
+                        </td>
+                    </tr>
+                `).join('');
+
+            } catch (error) {
+                console.error('Failed to load users:', error);
+            }
+        }
+
+        // Load companies
+        async function loadCompanies() {
+            try {
+                const data = await apiCall('/api/admin/companies');
+                const tbody = document.getElementById('companiesTableBody');
+                
+                if (data.companies.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">No companies found</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = data.companies.map(company => `
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div>
+                                <div class="text-sm font-medium text-gray-900">${company.name}</div>
+                                <div class="text-sm text-gray-500">${company.website || 'No website'}</div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            ${company.industry || 'Not specified'}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(company.status)}">
+                                ${company.status.charAt(0).toUpperCase() + company.status.slice(1)}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            ${company.job_count} jobs
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <select onchange="updateCompanyStatus(${company.id}, this.value)" class="border rounded px-2 py-1">
+                                <option value="pending" ${company.status === 'pending' ? 'selected' : ''}>Pending</option>
+                                <option value="approved" ${company.status === 'approved' ? 'selected' : ''}>Approved</option>
+                                <option value="rejected" ${company.status === 'rejected' ? 'selected' : ''}>Rejected</option>
+                                <option value="suspended" ${company.status === 'suspended' ? 'selected' : ''}>Suspended</option>
+                            </select>
+                        </td>
+                    </tr>
+                `).join('');
+
+            } catch (error) {
+                console.error('Failed to load companies:', error);
+            }
+        }
+
+        // Load jobs
+        async function loadJobs() {
+            try {
+                const data = await apiCall('/api/admin/jobs');
+                const tbody = document.getElementById('jobsTableBody');
+                
+                if (data.jobs.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">No jobs found</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = data.jobs.map(job => `
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div>
+                                <div class="text-sm font-medium text-gray-900">${job.title}</div>
+                                <div class="text-sm text-gray-500">${job.location_city || ''}, ${job.location_state || ''}</div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            ${job.company_name}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(job.status)}">
+                                ${job.status.replace('_', ' ').charAt(0).toUpperCase() + job.status.replace('_', ' ').slice(1)}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            ${job.application_count} applications
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <select onchange="updateJobStatus(${job.id}, this.value)" class="border rounded px-2 py-1">
+                                <option value="pending_review" ${job.status === 'pending_review' ? 'selected' : ''}>Pending Review</option>
+                                <option value="active" ${job.status === 'active' ? 'selected' : ''}>Approved</option>
+                                <option value="rejected" ${job.status === 'rejected' ? 'selected' : ''}>Rejected</option>
+                                <option value="paused" ${job.status === 'paused' ? 'selected' : ''}>Paused</option>
+                            </select>
+                        </td>
+                    </tr>
+                `).join('');
+
+            } catch (error) {
+                console.error('Failed to load jobs:', error);
+            }
+        }
+
+        // Update user status
+        async function updateUserStatus(userId, newStatus) {
+            try {
+                const adminNotes = prompt('Add admin notes (optional):');
+                
+                await apiCall(`/api/admin/users/${userId}/status`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ 
+                        status: newStatus,
+                        adminNotes: adminNotes
+                    })
+                });
+
+                alert('User status updated successfully!');
+                loadUsers(); // Reload the user list
+
+            } catch (error) {
+                console.error('Failed to update user status:', error);
+                alert('Failed to update user status. Please try again.');
+            }
+        }
+
+        // Update company status
+        async function updateCompanyStatus(companyId, newStatus) {
+            try {
+                await apiCall(`/api/admin/companies/${companyId}/status`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ status: newStatus })
+                });
+
+                alert('Company status updated successfully!');
+                loadCompanies(); // Reload the company list
+
+            } catch (error) {
+                console.error('Failed to update company status:', error);
+                alert('Failed to update company status. Please try again.');
+            }
+        }
+
+        // Update job status
+        async function updateJobStatus(jobId, newStatus) {
+            try {
+                let rejectionReason = null;
+                if (newStatus === 'rejected') {
+                    rejectionReason = prompt('Please provide a reason for rejection:');
+                    if (!rejectionReason) return; // Cancel if no reason provided
+                }
+
+                await apiCall(`/api/admin/jobs/${jobId}/status`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ 
+                        status: newStatus,
+                        rejectionReason: rejectionReason
+                    })
+                });
+
+                alert('Job status updated successfully!');
+                loadJobs(); // Reload the job list
+
+            } catch (error) {
+                console.error('Failed to update job status:', error);
+                alert('Failed to update job status. Please try again.');
+            }
+        }
+
+        // Initialize dashboard when page loads
+        document.addEventListener('DOMContentLoaded', async function() {
+            const isAuthenticated = await checkAdminAuth();
+            if (isAuthenticated) {
+                loadDashboardStats(); // Load initial dashboard data
+            }
+        });
+</script>
