@@ -328,9 +328,19 @@ app.get('/api/jobs', (req, res) => {
     res.json(jobs);
 });
 
-// Catch-all for SPA routing
+
+// Serve static HTML files for direct requests (e.g., /admin/login.html)
+app.get('/*.html', (req, res, next) => {
+    const filePath = path.join(__dirname, 'Public', req.path);
+    if (fs.existsSync(filePath)) {
+        return res.sendFile(filePath);
+    }
+    next();
+});
+
+// Catch-all for SPA routing (fallback to index.html for non-file routes)
 app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    res.sendFile(path.join(__dirname, 'Public', 'index.html'));
 });
 
 app.listen(PORT, () => {
