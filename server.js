@@ -32,8 +32,8 @@ const PORT = process.env.PORT || 3000;
 // Enable compression for better performance
 app.use(compression());
 
-// Serve static files from public directory
-app.use(express.static('public'));
+// Serve static files from Public directory (case-sensitive)
+app.use(express.static(path.join(__dirname, 'Public')));
 
 // Parse JSON bodies
 app.use(express.json());
