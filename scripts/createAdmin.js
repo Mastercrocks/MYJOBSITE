@@ -5,9 +5,9 @@ async function createAdmin() {
   try {
     console.log('Creating admin account...');
     
-    const email = 'admin@talentsync.com';
-    const username = 
-    const password = 
+  const email = 'petersondameu@gmail.com';
+  const username = 'petersondameu@gmail.com';
+  const password = 'Peter2011@';
     
     // Check if admin already exists
     const [existingAdmin] = await pool.execute(

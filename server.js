@@ -1,266 +1,344 @@
-// server.js - TalentSync Node.js Express Server
-
-const fs = require('fs');
-const multer = require('multer');
-const cors = require('cors');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const JWT_SECRET = 'your_super_secret_key';
-
 const express = require('express');
+const compression = require('compression');
 const path = require('path');
 const app = express();
+const fs = require('fs');
+const jobApiService = require('./services/jobApiService');
+// Import route files
+function safeRequireRouter(path) {
+    const mod = require(path);
+    // If the module exports an object with a 'router' property, use that
+    if (mod && typeof mod === 'object' && mod.router && typeof mod.router === 'function') {
+        return mod.router;
+    }
+    // If the module itself is a function (router), use it
+    if (typeof mod === 'function') {
+        return mod;
+    }
+    // If the module itself is a router (object with 'use' method)
+    if (mod && typeof mod.use === 'function') {
+        return mod;
+    }
+    console.error(`❌ ERROR: ${path} does not export a valid Express router.`);
+    return (req, res, next) => res.status(500).json({ error: 'Server router error' });
+}
+
+const adminRoutes = safeRequireRouter('./routes/admin');
+const authRoutes = safeRequireRouter('./routes/auth');
+const jobsRoutes = safeRequireRouter('./routes/jobs');
+const seoRoutes = safeRequireRouter('./routes/seo');
 const PORT = process.env.PORT || 3000;
 
-// Middleware
-app.use(cors());
+// Enable compression for better performance
+app.use(compression());
+
+// Serve static files from public directory
+app.use(express.static('public'));
+
+// Parse JSON bodies
 app.use(express.json());
+
+// Parse URL-encoded bodies
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public')));
 
-// Create directories if they don't exist
-const dirs = ['uploads/resumes', 'data'];
-dirs.forEach(dir => {
-    if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-    }
-});
+// Mount API and admin routes
+app.use('/admin', adminRoutes);
+app.use('/auth', authRoutes);
+app.use('/api/jobs', jobsRoutes);
+app.use('/seo', seoRoutes);
 
-// Multer setup for file uploads
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'uploads/resumes/');
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-    }
-});
+// SEO-optimized routes
 
-const upload = multer({
-    storage: storage,
-    fileFilter: (req, file, cb) => {
-        const allowedTypes = /pdf|doc|docx/;
-        const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-        const mimetype = allowedTypes.test(file.mimetype);
-        if (mimetype && extname) {
-            return cb(null, true);
-        } else {
-            cb(new Error('Only PDF, DOC, and DOCX files are allowed'));
-        }
-    },
-    limits: { fileSize: 5 * 1024 * 1024 }
-});
-
-// File-based database functions
-const readData = (filename) => {
-    try {
-        const data = fs.readFileSync(`data/${filename}`, 'utf8');
-        return JSON.parse(data);
-    } catch (error) {
-        return [];
-    }
-};
-
-const writeData = (filename, data) => {
-    fs.writeFileSync(`data/${filename}`, JSON.stringify(data, null, 2));
-};
-
-// JWT Auth Middleware
-const authenticateToken = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-    if (!token) return res.sendStatus(401);
-
-    jwt.verify(token, JWT_SECRET, (err, user) => {
-        if (err) return res.sendStatus(403);
-        req.user = user;
-        next();
-    });
-};
-
-// Routes
+// Homepage
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.post('/api/register', async (req, res) => {
-    try {
-        const { name, email, password, userType } = req.body;
-        const users = readData('users.json');
-        if (users.find(user => user.email === email)) {
-            return res.status(400).json({ error: 'User already exists' });
-        }
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const newUser = {
-            id: Date.now().toString(),
-            name,
-            email,
-            password: hashedPassword,
-            userType: userType || 'jobseeker',
-            createdAt: new Date().toISOString()
-        };
-        users.push(newUser);
-        writeData('users.json', users);
-        const token = jwt.sign({ id: newUser.id, email: newUser.email }, JWT_SECRET);
-        res.status(201).json({ message: 'User created successfully', token, user: newUser });
-    } catch (error) {
-        res.status(500).json({ error: 'Server error' });
-    }
+// Robots.txt for SEO
+app.get('/robots.txt', (req, res) => {
+    res.type('text/plain');
+    res.send(`User-agent: *
+Allow: /
+
+Sitemap: ${process.env.SITE_URL || 'http://localhost:3000'}/sitemap.xml`);
 });
 
-app.post('/api/login', async (req, res) => {
-    try {
-        const { email, password } = req.body;
-        const users = readData('users.json');
-        const user = users.find(u => u.email === email);
-        if (!user) return res.status(400).json({ error: 'Invalid credentials' });
-        const validPassword = await bcrypt.compare(password, user.password);
-        if (!validPassword) return res.status(400).json({ error: 'Invalid credentials' });
-        const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET);
-        res.json({ token, user });
-    } catch (error) {
-        res.status(500).json({ error: 'Server error' });
-    }
+// XML Sitemap for SEO
+app.get('/sitemap.xml', (req, res) => {
+    const baseUrl = process.env.SITE_URL || 'http://localhost:3000';
+    
+    // Major cities for location-based SEO
+    const majorCities = [
+        'new-york-ny', 'los-angeles-ca', 'chicago-il', 'houston-tx',
+        'phoenix-az', 'philadelphia-pa', 'san-antonio-tx', 'san-diego-ca',
+        'dallas-tx', 'san-jose-ca', 'austin-tx', 'jacksonville-fl',
+        'fort-worth-tx', 'columbus-oh', 'san-francisco-ca', 'charlotte-nc',
+        'indianapolis-in', 'seattle-wa', 'denver-co', 'washington-dc',
+        'boston-ma', 'el-paso-tx', 'nashville-tn', 'detroit-mi',
+        'oklahoma-city-ok', 'portland-or', 'las-vegas-nv', 'memphis-tn',
+        'louisville-ky', 'baltimore-md', 'milwaukee-wi', 'albuquerque-nm',
+        'tucson-az', 'fresno-ca', 'mesa-az', 'sacramento-ca', 'atlanta-ga',
+        'kansas-city-mo', 'colorado-springs-co', 'omaha-ne', 'raleigh-nc',
+        'miami-fl', 'cleveland-oh', 'tulsa-ok', 'virginia-beach-va',
+        'minneapolis-mn', 'honolulu-hi', 'arlington-tx', 'wichita-ks',
+        'st-louis-mo', 'new-orleans-la', 'cincinnati-oh', 'tampa-fl'
+    ];
+    
+    // Job categories for category-based SEO
+    const categories = [
+        'technology', 'healthcare', 'finance', 'education', 'marketing',
+        'sales', 'customer-service', 'administrative', 'retail', 'hospitality',
+        'manufacturing', 'construction', 'transportation', 'government',
+        'nonprofit', 'legal', 'consulting', 'real-estate', 'media',
+        'telecommunications', 'automotive', 'aerospace', 'biotechnology'
+    ];
+    
+    let sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+        <loc>${baseUrl}</loc>
+        <changefreq>daily</changefreq>
+        <priority>1.0</priority>
+    </url>`;
+    
+    // Add location pages
+    majorCities.forEach(city => {
+        sitemap += `
+    <url>
+        <loc>${baseUrl}/jobs/${city}</loc>
+        <changefreq>daily</changefreq>
+        <priority>0.8</priority>
+    </url>`;
+    });
+    
+    // Add category pages
+    categories.forEach(category => {
+        sitemap += `
+    <url>
+        <loc>${baseUrl}/jobs/${category}</loc>
+        <changefreq>daily</changefreq>
+        <priority>0.7</priority>
+    </url>`;
+    });
+    
+    sitemap += `
+</urlset>`;
+    
+    res.header('Content-Type', 'application/xml');
+    res.send(sitemap);
 });
 
-app.post('/api/resumes', authenticateToken, upload.single('resume'), (req, res) => {
+// Location-based job pages (SEO-optimized)
+app.get('/jobs/:location', async (req, res) => {
+    const location = req.params.location;
+    const cityName = location.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    // Local jobs
+    const jobsData = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'jobs.json'), 'utf8'));
+    const filteredLocalJobs = jobsData.filter(job =>
+        job.location && job.location.toLowerCase().includes(cityName.toLowerCase())
+    );
+    // Adzuna jobs
+    let adzunaJobs = [];
     try {
-        const { title, skills, experience } = req.body;
-        const resumes = readData('resumes.json');
-        const newResume = {
-            id: Date.now().toString(),
-            userId: req.user.id,
-            title,
-            skills: skills ? skills.split(',').map(s => s.trim()) : [],
-            experience,
-            filename: req.file?.filename || null,
-            originalName: req.file?.originalname || null,
-            createdAt: new Date().toISOString()
-        };
-        resumes.push(newResume);
-        writeData('resumes.json', resumes);
-        res.status(201).json({ message: 'Resume posted successfully', resume: newResume });
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to post resume' });
-    }
-});
-
-app.get('/api/resumes', authenticateToken, (req, res) => {
-    try {
-        const resumes = readData('resumes.json');
-        const users = readData('users.json');
-        const results = resumes.map(r => {
-            const user = users.find(u => u.id === r.userId);
-            return { ...r, userName: user?.name || 'Unknown', userEmail: user?.email || 'Unknown' };
+        adzunaJobs = await (new jobApiService()).searchAdzunaJobs({
+            what: '',
+            where: cityName,
+            results_per_page: 10,
+            page: 1,
+            country: 'us'
         });
-        res.json(results);
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch resumes' });
+    } catch (e) {
+        adzunaJobs = [];
     }
+    // Normalize Adzuna jobs for display
+    const normalizedAdzunaJobs = adzunaJobs.map(job => ({
+        id: job.id || job.redirect_url,
+        title: job.title,
+        company: job.company && job.company.display_name ? job.company.display_name : '',
+        location: job.location && job.location.display_name ? job.location.display_name : cityName,
+        description: job.description,
+        salary: job.salary_min && job.salary_max ? `$${job.salary_min} - $${job.salary_max}` : '',
+        source: 'adzuna',
+        url: job.redirect_url
+    }));
+    // Combine jobs
+    const allJobs = [...filteredLocalJobs, ...normalizedAdzunaJobs];
+    // Structured data for jobs
+    const jobsStructuredData = allJobs.map(job => ({
+        "@context": "https://schema.org",
+        "@type": "JobPosting",
+        "title": job.title,
+        "description": job.description,
+        "employmentType": "FULL_TIME",
+        "hiringOrganization": {
+            "@type": "Organization",
+            "name": job.company
+        },
+        "jobLocation": {
+            "@type": "Place",
+            "address": {
+                "@type": "PostalAddress",
+                "addressLocality": job.location
+            }
+        },
+        "baseSalary": job.salary ? {
+            "@type": "MonetaryAmount",
+            "currency": "USD",
+            "value": {
+                "@type": "QuantitativeValue",
+                "value": job.salary,
+                "unitText": "YEAR"
+            }
+        } : undefined
+    }));
+    const locationPageHTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jobs in ${cityName} | TalentSync - Find Your Next Career</title>
+    <meta name="description" content="Find jobs in ${cityName}. Browse thousands of job openings from top employers. Apply now and advance your career with TalentSync.">
+    <link rel="canonical" href="${process.env.SITE_URL || 'http://localhost:3000'}/jobs/${location}">
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="Jobs in ${cityName} | TalentSync">
+    <meta property="og:description" content="Find jobs in ${cityName}. Browse thousands of job openings from top employers.">
+    <meta property="og:url" content="${process.env.SITE_URL || 'http://localhost:3000'}/jobs/${location}">
+    <meta property="og:type" content="website">
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Jobs in ${cityName} | TalentSync">
+    <meta name="twitter:description" content="Find jobs in ${cityName}. Browse thousands of job openings from top employers.">
+    <!-- Structured Data for all jobs -->
+    <script type="application/ld+json">${JSON.stringify(jobsStructuredData)}</script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; line-height: 1.6; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { background: #2563eb; color: white; padding: 20px; border-radius: 8px; margin-bottom: 30px; }
+        .job-count { font-size: 1.2em; margin: 20px 0; color: #666; }
+        .job-card { border: 1px solid #ddd; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .breadcrumb { margin-bottom: 20px; }
+        .breadcrumb a { color: #2563eb; text-decoration: none; }
+        .breadcrumb a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="breadcrumb">
+            <a href="/">Home</a> > <a href="/jobs">Jobs</a> > ${cityName}
+        </nav>
+        <div class="header">
+            <h1>Jobs in ${cityName}</h1>
+            <p>Discover your next career opportunity in ${cityName}</p>
+        </div>
+        <div class="job-count">
+            <strong>${allJobs.length} jobs available in ${cityName}</strong>
+        </div>
+        <div class="job-listings">
+            ${allJobs.length === 0 ? `<p>No jobs found for this location.</p>` : allJobs.map(job => `
+                <div class="job-card">
+                    <h3>${job.title} - ${job.location}</h3>
+                    <p><strong>${job.company}</strong> | ${job.salary ? job.salary : ''}</p>
+                    <p>${job.description}</p>
+                    ${job.source === 'adzuna' && job.url ? `<a href="${job.url}" target="_blank">View on Adzuna</a>` : `<a href="/job/${job.id}">View Details</a>`}
+                </div>
+            `).join('')}
+        </div>
+    </div>
+</body>
+</html>`;
+    res.send(locationPageHTML);
 });
 
-app.post('/api/jobs', authenticateToken, (req, res) => {
-    try {
-        const { title, company, location, description, requirements, salary } = req.body;
-        const jobs = readData('jobs.json');
-        const newJob = {
-            id: Date.now().toString(),
-            employerId: req.user.id,
-            title,
-            company,
-            location,
-            description,
-            requirements,
-            salary,
-            applications: [],
-            createdAt: new Date().toISOString()
-        };
-        jobs.push(newJob);
-        writeData('jobs.json', jobs);
-        res.status(201).json({ message: 'Job posted successfully', job: newJob });
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to post job' });
-    }
+// Category-based job pages
+app.get('/jobs/category/:category', (req, res) => {
+    const category = req.params.category;
+    const categoryName = category.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    
+    res.send(`<h1>${categoryName} Jobs</h1><p>Browse ${categoryName.toLowerCase()} opportunities nationwide.</p>`);
 });
 
+// Individual job posting page
+app.get('/job/:id', (req, res) => {
+    const jobId = req.params.id;
+    
+    const jobPageHTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Software Engineer Job | TechCorp Inc. | TalentSync</title>
+    <meta name="description" content="Software Engineer position at TechCorp Inc. Full-time opportunity with competitive salary and benefits. Apply now!">
+    
+    <!-- Structured Data for Job Posting -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "JobPosting",
+        "title": "Software Engineer",
+        "description": "We are seeking a talented Software Engineer to join our dynamic team...",
+        "datePosted": "2024-08-08",
+        "employmentType": "FULL_TIME",
+        "hiringOrganization": {
+            "@type": "Organization",
+            "name": "TechCorp Inc.",
+            "sameAs": "https://techcorp.com"
+        },
+        "jobLocation": {
+            "@type": "Place",
+            "address": {
+                "@type": "PostalAddress",
+                "addressLocality": "New York",
+                "addressRegion": "NY",
+                "addressCountry": "US"
+            }
+        },
+        "baseSalary": {
+            "@type": "MonetaryAmount",
+            "currency": "USD",
+            "value": {
+                "@type": "QuantitativeValue",
+                "minValue": 75000,
+                "maxValue": 95000,
+                "unitText": "YEAR"
+            }
+        }
+    }
+    </script>
+</head>
+<body>
+    <h1>Software Engineer - Job #${jobId}</h1>
+    <p>TechCorp Inc. | Full-time | New York, NY</p>
+    <p>Salary: $75,000 - $95,000</p>
+    <h2>Job Description</h2>
+    <p>We are seeking a talented Software Engineer to join our dynamic team...</p>
+</body>
+</html>`;
+    
+    res.send(jobPageHTML);
+});
+
+// API Routes
 app.get('/api/jobs', (req, res) => {
-    try {
-        const { keyword, location } = req.query;
-        let jobs = readData('jobs.json');
-        if (keyword) jobs = jobs.filter(j => j.title.toLowerCase().includes(keyword.toLowerCase()) || j.description.toLowerCase().includes(keyword.toLowerCase()));
-        if (location) jobs = jobs.filter(j => j.location.toLowerCase().includes(location.toLowerCase()));
-        res.json(jobs);
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch jobs' });
-    }
+    // Sample job data
+    const jobs = [
+        { id: 1, title: 'Software Engineer', company: 'TechCorp', location: 'New York, NY', salary: '$75,000 - $95,000' },
+        { id: 2, title: 'Marketing Manager', company: 'MarketPro', location: 'Los Angeles, CA', salary: '$60,000 - $80,000' },
+        { id: 3, title: 'Sales Representative', company: 'SalesForce Solutions', location: 'Chicago, IL', salary: '$50,000 + Commission' }
+    ];
+    res.json(jobs);
 });
 
-app.post('/api/jobs/:jobId/apply', authenticateToken, (req, res) => {
-    try {
-        const jobId = req.params.jobId;
-        const { coverLetter } = req.body;
-        const jobs = readData('jobs.json');
-        const jobIndex = jobs.findIndex(j => j.id === jobId);
-        if (jobIndex === -1) return res.status(404).json({ error: 'Job not found' });
-        const application = {
-            id: Date.now().toString(),
-            userId: req.user.id,
-            coverLetter,
-            appliedAt: new Date().toISOString()
-        };
-        jobs[jobIndex].applications.push(application);
-        writeData('jobs.json', jobs);
-        res.json({ message: 'Application submitted successfully' });
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to submit application' });
-    }
+// Catch-all for SPA routing
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.get('/api/jobs/:jobId/applications', authenticateToken, (req, res) => {
-    try {
-        const jobId = req.params.jobId;
-        const jobs = readData('jobs.json');
-        const users = readData('users.json');
-        const resumes = readData('resumes.json');
-        const job = jobs.find(j => j.id === jobId);
-        if (!job) return res.status(404).json({ error: 'Job not found' });
-        if (job.employerId !== req.user.id) return res.status(403).json({ error: 'Unauthorized' });
-        const applications = job.applications.map(app => {
-            const user = users.find(u => u.id === app.userId);
-            const resume = resumes.find(r => r.userId === app.userId);
-            return { ...app, userName: user?.name || 'Unknown', userEmail: user?.email || 'Unknown', userResume: resume || null };
-        });
-        res.json(applications);
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch applications' });
-    }
-});
-
-app.get('/api/resumes/:filename/download', authenticateToken, (req, res) => {
-    try {
-        const filename = req.params.filename;
-        const filePath = path.join(__dirname, 'uploads', 'resumes', filename);
-        if (fs.existsSync(filePath)) {
-            res.download(filePath);
-        } else {
-            res.status(404).json({ error: 'File not found' });
-        }
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to download file' });
-    }
-});
-
-// Error Handling Middleware
-app.use((error, req, res, next) => {
-    if (error instanceof multer.MulterError && error.code === 'LIMIT_FILE_SIZE') {
-        return res.status(400).json({ error: 'File too large. Maximum size is 5MB.' });
-    }
-    res.status(500).json({ error: error.message });
-});
-
-// Start the Server
 app.listen(PORT, () => {
-    console.log(`TalentSync server running on port ${PORT}`);
-    console.log(`Visit http://localhost:${PORT} to access the application`);
+    console.log(`🚀 TalentSync server running on http://localhost:${PORT}`);
+    console.log(`📊 SEO features active:`);
+    console.log(`   - Sitemap: http://localhost:${PORT}/sitemap.xml`);
+    console.log(`   - Robots: http://localhost:${PORT}/robots.txt`);
+    console.log(`   - Location pages: http://localhost:${PORT}/jobs/new-york-ny`);
 });
+
+module.exports = app;

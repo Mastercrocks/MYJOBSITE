@@ -3,10 +3,9 @@ const { pool } = require('../config/database');
 
 class JobApiService {
   constructor() {
-    this.zipRecruiterBaseUrl = 'https://api.ziprecruiter.com/jobs/v1';
-    this.indeedBaseUrl = 'https://api.indeed.com/ads/apisearch';
-    this.adzunaBaseUrl = 'https://api.adzuna.com/v1/api/jobs';
-    this.rapidApiBaseUrl = 'https://jsearch.p.rapidapi.com';
+    this.indeedBaseUrl = 'https://api.indeed.com/jobs'; // replace with actual URL
+    this.adzunaBaseUrl = 'https://api.adzuna.com/v1/api/jobs'; // replace with actual URL
+    this.rapidApiBaseUrl = 'https://jsearch.p.rapidapi.com'; // RapidAPI base URL
   }
 
   // ZipRecruiter Job Search
@@ -21,7 +20,7 @@ class JobApiService {
         page = 1
       } = params;
 
-      const response = await axios.get(`${this.zipRecruiterBaseUrl}`, {
+      const response = await axios.get('https://api.ziprecruiter.com/jobs', {
         params: {
           search,
           location,
@@ -40,7 +39,7 @@ class JobApiService {
     }
   }
 
-  // Indeed Job Search (using their API)
+  // Indeed Job Search
   async searchIndeedJobs(params = {}) {
     try {
       const {
@@ -51,7 +50,7 @@ class JobApiService {
         start = 0
       } = params;
 
-      const response = await axios.get(`${this.indeedBaseUrl}`, {
+      const response = await axios.get(this.indeedBaseUrl, {
         params: {
           publisher: process.env.INDEED_PUBLISHER_ID,
           q,
@@ -99,7 +98,7 @@ class JobApiService {
     }
   }
 
-  // JSearch (RapidAPI) - Alternative job search
+  // JSearch (RapidAPI) Job Search
   async searchJSearchJobs(params = {}) {
     try {
       const {
@@ -134,14 +133,13 @@ class JobApiService {
   // Aggregate jobs from all sources
   async aggregateJobs(searchParams = {}) {
     console.log('Fetching jobs from multiple sources...');
-    
+
     const promises = [
       this.searchZipRecruiterJobs(searchParams),
       this.searchAdzunaJobs(searchParams),
       this.searchJSearchJobs(searchParams)
     ];
 
-    // Add Indeed if you have API access
     if (process.env.INDEED_PUBLISHER_ID) {
       promises.push(this.searchIndeedJobs(searchParams));
     }
@@ -158,7 +156,6 @@ class JobApiService {
         }
       });
 
-      // Remove duplicates and sort by date
       return this.deduplicateJobs(allJobs);
     } catch (error) {
       console.error('Error aggregating jobs:', error);
@@ -166,7 +163,7 @@ class JobApiService {
     }
   }
 
-  // Normalize job data from different sources
+  // Normalizers for each API's job data
   normalizeZipRecruiterJobs(jobs) {
     return jobs.map(job => ({
       id: `zr_${job.id}`,
@@ -190,4 +187,90 @@ class JobApiService {
       company: job.company,
       location: `${job.city}, ${job.state}`,
       description: job.snippet,
-      url: job
+      url: job.url,
+      salary: job.formattedSalary || null,
+      posted_date: job.date,
+      source: 'Indeed',
+      job_type: job.formattedRelativeTime?.includes('full') ? 'Full-time' : 'Unknown',
+      remote: job.jobtitle?.toLowerCase().includes('remote') || job.snippet?.toLowerCase().includes('remote')
+    }));
+  }
+
+  normalizeAdzunaJobs(jobs) {
+    return jobs.map(job => ({
+      id: `adzuna_${job.id}`,
+      title: job.title,
+      company: job.company?.display_name || 'Company Not Listed',
+      location: `${job.location.display_name}`,
+      description: job.description,
+      url: job.redirect_url,
+      salary: job.salary_max ? `${Math.round(job.salary_min)} - ${Math.round(job.salary_max)}` : null,
+      posted_date: job.created,
+      source: 'Adzuna',
+      job_type: job.contract_type || 'Full-time',
+      remote: job.title?.toLowerCase().includes('remote') || job.location?.display_name?.toLowerCase().includes('remote')
+    }));
+  }
+
+  normalizeJSearchJobs(jobs) {
+    return jobs.map(job => ({
+      id: `jsearch_${job.job_id}`,
+      title: job.job_title,
+      company: job.employer_name,
+      location: `${job.job_city}, ${job.job_state}`,
+      description: job.job_description,
+      url: job.job_apply_link,
+      salary: job.job_salary || null,
+      posted_date: job.job_posted_at_datetime_utc,
+      source: 'JSearch',
+      job_type: job.job_employment_type || 'Full-time',
+      remote: job.job_is_remote
+    }));
+  }
+
+  // Remove duplicate jobs by title + company
+  deduplicateJobs(jobs) {
+    const seen = new Set();
+    const unique = [];
+
+    for (const job of jobs) {
+      const key = `${job.title.toLowerCase()}_${job.company.toLowerCase()}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        unique.push(job);
+      }
+    }
+
+    return unique.sort((a, b) => new Date(b.posted_date) - new Date(a.posted_date));
+  }
+
+  // Save external jobs to your database
+  async saveExternalJobs(jobs) {
+    try {
+      for (const job of jobs) {
+        await pool.execute(`
+          INSERT IGNORE INTO external_jobs 
+          (external_id, title, company, location, description, url, salary, posted_date, source, job_type, is_remote)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+          job.id,
+          job.title,
+          job.company,
+          job.location,
+          job.description,
+          job.url,
+          job.salary,
+          job.posted_date,
+          job.source,
+          job.job_type,
+          job.remote
+        ]);
+      }
+      console.log(`Saved ${jobs.length} external jobs to database`);
+    } catch (error) {
+      console.error('Error saving external jobs:', error);
+    }
+  }
+}
+
+module.exports = new JobApiService();
