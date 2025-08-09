@@ -1,3 +1,49 @@
+const crypto = require('crypto');
+const { sendAccountEmail } = require('../services/emailService');
+// ADMIN FORGOT PASSWORD
+router.post('/admin/forgot-password', async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email is required' });
+  try {
+    // Only allow admin user
+    const [users] = await pool.execute('SELECT id FROM users WHERE email = ? AND user_type = ?', [email, 'admin']);
+    if (users.length === 0) return res.status(404).json({ error: 'Admin not found' });
+    const user = users[0];
+    // Generate token
+    const token = crypto.randomBytes(32).toString('hex');
+    const expires = new Date(Date.now() + 1000 * 60 * 30); // 30 min expiry
+    await pool.execute('UPDATE users SET reset_token = ?, reset_token_expires = ? WHERE id = ?', [token, expires, user.id]);
+    // Send email
+    const resetUrl = `${process.env.SITE_URL || 'http://localhost:3000'}/admin/reset-password.html?token=${token}`;
+    await sendAccountEmail({
+      to: email,
+      subject: 'Admin Password Reset',
+      text: `Reset your admin password: ${resetUrl}`,
+      html: `<p>Click <a href="${resetUrl}">here</a> to reset your admin password. This link expires in 30 minutes.</p>`
+    });
+    res.json({ message: 'Password reset link sent to your email.' });
+  } catch (e) {
+    console.error('Admin forgot password error:', e);
+    res.status(500).json({ error: 'Failed to send reset email.' });
+  }
+});
+
+// ADMIN RESET PASSWORD
+router.post('/auth/reset-password', async (req, res) => {
+  const { token, password } = req.body;
+  if (!token || !password) return res.status(400).json({ error: 'Token and new password required' });
+  try {
+    const [users] = await pool.execute('SELECT id FROM users WHERE reset_token = ? AND reset_token_expires > NOW() AND user_type = ?', [token, 'admin']);
+    if (users.length === 0) return res.status(400).json({ error: 'Invalid or expired token' });
+    const user = users[0];
+    const passwordHash = await bcrypt.hash(password, parseInt(process.env.BCRYPT_ROUNDS));
+    await pool.execute('UPDATE users SET password_hash = ?, reset_token = NULL, reset_token_expires = NULL WHERE id = ?', [passwordHash, user.id]);
+    res.json({ message: 'Password reset successful. You can now log in.' });
+  } catch (e) {
+    console.error('Admin reset password error:', e);
+    res.status(500).json({ error: 'Failed to reset password.' });
+  }
+});
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
