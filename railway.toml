@@ -1,0 +1,4 @@
+[build]
+
+[deploy]
+startCommand = "node server.js"
