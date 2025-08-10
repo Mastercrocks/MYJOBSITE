@@ -59,15 +59,16 @@ app.get('/', async (req, res) => {
         const indeedData = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'indeed_jobs.json'), 'utf8'));
         indeedJobs = indeedData.map((job, idx) => ({
             id: `indeed_${idx}`,
-            title: job.positionName,
+            title: job.positionName || job.title,
             company: job.company,
             location: job.location,
-            description: '',
+            description: job.description || '',
             salary: job.salary,
             source: 'indeed',
-            url: ''
+            url: job.url || ''
         }));
     } catch (e) {
+        console.log('Could not load Indeed jobs:', e.message);
         indeedJobs = [];
     }
     // Load Adzuna jobs (optional, can be slow)
@@ -248,13 +249,13 @@ app.get('/jobs/:location', async (req, res) => {
             })
             .map((job, idx) => ({
                 id: `indeed_${idx}`,
-                title: job.positionName,
+                title: job.positionName || job.title,
                 company: job.company,
                 location: job.location,
-                description: '',
+                description: job.description || '',
                 salary: job.salary,
                 source: 'indeed',
-                url: ''
+                url: job.url || ''
             }));
     } catch (e) {
         indeedJobs = [];
