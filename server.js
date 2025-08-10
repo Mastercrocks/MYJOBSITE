@@ -50,8 +50,78 @@ app.use('/seo', seoRoutes);
 // SEO-optimized routes
 
 // Homepage
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+app.get('/', async (req, res) => {
+    // Load local jobs
+    const jobsData = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'jobs.json'), 'utf8'));
+    // Load Indeed jobs
+    let indeedJobs = [];
+    try {
+        const indeedData = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'indeed_jobs.json'), 'utf8'));
+        indeedJobs = indeedData.map((job, idx) => ({
+            id: `indeed_${idx}`,
+            title: job.positionName,
+            company: job.company,
+            location: job.location,
+            description: '',
+            salary: job.salary,
+            source: 'indeed',
+            url: ''
+        }));
+    } catch (e) {
+        indeedJobs = [];
+    }
+    // Load Adzuna jobs (optional, can be slow)
+    let adzunaJobs = [];
+    try {
+        adzunaJobs = await (new jobApiService()).searchAdzunaJobs({
+            what: '',
+            where: '',
+            results_per_page: 10,
+            page: 1,
+            country: 'us'
+        });
+    } catch (e) {
+        adzunaJobs = [];
+    }
+    const normalizedAdzunaJobs = adzunaJobs.map(job => ({
+        id: job.id || job.redirect_url,
+        title: job.title,
+        company: job.company && job.company.display_name ? job.company.display_name : '',
+        location: job.location && job.location.display_name ? job.location.display_name : '',
+        description: job.description,
+        salary: job.salary_min && job.salary_max ? `$${job.salary_min} - $${job.salary_max}` : '',
+        source: 'adzuna',
+        url: job.redirect_url
+    }));
+    // Combine all jobs
+    const allJobs = [...jobsData, ...normalizedAdzunaJobs, ...indeedJobs];
+    // Render simple HTML for all jobs
+    const jobsHTML = allJobs.map(job => `
+        <div class="job-card">
+            <h3>${job.title} - ${job.location}</h3>
+            <p><strong>${job.company}</strong> | ${job.salary ? job.salary : ''}</p>
+            <p>${job.description || ''}</p>
+            <span style="font-size:0.9em;color:#888;">Source: ${job.source || 'local'}</span>
+        </div>
+    `).join('');
+    res.send(`<!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>All Jobs | TalentSync</title>
+        <link rel="stylesheet" href="/styles.css">
+        <style>.job-card{border:1px solid #ddd;padding:20px;margin:10px 0;border-radius:8px;}</style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>All Jobs</h1>
+            <div class="job-listings">
+                ${jobsHTML}
+            </div>
+        </div>
+    </body>
+    </html>`);
 });
 
 // Robots.txt for SEO
@@ -137,6 +207,7 @@ app.get('/jobs/:location', async (req, res) => {
     const filteredLocalJobs = jobsData.filter(job =>
         job.location && job.location.toLowerCase().includes(cityName.toLowerCase())
     );
+
     // Adzuna jobs
     let adzunaJobs = [];
     try {
@@ -161,8 +232,36 @@ app.get('/jobs/:location', async (req, res) => {
         source: 'adzuna',
         url: job.redirect_url
     }));
+
+    // Indeed jobs from Apify dataset
+    let indeedJobs = [];
+    try {
+        const indeedData = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'indeed_jobs.json'), 'utf8'));
+        // Normalize cityName for matching (e.g., 'New York')
+        const cityNameNorm = cityName.toLowerCase().replace(/[^a-z0-9]/g, '');
+        indeedJobs = indeedData
+            .filter(job => {
+                if (!job.location) return false;
+                // Normalize job location (e.g., 'New York, NY' -> 'newyorkny')
+                const jobLocNorm = job.location.toLowerCase().replace(/[^a-z0-9]/g, '');
+                return jobLocNorm.includes(cityNameNorm) || cityNameNorm.includes(jobLocNorm);
+            })
+            .map((job, idx) => ({
+                id: `indeed_${idx}`,
+                title: job.positionName,
+                company: job.company,
+                location: job.location,
+                description: '',
+                salary: job.salary,
+                source: 'indeed',
+                url: ''
+            }));
+    } catch (e) {
+        indeedJobs = [];
+    }
+
     // Combine jobs
-    const allJobs = [...filteredLocalJobs, ...normalizedAdzunaJobs];
+    const allJobs = [...filteredLocalJobs, ...normalizedAdzunaJobs, ...indeedJobs];
     // Structured data for jobs
     const jobsStructuredData = allJobs.map(job => ({
         "@context": "https://schema.org",

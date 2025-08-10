@@ -593,6 +593,7 @@
             </div>
 
             <div class="job-results" id="jobResults"></div>
+    <div class="job-results" id="indeedJobResults"></div>
         </div>
     </section>
 
@@ -1159,6 +1160,32 @@
                 }
             });
         }
+
+        // Load and display all Indeed jobs on homepage
+        async function loadIndeedJobs() {
+            try {
+                const response = await fetch('/data/indeed_jobs.json');
+                if (!response.ok) return;
+                const jobs = await response.json();
+                const indeedJobResults = document.getElementById('indeedJobResults');
+                if (!jobs.length) {
+                    indeedJobResults.innerHTML = '<p>No Indeed jobs found.</p>';
+                    return;
+                }
+                indeedJobResults.innerHTML = '<h2 style="margin-top:2rem;">Latest Indeed Jobs</h2>' + jobs.map(job => `
+                    <div class="job-card">
+                        <div class="job-title">${job.positionName}</div>
+                        <div class="job-company">${job.company}</div>
+                        <div class="job-location">${job.location}</div>
+                        ${job.salary ? `<div style="color: #667eea; font-weight: 600;">Salary: ${job.salary}</div>` : ''}
+                    </div>
+                `).join('');
+            } catch (e) {
+                // fail silently
+            }
+        }
+        // Run on page load
+        loadIndeedJobs();
     </script>
 </body>
 </html>

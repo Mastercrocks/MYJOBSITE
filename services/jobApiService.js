@@ -1,5 +1,5 @@
 const axios = require('axios');
-const { pool } = require('../config/database');
+const { pool } = require('../Config/database');
 
 class JobApiService {
   constructor() {

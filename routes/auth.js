@@ -1,5 +1,14 @@
+
+const express = require('express');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const rateLimit = require('express-rate-limit');
+const { pool } = require('../Config/database');
+const { authenticateToken } = require('../middleware/auth');
 const crypto = require('crypto');
 const { sendAccountEmail } = require('../services/emailService');
+const router = express.Router();
+
 // ADMIN FORGOT PASSWORD
 router.post('/admin/forgot-password', async (req, res) => {
   const { email } = req.body;
@@ -44,14 +53,7 @@ router.post('/auth/reset-password', async (req, res) => {
     res.status(500).json({ error: 'Failed to reset password.' });
   }
 });
-const express = require('express');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const rateLimit = require('express-rate-limit');
-const { pool } = require('../config/database');
-const { authenticateToken } = require('../middleware/auth');
 
-const router = express.Router();
 
 // Rate limiting to prevent spam
 const authLimiter = rateLimit({
