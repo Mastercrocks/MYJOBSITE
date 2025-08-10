@@ -31,13 +31,28 @@ app.get('/api/fresh', (req, res) => {
         const scrapedJobsPath = path.join(__dirname, 'data', 'scraped_jobs.json');
         if (fs.existsSync(scrapedJobsPath)) {
             const scrapedJobs = JSON.parse(fs.readFileSync(scrapedJobsPath, 'utf8'));
-            res.json(scrapedJobs);
+            res.json({
+                success: true,
+                jobs: scrapedJobs,
+                sources: {
+                    scraped: scrapedJobs.length,
+                    api: 0
+                }
+            });
         } else {
-            res.json([]);
+            res.json({
+                success: false,
+                jobs: [],
+                sources: { scraped: 0, api: 0 }
+            });
         }
     } catch (error) {
         console.error('Error reading scraped jobs:', error);
-        res.json([]);
+        res.json({
+            success: false,
+            jobs: [],
+            sources: { scraped: 0, api: 0 }
+        });
     }
 });
 
