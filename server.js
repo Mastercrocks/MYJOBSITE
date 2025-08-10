@@ -107,81 +107,10 @@ locations.forEach(location => {
 
 // SEO-optimized routes
 
-// Homepage
-app.get('/', async (req, res) => {
-    // Load local jobs
-    const jobsData = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'jobs.json'), 'utf8'));
-    // Load Indeed jobs
-    let indeedJobs = [];
-    try {
-        const indeedData = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'indeed_jobs.json'), 'utf8'));
-        indeedJobs = indeedData.map((job, idx) => ({
-            id: `indeed_${idx}`,
-            title: job.positionName || job.title,
-            company: job.company,
-            location: job.location,
-            description: job.description || '',
-            salary: job.salary,
-            source: 'indeed',
-            url: job.url || ''
-        }));
-    } catch (e) {
-        console.log('Could not load Indeed jobs:', e.message);
-        indeedJobs = [];
-    }
-    // Load Adzuna jobs (optional, can be slow)
-    let adzunaJobs = [];
-    try {
-        adzunaJobs = await (new jobApiService()).searchAdzunaJobs({
-            what: '',
-            where: '',
-            results_per_page: 10,
-            page: 1,
-            country: 'us'
-        });
-    } catch (e) {
-        adzunaJobs = [];
-    }
-    const normalizedAdzunaJobs = adzunaJobs.map(job => ({
-        id: job.id || job.redirect_url,
-        title: job.title,
-        company: job.company && job.company.display_name ? job.company.display_name : '',
-        location: job.location && job.location.display_name ? job.location.display_name : '',
-        description: job.description,
-        salary: job.salary_min && job.salary_max ? `$${job.salary_min} - $${job.salary_max}` : '',
-        source: 'adzuna',
-        url: job.redirect_url
-    }));
-    // Combine all jobs
-    const allJobs = [...jobsData, ...normalizedAdzunaJobs, ...indeedJobs];
-    // Render simple HTML for all jobs
-    const jobsHTML = allJobs.map(job => `
-        <div class="job-card">
-            <h3>${job.title} - ${job.location}</h3>
-            <p><strong>${job.company}</strong> | ${job.salary ? job.salary : ''}</p>
-            <p>${job.description || ''}</p>
-            <span style="font-size:0.9em;color:#888;">Source: ${job.source || 'local'}</span>
-        </div>
-    `).join('');
-    res.send(`<!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>All Jobs | TalentSync</title>
-        <link rel="stylesheet" href="/styles.css">
-        <style>.job-card{border:1px solid #ddd;padding:20px;margin:10px 0;border-radius:8px;}</style>
-    </head>
-    <body>
-        <div class="container">
-            <h1>All Jobs</h1>
-            <div class="job-listings">
-                ${jobsHTML}
-            </div>
-        </div>
-    </body>
-    </html>`);
-});
+// REMOVE THIS ENTIRE SECTION - IT'S STILL ACTIVE AND CAUSING PROBLEMS
+// The dynamic homepage route below is preventing your static index.html from being served
+
+// Comment out or remove lines 100-170 completely
 
 // Robots.txt for SEO
 app.get('/robots.txt', (req, res) => {
@@ -491,17 +420,21 @@ app.get('/dashboard', (req, res) => {
     res.sendFile(path.join(__dirname, 'Public', 'dashboard.html'));
 });
 
-// Serve static HTML files for direct requests (e.g., /admin/login.html)
-app.get('/*.html', (req, res, next) => {
-    const filePath = path.join(__dirname, 'Public', req.path);
-    if (fs.existsSync(filePath)) {
-        return res.sendFile(filePath);
-    }
-    next();
-});
 
 // Catch-all for SPA routing (fallback to index.html for non-file routes)
+// BUT EXCLUDE API routes and static files
 app.get('*', (req, res) => {
+    // Don't catch API routes
+    if (req.path.startsWith('/api/')) {
+        return res.status(404).json({ error: 'API endpoint not found' });
+    }
+    
+    // Don't catch files with extensions (CSS, JS, images, etc.) - let static middleware handle them
+    if (path.extname(req.path)) {
+        return res.status(404).send('File not found');
+    }
+    
+    // Only serve index.html for actual page routes (not admin routes)
     res.sendFile(path.join(__dirname, 'Public', 'index.html'));
 });
 

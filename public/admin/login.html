@@ -1,56 +1,171 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Login - TalentSync</title>
-  <link rel="stylesheet" href="/styles.css">
-  <style>
-    .container { max-width: 400px; margin: 60px auto; background: #fff; padding: 2rem; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-    h2 { text-align: center; margin-bottom: 1.5rem; color: #2563eb; }
-    label { display: block; margin-top: 1rem; color: #333; }
-    input { width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 1rem; }
-    button { width: 100%; padding: 0.75rem; background: #2563eb; color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
-    button:hover { background: #174ea6; }
-    #error { color: #c00; margin-bottom: 1rem; text-align: center; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TalentSync Admin - PIN Access</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            color: #2563eb;
+            margin-bottom: 10px;
+            font-size: 1.8rem;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1rem;
+        }
+
+        .pin-group {
+            margin-bottom: 25px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: bold;
+        }
+
+        #adminPin {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1.2rem;
+            text-align: center;
+            letter-spacing: 3px;
+            font-weight: bold;
+        }
+
+        #adminPin:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 15px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .login-btn:hover {
+            background: #1d4ed8;
+        }
+
+        .error {
+            color: #e74c3c;
+            margin-top: 15px;
+            padding: 10px;
+            background: #ffe6e6;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .back-link {
+            margin-top: 20px;
+        }
+
+        .back-link a {
+            color: #666;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .back-link a:hover {
+            color: #2563eb;
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <h2>Admin Login</h2>
-    <form id="adminPinForm">
-      <label for="pin">Enter Admin PIN:</label>
-      <input type="password" id="pin" name="pin" maxlength="12" required>
-      <button type="submit">Login</button>
-    </form>
-    <div id="error"></div>
-  </div>
-  <script>
-    document.getElementById('adminPinForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-      const pin = document.getElementById('pin').value;
-      if (pin === '251996') {
-        // Clear any existing auth data
-        localStorage.clear();
-        sessionStorage.clear();
+    <div class="login-container">
+        <div class="logo">🔐</div>
+        <h1>Admin Access</h1>
+        <p class="subtitle">Enter your PIN to continue</p>
         
-        // Store admin session
-        localStorage.setItem('adminSession', 'true');
-        localStorage.setItem('adminLoginTime', Date.now());
-        localStorage.setItem('userType', 'admin');
+        <form id="pinForm">
+            <div class="pin-group">
+                <label for="adminPin">Administrator PIN</label>
+                <input type="text" id="adminPin" maxlength="6" placeholder="Enter PIN" required>
+            </div>
+            
+            <button type="submit" class="login-btn">Access Dashboard</button>
+            
+            <div id="errorMsg" class="error">
+                Invalid PIN. Please try again.
+            </div>
+        </form>
         
-        // Show success message
-        document.getElementById('error').style.color = 'green';
-        document.getElementById('error').textContent = 'Login successful! Redirecting...';
-        
-        // Redirect after a short delay
-        setTimeout(() => {
-          window.location.href = '/admin/dashboard.html';
-        }, 1000);
-      } else {
-        document.getElementById('error').textContent = 'Invalid PIN.';
-      }
-    });
-  </script>
+        <div class="back-link">
+            <a href="/">← Back to TalentSync</a>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('pinForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const pin = document.getElementById('adminPin').value;
+            const errorMsg = document.getElementById('errorMsg');
+            
+            if (pin === '251996') {
+                // Correct PIN
+                localStorage.setItem('adminAuth', 'authenticated');
+                localStorage.setItem('adminTime', Date.now());
+                window.location.href = '/admin/dashboard.html';
+            } else {
+                // Wrong PIN
+                errorMsg.style.display = 'block';
+                document.getElementById('adminPin').value = '';
+                document.getElementById('adminPin').focus();
+            }
+        });
+
+        // Focus on PIN input when page loads
+        window.onload = function() {
+            document.getElementById('adminPin').focus();
+        };
+    </script>
 </body>
 </html>
