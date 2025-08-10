@@ -33,10 +33,16 @@ const PORT = process.env.PORT || 3000;
 app.use(compression());
 
 // Serve admin static files FIRST (before general static files)
-app.use('/admin', express.static(path.join(__dirname, 'Public/admin')));
+app.use('/admin', express.static(path.join(__dirname, 'Public/admin'), {
+    caseSensitive: false,
+    dotfiles: 'deny'
+}));
 
 // Serve static files from Public directory (case-sensitive)
-app.use(express.static(path.join(__dirname, 'Public')));
+app.use(express.static(path.join(__dirname, 'Public'), {
+    caseSensitive: false,
+    dotfiles: 'deny'
+}));
 
 // Parse JSON bodies
 app.use(express.json());
@@ -422,8 +428,13 @@ app.get('/dashboard', (req, res) => {
 
 
 // Catch-all for SPA routing (fallback to index.html for non-file routes)
-// BUT EXCLUDE API routes and static files
+// BUT EXCLUDE API routes, admin routes, and static files
 app.get('*', (req, res) => {
+    // Completely skip admin routes - they should be handled by static middleware above
+    if (req.path.startsWith('/admin/')) {
+        return res.status(404).send('Not found');
+    }
+    
     // Don't catch API routes
     if (req.path.startsWith('/api/')) {
         return res.status(404).json({ error: 'API endpoint not found' });
@@ -434,7 +445,7 @@ app.get('*', (req, res) => {
         return res.status(404).send('File not found');
     }
     
-    // Only serve index.html for actual page routes (not admin routes)
+    // Only serve index.html for actual page routes
     res.sendFile(path.join(__dirname, 'Public', 'index.html'));
 });
 
