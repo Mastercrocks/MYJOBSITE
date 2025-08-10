@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Career Advice Blog for College Students | TalentSync</title>
+    <meta name="description" content="Get expert career advice, job search tips, and professional development insights for college students and recent graduates.">
+    <meta name="keywords" content="career advice, college students, job search tips, resume help, interview tips, career development">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #ffffff;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header */
+        header {
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 1rem 0;
+            position: relative;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2563eb;
+            text-decoration: none;
+        }
+
+        /* Hamburger Menu */
+        .menu-toggle {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            width: 30px;
+            height: 30px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            z-index: 1001;
+        }
+
+        .menu-toggle span {
+            display: block;
+            height: 3px;
+            width: 100%;
+            background: #2563eb;
+            transition: all 0.3s ease;
+            transform-origin: center;
+        }
+
+        .menu-toggle.active span:nth-child(1) {
+            transform: rotate(45deg) translate(7px, 7px);
+        }
+
+        .menu-toggle.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .menu-toggle.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(7px, -7px);
+        }
+
+        /* Mobile Menu */
+        .mobile-menu {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 300px;
+            height: 100vh;
+            background: white;
+            z-index: 1000;
+            transition: right 0.3s ease;
+            box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+            padding-top: 80px;
+        }
+
+        .mobile-menu.active {
+            right: 0;
+        }
+
+        .mobile-menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .mobile-menu-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .nav-links {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .nav-links li {
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .nav-links a {
+            display: block;
+            color: #4b5563;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 1.5rem 2rem;
+            transition: all 0.2s;
+            font-size: 1.1rem;
+        }
+
+        .nav-links a:hover {
+            color: #2563eb;
+            background: #f8fafc;
+        }
+
+        .nav-links .btn-primary {
+            background: #2563eb;
+            color: white;
+            margin: 1rem 2rem;
+            border-radius: 8px;
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .nav-links .btn-primary:hover {
+            background: #1d4ed8;
+            color: white;
+        }
+
+        .nav-links .btn-secondary {
+            background: #10b981;
+            color: white;
+            margin: 0 2rem 1rem 2rem;
+            border-radius: 8px;
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .nav-links .btn-secondary:hover {
+            background: #059669;
+            color: white;
+        }
+
+        /* Desktop menu hidden by default */
+        .desktop-nav {
+            display: none;
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            color: white;
+            text-align: center;
+            padding: 4rem 0;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .hero-subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Featured Article */
+        .featured-section {
+            padding: 3rem 0;
+            background: #f8fafc;
+        }
+
+        .featured-article {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .featured-content {
+            padding: 2rem;
+        }
+
+        .featured-image {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 4rem;
+        }
+
+        .featured-tag {
+            background: #8b5cf6;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            display: inline-block;
+            margin-bottom: 1rem;
+        }
+
+        .featured-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 1rem;
+            text-decoration: none;
+        }
+
+        .featured-title:hover {
+            color: #8b5cf6;
+        }
+
+        .featured-excerpt {
+            color: #6b7280;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .read-more-btn {
+            background: #8b5cf6;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .read-more-btn:hover {
+            background: #7c3aed;
+        }
+
+        /* Articles Grid */
+        .articles-section {
+            padding: 3rem 0;
+            background: white;
+        }
+
+        .articles-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .article-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s;
+            border: 1px solid #e5e7eb;
+        }
+
+        .article-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        .article-image {
+            height: 200px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2.5rem;
+        }
+
+        .article-content {
+            padding: 1.5rem;
+        }
+
+        .article-category {
+            background: #e0e7ff;
+            color: #3730a3;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            display: inline-block;
+            margin-bottom: 1rem;
+        }
+
+        .article-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 0.5rem;
+            text-decoration: none;
+        }
+
+        .article-title:hover {
+            color: #8b5cf6;
+        }
+
+        .article-excerpt {
+            color: #6b7280;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+
+        .article-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: #9ca3af;
+        }
+
+        /* Newsletter Signup */
+        .newsletter-section {
+            background: #1f2937;
+            color: white;
+            padding: 3rem 0;
+            text-align: center;
+        }
+
+        .newsletter-form {
+            max-width: 500px;
+            margin: 2rem auto 0;
+            display: flex;
+            gap: 1rem;
+        }
+
+        .newsletter-input {
+            flex: 1;
+            padding: 1rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .newsletter-btn {
+            background: #8b5cf6;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .newsletter-btn:hover {
+            background: #7c3aed;
+        }
+
+        /* Footer */
+        footer {
+            background: #111827;
+            color: #d1d5db;
+            padding: 2rem 0;
+            text-align: center;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: #d1d5db;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .footer-links a:hover {
+            color: white;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .featured-article {
+                grid-template-columns: 1fr;
+            }
+
+            .newsletter-form {
+                flex-direction: column;
+            }
+        }
+
+        @media (min-width: 769px) {
+            /* Keep hamburger menu visible */
+            .menu-toggle {
+                display: flex;
+            }
+
+            /* Keep mobile menu functional */
+            .mobile-menu {
+                display: block;
+            }
+
+            /* Hide desktop nav completely */
+            .desktop-nav {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <a href="/" class="logo">TalentSync</a>
+                
+                <!-- Hamburger Menu Toggle -->
+                <button class="menu-toggle" id="menuToggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                
+                <!-- Desktop Navigation - Hidden, everything goes in hamburger menu -->
+                <nav class="desktop-nav" style="display: none;">
+                </nav>
+            </div>
+        </div>
+        
+        <!-- Mobile Menu Overlay -->
+        <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+        
+        <!-- Mobile Menu -->
+        <div class="mobile-menu" id="mobileMenu">
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="/jobs">Jobs</a></li>
+                    <li><a href="/resumes">Search Resumes</a></li>
+                    <li><a href="/blog">Blog</a></li>
+                    <li id="authMenuItem"><a href="/login.html">Sign In</a></li>
+                    <li><a href="/register.html" class="btn-primary">Post Resume</a></li>
+                    <li><a href="/employers" class="btn-secondary">Employers - Post Job</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="container">
+            <h1>Career Advice Blog</h1>
+            <p class="hero-subtitle">Expert tips and insights to help college students launch successful careers</p>
+        </div>
+    </section>
+
+    <!-- Featured Article -->
+    <section class="featured-section">
+        <div class="container">
+            <h2 style="text-align: center; margin-bottom: 2rem;">Featured Article</h2>
+            <div class="featured-article">
+                <div class="featured-content">
+                    <span class="featured-tag">Career Tips</span>
+                    <a href="/blog/first-job-interview-tips" class="featured-title">First Job Interview Tips for College Students</a>
+                    <p class="featured-excerpt">Master your first job interview with these essential tips and strategies. Learn what to wear, how to prepare, and how to answer common interview questions with confidence.</p>
+                    <a href="/blog/first-job-interview-tips" class="read-more-btn">Read Full Article</a>
+                    <div style="margin-top: 1rem; font-size: 0.9rem; color: #6b7280;">
+                        6 minute read • Updated January 2025
+                    </div>
+                </div>
+                <div class="featured-image">💼</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Articles Grid -->
+    <section class="articles-section">
+        <div class="container">
+            <h2 style="text-align: center; margin-bottom: 1rem;">Latest Articles</h2>
+            <p style="text-align: center; color: #6b7280; margin-bottom: 2rem;">Stay updated with the latest career advice and job search strategies</p>
+            
+            <div class="articles-grid">
+                <!-- Resume Guide Article -->
+                <div class="article-card">
+                    <div class="article-image">📄</div>
+                    <div class="article-content">
+                        <span class="article-category">Resume Tips</span>
+                        <a href="/blog/college-student-resume-guide" class="article-title">The Ultimate Resume Guide for College Students</a>
+                        <p class="article-excerpt">Create a compelling resume that gets you noticed by employers. Learn formatting tips, what to include, and common mistakes to avoid.</p>
+                        <div class="article-meta">
+                            <span>5 min read</span>
+                            <span>January 2025</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interview Tips Article -->
+                <div class="article-card">
+                    <div class="article-image">🎯</div>
+                    <div class="article-content">
+                        <span class="article-category">Interview Prep</span>
+                        <a href="/blog/first-job-interview-tips" class="article-title">First Job Interview Tips for College Students</a>
+                        <p class="article-excerpt">Essential interview tips for landing your first job. From preparation to follow-up, everything you need to know.</p>
+                        <div class="article-meta">
+                            <span>6 min read</span>
+                            <span>January 2025</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Networking Article -->
+                <div class="article-card">
+                    <div class="article-image">🤝</div>
+                    <div class="article-content">
+                        <span class="article-category">Career Development</span>
+                        <a href="/blog/networking-for-students" class="article-title">Networking Tips for College Students</a>
+                        <p class="article-excerpt">Build meaningful professional relationships that can jumpstart your career. Learn how to network effectively as a student.</p>
+                        <div class="article-meta">
+                            <span>4 min read</span>
+                            <span>Coming Soon</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Internship Guide -->
+                <div class="article-card">
+                    <div class="article-image">🚀</div>
+                    <div class="article-content">
+                        <span class="article-category">Internships</span>
+                        <a href="/blog/internship-application-guide" class="article-title">How to Land Your First Internship</a>
+                        <p class="article-excerpt">Step-by-step guide to finding and applying for internships as a student. Tips for standing out from the competition.</p>
+                        <div class="article-meta">
+                            <span>7 min read</span>
+                            <span>Coming Soon</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Salary Negotiation -->
+                <div class="article-card">
+                    <div class="article-image">💰</div>
+                    <div class="article-content">
+                        <span class="article-category">Career Tips</span>
+                        <a href="/blog/salary-negotiation-basics" class="article-title">Salary Negotiation Basics for New Grads</a>
+                        <p class="article-excerpt">Learn how to negotiate your first salary with confidence. Research strategies and negotiation tactics for entry-level positions.</p>
+                        <div class="article-meta">
+                            <span>5 min read</span>
+                            <span>Coming Soon</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LinkedIn Profile -->
+                <div class="article-card">
+                    <div class="article-image">💼</div>
+                    <div class="article-content">
+                        <span class="article-category">Online Presence</span>
+                        <a href="/blog/linkedin-profile-students" class="article-title">Creating a Standout LinkedIn Profile</a>
+                        <p class="article-excerpt">Optimize your LinkedIn profile to attract recruiters and networking opportunities. Essential tips for students.</p>
+                        <div class="article-meta">
+                            <span>4 min read</span>
+                            <span>Coming Soon</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Newsletter Signup -->
+    <section class="newsletter-section">
+        <div class="container">
+            <h2>Stay Updated</h2>
+            <p style="margin-bottom: 1rem;">Get the latest career tips and job opportunities delivered to your inbox</p>
+            <form class="newsletter-form">
+                <input type="email" class="newsletter-input" placeholder="Enter your email address" required>
+                <button type="submit" class="newsletter-btn">Subscribe</button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-links">
+                <a href="/">Home</a>
+                <a href="/jobs">Jobs</a>
+                <a href="/resumes">Search Resumes</a>
+                <a href="/employers">Employers</a>
+                <a href="/privacy">Privacy</a>
+                <a href="/terms">Terms</a>
+                <a href="/contact">Contact Us</a>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 TalentSync. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile menu functionality
+        const menuToggle = document.getElementById('menuToggle');
+        const mobileMenu = document.getElementById('mobileMenu');
+        const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
+
+        function toggleMenu() {
+            menuToggle.classList.toggle('active');
+            mobileMenu.classList.toggle('active');
+            mobileMenuOverlay.classList.toggle('active');
+            
+            if (mobileMenu.classList.contains('active')) {
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.body.style.overflow = '';
+            }
+        }
+
+        menuToggle.addEventListener('click', toggleMenu);
+        mobileMenuOverlay.addEventListener('click', toggleMenu);
+
+        const mobileMenuLinks = mobileMenu.querySelectorAll('a');
+        mobileMenuLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                if (mobileMenu.classList.contains('active')) {
+                    toggleMenu();
+                }
+            });
+        });
+
+        // Check authentication status and update navigation
+        function updateNavigation() {
+            const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            const authMenuItem = document.getElementById('authMenuItem');
+            
+            if (isLoggedIn && user.email) {
+                authMenuItem.innerHTML = `<a href="/dashboard">Dashboard</a>`;
+            } else {
+                authMenuItem.innerHTML = `<a href="/login.html">Sign In</a>`;
+            }
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', updateNavigation);
+
+        // Newsletter form
+        document.querySelector('.newsletter-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const email = this.querySelector('.newsletter-input').value;
+            alert(`Thank you for subscribing with email: ${email}. You'll receive our latest career tips and job opportunities.`);
+            this.reset();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>#1 Job Site for College Students & Recent Graduates | TalentSync</title>
+    <meta name="description" content="Find your first job or internship with TalentSync - the premier job board for college students and recent graduates. Connect with top employers hiring entry-level talent.">
+    <meta name="keywords" content="college jobs, student jobs, entry level jobs, internships, recent graduate jobs, first job, college career, part time jobs, summer jobs, campus jobs">
+    
+    <!-- Open Graph Meta Tags for Social Media -->
+    <meta property="og:title" content="#1 Job Site for College Students & Recent Graduates | TalentSync">
+    <meta property="og:description" content="Find your first job or internship with TalentSync - the premier job board for college students and recent graduates.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://talentsync.shop">
+    <meta property="og:image" content="https://talentsync.shop/img/og-image.jpg">
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="#1 Job Site for College Students & Recent Graduates | TalentSync">
+    <meta name="twitter:description" content="Find your first job or internship with TalentSync - the premier job board for college students and recent graduates.">
+    <meta name="twitter:image" content="https://talentsync.shop/img/twitter-image.jpg">
+    
+    <!-- Schema.org JSON-LD for Rich Snippets -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "JobBoard",
+      "name": "TalentSync",
+      "description": "Premier job board for college students and recent graduates",
+      "url": "https://talentsync.shop",
+      "sameAs": [
+        "https://www.facebook.com/talentsync",
+        "https://www.twitter.com/talentsync",
+        "https://www.linkedin.com/company/talentsync"
+      ],
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://talentsync.shop/jobs?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://talentsync.shop">
+    
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-XXXXXXXXXX');
+    </script>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #ffffff;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header */
+        header {
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 1rem 0;
+            position: relative;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2563eb;
+            text-decoration: none;
+        }
+
+        /* Hamburger Menu - Always visible */
+        .menu-toggle {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            width: 30px;
+            height: 30px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            z-index: 1001;
+        }
+
+        .menu-toggle span {
+            display: block;
+            height: 3px;
+            width: 100%;
+            background: #2563eb;
+            transition: all 0.3s ease;
+            transform-origin: center;
+        }
+
+        .menu-toggle.active span:nth-child(1) {
+            transform: rotate(45deg) translate(7px, 7px);
+        }
+
+        .menu-toggle.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .menu-toggle.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(7px, -7px);
+        }
+
+        /* Mobile Menu - Now the only menu */
+        .mobile-menu {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 300px;
+            height: 100vh;
+            background: white;
+            z-index: 1000;
+            transition: right 0.3s ease;
+            box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+            padding-top: 80px;
+        }
+
+        .mobile-menu.active {
+            right: 0;
+        }
+
+        .mobile-menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .mobile-menu-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .nav-links {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .nav-links li {
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .nav-links a {
+            display: block;
+            color: #4b5563;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 1.5rem 2rem;
+            transition: all 0.2s;
+            font-size: 1.1rem;
+        }
+
+        .nav-links a:hover {
+            color: #2563eb;
+            background: #f8fafc;
+        }
+
+        .nav-links .btn-primary {
+            background: #2563eb;
+            color: white;
+            margin: 1rem 2rem;
+            border-radius: 8px;
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .nav-links .btn-primary:hover {
+            background: #1d4ed8;
+            color: white;
+        }
+
+        .nav-links .btn-secondary {
+            background: #10b981;
+            color: white;
+            margin: 0 2rem 1rem 2rem;
+            border-radius: 8px;
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .nav-links .btn-secondary:hover {
+            background: #059669;
+            color: white;
+        }
+
+        /* Desktop menu hidden by default */
+        .desktop-nav {
+            display: none;
+        }
+
+        /* Main Hero Section */
+        .hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            padding: 4rem 0 3rem;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+        }
+
+        .hero-subtitle {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+
+        /* Search Form */
+        .search-section {
+            background: white;
+            padding: 2rem 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .search-form {
+            display: flex;
+            gap: 1rem;
+            max-width: 600px;
+            margin: 0 auto;
+            align-items: center;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #2563eb;
+        }
+
+        .search-btn {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .search-btn:hover {
+            background: #1d4ed8;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            padding: 2rem 0;
+            text-align: center;
+            background: #f9fafb;
+        }
+
+        .quick-actions p {
+            margin-bottom: 1rem;
+            color: #6b7280;
+        }
+
+        .action-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .action-link {
+            background: #2563eb;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        .action-link:hover {
+            background: #1d4ed8;
+            color: white;
+        }
+
+        .action-link.secondary {
+            background: #10b981;
+        }
+
+        .action-link.secondary:hover {
+            background: #059669;
+        }
+
+        /* College Categories */
+        .college-categories {
+            padding: 3rem 0;
+            background: white;
+        }
+
+        .college-categories h2 {
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 2rem;
+            color: #1f2937;
+        }
+
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .category-item {
+            background: #f8fafc;
+            padding: 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+            text-decoration: none;
+            color: #374151;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .category-item:hover {
+            background: #e0e7ff;
+            border-color: #2563eb;
+            transform: translateY(-2px);
+            color: #374151;
+        }
+
+        .category-item h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .category-item p {
+            font-size: 0.9rem;
+            color: #6b7280;
+        }
+
+        /* Featured Jobs */
+        .featured-jobs {
+            padding: 3rem 0;
+            background: #f9fafb;
+        }
+
+        .featured-jobs h2 {
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 2rem;
+            color: #1f2937;
+        }
+
+        .jobs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .job-item {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s;
+        }
+
+        .job-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .job-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1f2937;
+            text-decoration: none;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .job-title:hover {
+            color: #2563eb;
+        }
+
+        .job-company {
+            color: #6b7280;
+            margin-bottom: 0.5rem;
+        }
+
+        .job-location {
+            color: #9ca3af;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .job-details {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .job-salary {
+            background: #dcfce7;
+            color: #166534;
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .job-source {
+            background: #2563eb;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Footer */
+        footer {
+            background: #1f2937;
+            color: #d1d5db;
+            padding: 2rem 0;
+            text-align: center;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: #d1d5db;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .footer-links a:hover {
+            color: white;
+        }
+
+        .footer-bottom {
+            font-size: 0.85rem;
+            color: #9ca3af;
+        }
+
+        /* Loading States */
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #6b7280;
+            font-style: italic;
+        }
+
+        /* Responsive Design - Simplified */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .search-form {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .search-input, .search-btn {
+                width: 100%;
+            }
+
+            .action-links {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+
+        /* Hamburger menu always visible on all screen sizes */
+        @media (min-width: 769px) {
+            /* Keep hamburger menu visible */
+            .menu-toggle {
+                display: flex;
+            }
+
+            /* Keep mobile menu functional */
+            .mobile-menu {
+                display: block;
+            }
+
+            /* Hide desktop nav completely */
+            .desktop-nav {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <a href="/" class="logo">TalentSync</a>
+                
+                <!-- Hamburger Menu Toggle -->
+                <button class="menu-toggle" id="menuToggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                
+                <!-- Desktop Navigation - Hidden, everything goes in hamburger menu -->
+                <nav class="desktop-nav" style="display: none;">
+                </nav>
+            </div>
+        </div>
+        
+        <!-- Mobile Menu Overlay -->
+        <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+        
+        <!-- Mobile Menu -->
+        <div class="mobile-menu" id="mobileMenu">
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="/jobs">Jobs</a></li>
+                    <li><a href="/resumes">Search Resumes</a></li>
+                    <li><a href="/blog">Blog</a></li>
+                    <li id="authMenuItem"><a href="/login.html">Sign In</a></li>
+                    <li><a href="/register.html" class="btn-primary">Post Resume</a></li>
+                    <li><a href="/employers" class="btn-secondary">Employers - Post Job</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <h1>#1 job site for college students & grads</h1>
+            <p class="hero-subtitle">Launch your career with opportunities designed for students and recent graduates</p>
+        </div>
+    </section>
+
+    <!-- Search Section -->
+    <section class="search-section">
+        <div class="container">
+            <form class="search-form" id="jobSearchForm">
+                <input type="text" class="search-input" placeholder="Keyword or Company" id="searchKeyword">
+                <input type="text" class="search-input" placeholder="City" id="searchLocation">
+                <button type="submit" class="search-btn">Search</button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Quick Actions -->
+    <section class="quick-actions">
+        <div class="container">
+            <p><strong>Post your resume</strong> - it only takes a few seconds</p>
+            <div class="action-links">
+                <a href="/register.html" class="action-link">Post Your Resume</a>
+                <a href="/post-job" class="action-link secondary">Employers - Post a Job</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- College Categories -->
+    <section class="college-categories">
+        <div class="container">
+            <h2>Find Jobs by Education Level</h2>
+            <div class="categories-grid">
+                <a href="/jobs?category=technical" class="category-item">
+                    <h3>Technical Colleges</h3>
+                    <p>Entry-level technical and trade positions</p>
+                </a>
+                <a href="/jobs?category=vocational" class="category-item">
+                    <h3>Vocational Colleges</h3>
+                    <p>Skilled trade and specialized careers</p>
+                </a>
+                <a href="/jobs?category=community" class="category-item">
+                    <h3>Community Colleges</h3>
+                    <p>Associate degree opportunities</p>
+                </a>
+                <a href="/jobs?category=public" class="category-item">
+                    <h3>Public Universities</h3>
+                    <p>Bachelor's degree entry-level roles</p>
+                </a>
+                <a href="/jobs?category=private" class="category-item">
+                    <h3>Private Universities</h3>
+                    <p>Premium graduate opportunities</p>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Jobs -->
+    <section class="featured-jobs">
+        <div class="container">
+            <h2>Latest Entry-Level Opportunities</h2>
+            <p style="text-align: center; color: #6b7280; margin-bottom: 2rem;">Browse thousands of student-friendly jobs and internships</p>
+            <div style="text-align: center;">
+                <a href="/jobs" class="action-link">Browse All Jobs</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-links">
+                <a href="/employers">Employers</a>
+                <a href="/privacy">Privacy</a>
+                <a href="/terms">Terms</a>
+                <a href="/contact">Contact Us</a>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 TalentSync</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile menu functionality
+        const menuToggle = document.getElementById('menuToggle');
+        const mobileMenu = document.getElementById('mobileMenu');
+        const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
+
+        function toggleMenu() {
+            menuToggle.classList.toggle('active');
+            mobileMenu.classList.toggle('active');
+            mobileMenuOverlay.classList.toggle('active');
+            
+            // Prevent body scroll when menu is open
+            if (mobileMenu.classList.contains('active')) {
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.body.style.overflow = '';
+            }
+        }
+
+        menuToggle.addEventListener('click', toggleMenu);
+        mobileMenuOverlay.addEventListener('click', toggleMenu);
+
+        // Close menu when clicking on a link
+        const mobileMenuLinks = mobileMenu.querySelectorAll('a');
+        mobileMenuLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                if (mobileMenu.classList.contains('active')) {
+                    toggleMenu();
+                }
+            });
+        });
+
+        // Check authentication status and update navigation
+        function updateNavigation() {
+            const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            const authMenuItem = document.getElementById('authMenuItem');
+            
+            if (isLoggedIn && user.email) {
+                // User is logged in, show dashboard link
+                authMenuItem.innerHTML = `<a href="/dashboard">Dashboard</a>`;
+            } else {
+                // User is not logged in, show sign in link
+                authMenuItem.innerHTML = `<a href="/login.html">Sign In</a>`;
+            }
+        }
+
+        // Call the function when page loads
+        updateNavigation();
+
+        // Handle search form submission
+        document.getElementById('jobSearchForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const keyword = document.getElementById('searchKeyword').value;
+            const location = document.getElementById('searchLocation').value;
+            
+            // Redirect to job search results page
+            let searchUrl = '/jobs?';
+            if (keyword) searchUrl += `q=${encodeURIComponent(keyword)}&`;
+            if (location) searchUrl += `location=${encodeURIComponent(location)}&`;
+            
+            window.location.href = searchUrl.slice(0, -1); // Remove trailing &
+        });
+    </script>
+</body>
+</html>
