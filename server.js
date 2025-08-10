@@ -51,10 +51,28 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Mount API and admin routes
+const scrapedJobsRoutes = safeRequireRouter('./routes/scraped-jobs');
 app.use('/admin/api', adminRoutes);
 app.use('/auth', authRoutes);
 app.use('/api/jobs', jobsRoutes);
+app.use('/api', scrapedJobsRoutes);
 app.use('/seo', seoRoutes);
+
+// Initialize job scraping scheduler
+try {
+    const JobScrapingScheduler = require('./services/jobScheduler');
+    const jobScheduler = new JobScrapingScheduler();
+    
+    // Start automated scraping (only in production or when explicitly enabled)
+    if (process.env.ENABLE_AUTO_SCRAPING === 'true' || process.env.NODE_ENV === 'production') {
+        jobScheduler.startScheduler();
+        console.log('🤖 Automated job scraping enabled');
+    } else {
+        console.log('ℹ️ Automated job scraping disabled (set ENABLE_AUTO_SCRAPING=true to enable)');
+    }
+} catch (error) {
+    console.warn('⚠️ Job scraping scheduler not available:', error.message);
+}
 
 // Main navigation routes
 app.get('/jobs', (req, res) => {
@@ -67,6 +85,19 @@ app.get('/resumes', (req, res) => {
 
 app.get('/blog', (req, res) => {
     res.sendFile(path.join(__dirname, 'Public', 'blog.html'));
+});
+
+// Privacy, Terms, and Contact routes
+app.get('/privacy', (req, res) => {
+    res.sendFile(path.join(__dirname, 'Public', 'privacy.html'));
+});
+
+app.get('/terms', (req, res) => {
+    res.sendFile(path.join(__dirname, 'Public', 'terms.html'));
+});
+
+app.get('/contact', (req, res) => {
+    res.sendFile(path.join(__dirname, 'Public', 'contact.html'));
 });
 
 // Employer routes
