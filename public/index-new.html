@@ -303,16 +303,6 @@
             font-weight: 500;
         }
 
-        .job-source {
-            background: #2563eb;
-            color: white;
-            padding: 0.25rem 0.75rem;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
         /* Footer */
         footer {
             background: #1f2937;
@@ -524,7 +514,6 @@
                     <div class="job-location">${job.location}</div>
                     <div class="job-details">
                         ${job.salary ? `<span class="job-salary">${job.salary}</span>` : ''}
-                        <span class="job-source">${job.source}</span>
                     </div>
                 </div>
             `).join('');

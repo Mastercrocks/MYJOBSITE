@@ -342,16 +342,6 @@
             font-weight: 500;
         }
 
-        .job-source {
-            background: #2563eb;
-            color: white;
-            padding: 0.25rem 0.75rem;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
         /* Loading States */
         .loading {
             text-align: center;
@@ -648,7 +638,6 @@
                     ${job.description ? `<div class="job-description">${job.description.substring(0, 120)}...</div>` : ''}
                     <div class="job-details">
                         ${job.salary ? `<span class="job-salary">${job.salary}</span>` : ''}
-                        <span class="job-source">${job.source || 'Indeed'}</span>
                     </div>
                 </div>
             `).join('');
