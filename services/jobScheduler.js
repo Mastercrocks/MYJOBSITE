@@ -1,17 +1,17 @@
 const cron = require('node-cron');
-const JobScraper = require('./jobScraper');
+const RailwayJobScraper = require('./railwayJobScraper'); // Railway-optimized scraper
 const fs = require('fs').promises;
 const path = require('path');
 
 class JobScrapingScheduler {
     constructor() {
-        this.scraper = new JobScraper();
+        this.scraper = new RailwayJobScraper();
         this.isRunning = false;
         this.lastRunTime = null;
         this.successfulRuns = 0;
         this.failedRuns = 0;
         
-        console.log('🤖 Job Scraping Scheduler initialized');
+        console.log('🤖 Railway Job Scraping Scheduler initialized');
     }
 
     // Start automated job scraping

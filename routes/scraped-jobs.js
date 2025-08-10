@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const JobScraper = require('../services/jobScraper');
+const RailwayJobScraper = require('../services/railwayJobScraper'); // Railway-optimized scraper
 const JobScrapingScheduler = require('../services/jobScheduler');
 const fs = require('fs').promises;
 const path = require('path');
 
 // Initialize scraper and scheduler
-const scraper = new JobScraper();
+const scraper = new RailwayJobScraper();
 const scheduler = new JobScrapingScheduler();
 
 // GET /api/scraped-jobs - Get latest scraped jobs
