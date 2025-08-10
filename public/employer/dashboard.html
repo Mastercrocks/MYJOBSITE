@@ -8,27 +8,279 @@
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100">
-  <div class="min-h-screen flex flex-col items-center justify-center">
-    <div class="bg-white rounded-lg shadow-lg p-8 w-full max-w-2xl mt-10">
-      <h1 class="text-2xl font-bold mb-4 text-center">🏢 Employer Dashboard</h1>
-      <p class="mb-6 text-center text-gray-600">Welcome! Here you can manage your company profile, post jobs, and review applications.</p>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <a href="#" class="block bg-blue-600 text-white rounded-lg p-6 text-center font-semibold hover:bg-blue-700 transition">Post a New Job</a>
-        <a href="#" class="block bg-green-600 text-white rounded-lg p-6 text-center font-semibold hover:bg-green-700 transition">View My Job Listings</a>
-        <a href="#" class="block bg-purple-600 text-white rounded-lg p-6 text-center font-semibold hover:bg-purple-700 transition">Review Applications</a>
-        <a href="#" class="block bg-gray-600 text-white rounded-lg p-6 text-center font-semibold hover:bg-gray-700 transition">Edit Company Profile</a>
-      </div>
-      <div class="mt-8 text-center">
-        <button onclick="logout()" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">Logout</button>
-      </div>
-    </div>
-  </div>
+  <!-- Auth Check Script -->
   <script>
-    function logout() {
-      // Clear auth token and redirect to login (implement as needed)
-      localStorage.removeItem('token');
-      window.location.href = '/login.html';
+    function checkEmployerAuth() {
+      const token = localStorage.getItem('authToken');
+      const userType = localStorage.getItem('userType');
+      
+      if (!token || userType !== 'employer') {
+        // Redirect to employer login if not authenticated
+        window.location.href = '/employers#auth';
+        return false;
+      }
+      return true;
     }
+    
+    // Check auth on page load
+    if (!checkEmployerAuth()) {
+      // Redirect handled in function
+    }
+  </script>
+
+  <div class="min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+          <div class="flex items-center">
+            <a href="/" class="text-2xl font-bold text-blue-600">TalentSync</a>
+            <span class="ml-4 text-gray-500">Employer Dashboard</span>
+          </div>
+          <div class="flex items-center space-x-4">
+            <span class="text-gray-700" id="welcomeMessage">Welcome, Employer!</span>
+            <button onclick="logout()" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition">
+              Logout
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-8">
+      <div class="max-w-7xl mx-auto">
+        <div class="mb-8">
+          <h1 class="text-3xl font-bold text-gray-900 mb-2">🏢 Employer Dashboard</h1>
+          <p class="text-gray-600">Manage your job postings, review applications, and find top college talent.</p>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+              <div class="flex-shrink-0">
+                <div class="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
+                  <span class="text-white font-bold">📝</span>
+                </div>
+              </div>
+              <div class="ml-5 w-0 flex-1">
+                <dl>
+                  <dt class="text-sm font-medium text-gray-500 truncate">Active Jobs</dt>
+                  <dd class="text-lg font-medium text-gray-900" id="activeJobs">0</dd>
+                </dl>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+              <div class="flex-shrink-0">
+                <div class="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
+                  <span class="text-white font-bold">👥</span>
+                </div>
+              </div>
+              <div class="ml-5 w-0 flex-1">
+                <dl>
+                  <dt class="text-sm font-medium text-gray-500 truncate">Applications</dt>
+                  <dd class="text-lg font-medium text-gray-900" id="totalApplications">0</dd>
+                </dl>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+              <div class="flex-shrink-0">
+                <div class="w-8 h-8 bg-yellow-500 rounded-md flex items-center justify-center">
+                  <span class="text-white font-bold">⏳</span>
+                </div>
+              </div>
+              <div class="ml-5 w-0 flex-1">
+                <dl>
+                  <dt class="text-sm font-medium text-gray-500 truncate">Pending Review</dt>
+                  <dd class="text-lg font-medium text-gray-900" id="pendingReviews">0</dd>
+                </dl>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+              <div class="flex-shrink-0">
+                <div class="w-8 h-8 bg-purple-500 rounded-md flex items-center justify-center">
+                  <span class="text-white font-bold">📊</span>
+                </div>
+              </div>
+              <div class="ml-5 w-0 flex-1">
+                <dl>
+                  <dt class="text-sm font-medium text-gray-500 truncate">Profile Views</dt>
+                  <dd class="text-lg font-medium text-gray-900" id="profileViews">0</dd>
+                </dl>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+            <div class="p-6">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">Post a New Job</h3>
+                <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
+                  <span class="text-white text-xl">✏️</span>
+                </div>
+              </div>
+              <p class="text-gray-600 mb-4">Create a new job posting to attract college students and recent graduates.</p>
+              <button onclick="postNewJob()" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition font-medium">
+                Create Job Posting
+              </button>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+            <div class="p-6">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">My Job Listings</h3>
+                <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
+                  <span class="text-white text-xl">📋</span>
+                </div>
+              </div>
+              <p class="text-gray-600 mb-4">View and manage all your active and expired job postings.</p>
+              <button onclick="viewJobListings()" class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition font-medium">
+                View My Jobs
+              </button>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+            <div class="p-6">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">Review Applications</h3>
+                <div class="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center">
+                  <span class="text-white text-xl">👥</span>
+                </div>
+              </div>
+              <p class="text-gray-600 mb-4">Review applications from students and recent graduates.</p>
+              <button onclick="reviewApplications()" class="w-full bg-yellow-600 text-white py-2 px-4 rounded-md hover:bg-yellow-700 transition font-medium">
+                Review Applications
+              </button>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+            <div class="p-6">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">Search Resumes</h3>
+                <div class="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center">
+                  <span class="text-white text-xl">🔍</span>
+                </div>
+              </div>
+              <p class="text-gray-600 mb-4">Browse and search through candidate resumes and profiles.</p>
+              <button onclick="searchResumes()" class="w-full bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 transition font-medium">
+                Browse Talent
+              </button>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+            <div class="p-6">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">Company Profile</h3>
+                <div class="w-12 h-12 bg-gray-500 rounded-full flex items-center justify-center">
+                  <span class="text-white text-xl">🏢</span>
+                </div>
+              </div>
+              <p class="text-gray-600 mb-4">Update your company information and profile details.</p>
+              <button onclick="editCompanyProfile()" class="w-full bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 transition font-medium">
+                Edit Profile
+              </button>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+            <div class="p-6">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">Analytics</h3>
+                <div class="w-12 h-12 bg-indigo-500 rounded-full flex items-center justify-center">
+                  <span class="text-white text-xl">📈</span>
+                </div>
+              </div>
+              <p class="text-gray-600 mb-4">View performance analytics and insights for your job postings.</p>
+              <button onclick="viewAnalytics()" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition font-medium">
+                View Analytics
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Load user profile and dashboard data
+    async function loadDashboardData() {
+      try {
+        const token = localStorage.getItem('authToken');
+        
+        // Get user profile
+        const profileResponse = await fetch('/auth/profile', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (profileResponse.ok) {
+          const profile = await profileResponse.json();
+          document.getElementById('welcomeMessage').textContent = 
+            `Welcome, ${profile.first_name || 'Employer'}!`;
+        }
+        
+        // Load dashboard stats (placeholder for now)
+        document.getElementById('activeJobs').textContent = '3';
+        document.getElementById('totalApplications').textContent = '12';
+        document.getElementById('pendingReviews').textContent = '5';
+        document.getElementById('profileViews').textContent = '48';
+        
+      } catch (error) {
+        console.error('Error loading dashboard data:', error);
+      }
+    }
+
+    // Dashboard action functions
+    function postNewJob() {
+      alert('Job posting feature coming soon! You can integrate with your existing job posting system here.');
+    }
+
+    function viewJobListings() {
+      alert('Job listings view coming soon! This will show all your posted jobs.');
+    }
+
+    function reviewApplications() {
+      alert('Application review coming soon! This will show all applications to your jobs.');
+    }
+
+    function searchResumes() {
+      alert('Resume search coming soon! This will allow you to browse candidate profiles.');
+    }
+
+    function editCompanyProfile() {
+      alert('Profile editing coming soon! You can update your company information here.');
+    }
+
+    function viewAnalytics() {
+      alert('Analytics dashboard coming soon! Track your job posting performance.');
+    }
+
+    function logout() {
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('userType');
+      window.location.href = '/employers';
+    }
+
+    // Load dashboard data when page loads
+    document.addEventListener('DOMContentLoaded', loadDashboardData);
   </script>
 </body>
 </html>

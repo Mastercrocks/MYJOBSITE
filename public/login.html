@@ -4,112 +4,539 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign In - TalentSync</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="description" content="Sign in to your TalentSync account to access your profile, saved jobs, and applications.">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            width: 100%;
+            max-width: 1000px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            min-height: 600px;
+        }
+
+        .left-panel {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white;
+            padding: 3rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .left-panel h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+
+        .left-panel p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+
+        .benefits {
+            list-style: none;
+            text-align: left;
+        }
+
+        .benefits li {
+            margin: 1rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .benefits li::before {
+            content: "✓";
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .right-panel {
+            padding: 3rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .logo h2 {
+            color: #2563eb;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .form-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .form-header h3 {
+            color: #1f2937;
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-header p {
+            color: #6b7280;
+        }
+
+        .auth-tabs {
+            display: flex;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 1rem;
+            text-align: center;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #6b7280;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .auth-tab.active {
+            color: #2563eb;
+            border-bottom-color: #2563eb;
+        }
+
+        .auth-form {
+            display: none;
+        }
+
+        .auth-form.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #374151;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #2563eb;
+        }
+
+        .form-group input.error {
+            border-color: #ef4444;
+        }
+
+        .error-message {
+            color: #ef4444;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .submit-btn {
+            width: 100%;
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 0.875rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-bottom: 1rem;
+        }
+
+        .submit-btn:hover {
+            background: #1d4ed8;
+        }
+
+        .submit-btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .forgot-password {
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .forgot-password a {
+            color: #2563eb;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .forgot-password a:hover {
+            text-decoration: underline;
+        }
+
+        .back-home {
+            text-align: center;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .back-home a {
+            color: #6b7280;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .back-home a:hover {
+            color: #2563eb;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: #6b7280;
+            margin-top: 1rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+                max-width: 400px;
+            }
+
+            .left-panel {
+                display: none;
+            }
+
+            .right-panel {
+                padding: 2rem;
+            }
+        }
+    </style>
 </head>
-<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen flex items-center justify-center">
-    <div class="max-w-md w-full mx-4">
-        <div class="bg-white rounded-2xl shadow-xl p-8">
-            <!-- Header -->
-            <div class="text-center mb-8">
-                <h1 class="text-3xl font-bold text-gray-800 mb-2">🎯 Welcome Back</h1>
-                <p class="text-gray-600">Sign in to your TalentSync account</p>
+<body>
+    <div class="container">
+        <!-- Left Panel -->
+        <div class="left-panel">
+            <h1>Welcome to TalentSync</h1>
+            <p>Join thousands of students who have found their dream jobs with us</p>
+            <ul class="benefits">
+                <li>Access to thousands of student-friendly jobs</li>
+                <li>Save and track your job applications</li>
+                <li>Get personalized job recommendations</li>
+                <li>Connect with top employers</li>
+                <li>Build your professional profile</li>
+            </ul>
+        </div>
+
+        <!-- Right Panel -->
+        <div class="right-panel">
+            <div class="logo">
+                <h2>TalentSync</h2>
             </div>
 
-            <!-- Login Form -->
-            <form id="loginForm" onsubmit="handleLogin(event)">
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Username or Email</label>
-                        <input type="text" id="username" required 
-                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
-                        <input type="password" id="password" required 
-                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                    </div>
-                    
-                    <div class="flex items-center justify-between">
-                        <label class="flex items-center">
-                            <input type="checkbox" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-                            <span class="ml-2 text-sm text-gray-600">Remember me</span>
-                        </label>
-                        <a href="/forgot-password.html" class="text-sm text-blue-600 hover:underline">Forgot password?</a>
-                    </div>
+            <div class="form-header">
+                <h3>Welcome Back</h3>
+                <p>Sign in to your account or create a new one</p>
+            </div>
+
+            <!-- Auth Tabs -->
+            <div class="auth-tabs">
+                <button class="auth-tab active" data-tab="signin">Sign In</button>
+                <button class="auth-tab" data-tab="signup">Sign Up</button>
+            </div>
+
+            <!-- Sign In Form -->
+            <form class="auth-form active" id="signinForm">
+                <div class="form-group">
+                    <label for="signinEmail">Email Address</label>
+                    <input type="email" id="signinEmail" name="email" required>
+                    <div class="error-message" id="signinEmailError"></div>
                 </div>
 
-                <button type="submit" id="loginBtn" 
-                        class="w-full mt-6 bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 transition duration-200">
-                    Sign In
-                </button>
+                <div class="form-group">
+                    <label for="signinPassword">Password</label>
+                    <input type="password" id="signinPassword" name="password" required>
+                    <div class="error-message" id="signinPasswordError"></div>
+                </div>
 
-                <!-- Error Display -->
-                <div id="errorMessage" class="hidden mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                    <p class="text-red-600 text-sm"></p>
+                <button type="submit" class="submit-btn">Sign In</button>
+                
+                <div class="forgot-password">
+                    <a href="#" id="forgotPasswordLink">Forgot your password?</a>
                 </div>
             </form>
 
-            <!-- Sign Up Link -->
-            <div class="text-center mt-6 pt-6 border-t border-gray-200">
-                <p class="text-gray-600">
-                    Don't have an account? 
-                    <a href="/register.html" class="text-blue-600 hover:underline font-medium">Sign Up</a>
-                </p>
+            <!-- Sign Up Form -->
+            <form class="auth-form" id="signupForm">
+                <div class="form-group">
+                    <label for="signupName">Full Name</label>
+                    <input type="text" id="signupName" name="name" required>
+                    <div class="error-message" id="signupNameError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="signupEmail">Email Address</label>
+                    <input type="email" id="signupEmail" name="email" required>
+                    <div class="error-message" id="signupEmailError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="signupPassword">Password</label>
+                    <input type="password" id="signupPassword" name="password" required minlength="6">
+                    <div class="error-message" id="signupPasswordError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm Password</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" required>
+                    <div class="error-message" id="confirmPasswordError"></div>
+                </div>
+
+                <button type="submit" class="submit-btn">Create Account</button>
+            </form>
+
+            <div class="loading" id="loadingMessage">
+                Processing your request...
+            </div>
+
+            <div class="back-home">
+                <a href="/">← Back to Home</a>
             </div>
         </div>
     </div>
 
     <script>
-        async function handleLogin(event) {
-            event.preventDefault();
-            
-            const loginBtn = document.getElementById('loginBtn');
-            const errorDiv = document.getElementById('errorMessage');
-            
-            // Show loading state
-            loginBtn.disabled = true;
-            loginBtn.textContent = 'Signing In...';
-            errorDiv.classList.add('hidden');
-            
-            try {
-                const response = await fetch('/auth/login', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        username: document.getElementById('username').value,
-                        password: document.getElementById('password').value
-                    })
-                });
+        // Tab switching functionality
+        const tabs = document.querySelectorAll('.auth-tab');
+        const forms = document.querySelectorAll('.auth-form');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const targetTab = tab.dataset.tab;
                 
-                const data = await response.json();
+                // Update active tab
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
                 
-                if (response.ok) {
-                    // Store token
-                    localStorage.setItem('authToken', data.token);
-                    
-                    // Redirect based on user type
-                    if (data.user.userType === 'admin') {
-                        window.location.href = '/admin/dashboard.html';
-                    } else if (data.user.userType === 'employer') {
-                        window.location.href = '/employer/dashboard.html';
-                    } else {
-                        window.location.href = '/jobseeker/dashboard.html';
+                // Update active form
+                forms.forEach(form => {
+                    form.classList.remove('active');
+                    if (form.id === targetTab + 'Form') {
+                        form.classList.add('active');
                     }
-                } else {
-                    throw new Error(data.error || 'Login failed');
-                }
-                
-            } catch (error) {
-                errorDiv.querySelector('p').textContent = error.message;
-                errorDiv.classList.remove('hidden');
-            } finally {
-                loginBtn.disabled = false;
-                loginBtn.textContent = 'Sign In';
-            }
+                });
+            });
+        });
+
+        // Form validation
+        function validateEmail(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
         }
+
+        function showError(inputId, message) {
+            const input = document.getElementById(inputId);
+            const errorDiv = document.getElementById(inputId + 'Error');
+            input.classList.add('error');
+            errorDiv.textContent = message;
+            errorDiv.classList.add('show');
+        }
+
+        function clearError(inputId) {
+            const input = document.getElementById(inputId);
+            const errorDiv = document.getElementById(inputId + 'Error');
+            input.classList.remove('error');
+            errorDiv.classList.remove('show');
+        }
+
+        function clearAllErrors() {
+            const inputs = document.querySelectorAll('input');
+            inputs.forEach(input => clearError(input.id));
+        }
+
+        // Sign In Form
+        document.getElementById('signinForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            clearAllErrors();
+
+            const email = document.getElementById('signinEmail').value;
+            const password = document.getElementById('signinPassword').value;
+
+            // Basic validation
+            let hasError = false;
+
+            if (!email) {
+                showError('signinEmail', 'Email is required');
+                hasError = true;
+            } else if (!validateEmail(email)) {
+                showError('signinEmail', 'Please enter a valid email');
+                hasError = true;
+            }
+
+            if (!password) {
+                showError('signinPassword', 'Password is required');
+                hasError = true;
+            }
+
+            if (hasError) return;
+
+            // For now, just store the user info locally and redirect
+            // Later you can add real backend authentication
+            
+            // Show loading
+            document.getElementById('loadingMessage').style.display = 'block';
+
+            // Simulate API call delay
+            setTimeout(() => {
+                // Store user info in localStorage
+                const user = {
+                    name: email.split('@')[0], // Use part of email as name for now
+                    email: email,
+                    id: Date.now() // Simple ID for now
+                };
+                
+                localStorage.setItem('user', JSON.stringify(user));
+                localStorage.setItem('isLoggedIn', 'true');
+                
+                // Redirect to home page (or dashboard if you create one)
+                window.location.href = '/';
+            }, 1000);
+        });
+
+        // Sign Up Form
+        document.getElementById('signupForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            clearAllErrors();
+
+            const name = document.getElementById('signupName').value;
+            const email = document.getElementById('signupEmail').value;
+            const password = document.getElementById('signupPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            // Validation
+            let hasError = false;
+
+            if (!name.trim()) {
+                showError('signupName', 'Full name is required');
+                hasError = true;
+            }
+
+            if (!email) {
+                showError('signupEmail', 'Email is required');
+                hasError = true;
+            } else if (!validateEmail(email)) {
+                showError('signupEmail', 'Please enter a valid email');
+                hasError = true;
+            }
+
+            if (!password) {
+                showError('signupPassword', 'Password is required');
+                hasError = true;
+            } else if (password.length < 6) {
+                showError('signupPassword', 'Password must be at least 6 characters');
+                hasError = true;
+            }
+
+            if (password !== confirmPassword) {
+                showError('confirmPassword', 'Passwords do not match');
+                hasError = true;
+            }
+
+            if (hasError) return;
+
+            // Show loading
+            document.getElementById('loadingMessage').style.display = 'block';
+
+            // Simulate API call delay
+            setTimeout(() => {
+                // Store user info in localStorage
+                const user = {
+                    name: name,
+                    email: email,
+                    id: Date.now()
+                };
+                
+                localStorage.setItem('user', JSON.stringify(user));
+                localStorage.setItem('isLoggedIn', 'true');
+                
+                // Redirect to home page
+                window.location.href = '/';
+            }, 1000);
+        });
+
+        // Forgot password
+        document.getElementById('forgotPasswordLink').addEventListener('click', function(e) {
+            e.preventDefault();
+            alert('Password reset functionality will be available soon. Please contact support if you need assistance.');
+        });
+
+        // Check if user is already logged in
+        if (localStorage.getItem('isLoggedIn') === 'true') {
+            window.location.href = '/';
+        }
+
     </script>
 </body>
 </html>

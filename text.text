@@ -1,0 +1,629 @@
+</footer>
+
+    <!-- Include the jobs data -->
+    <script src="indeed_jobs.js"></script>
+    
+    <!-- Main JavaScript -->
+    <script>
+        // Load jobs data (fallback if external file not available)
+        let jobsData = [];
+        
+        // Try to use external data, fallback to empty array
+        try {
+            jobsData = typeof indeedJobs !== 'undefined' ? indeedJobs : [];
+        } catch (e) {
+            console.log('External jobs data not loaded, using inline data');
+            // Inline jobs data as fallback (first 10 jobs)
+            jobsData = [
+                {
+                    "salary": "$80,000 - $105,000 a year",
+                    "company": "Parfums Christian Dior",
+                    "location": "New York, NY",
+                    "rating": 4,
+                    "positionName": "Assistant Manager, Digital Marketing & Media",
+                    "url": "https://www.indeed.com/viewjob?jk=7b2ab967697c6ea5",
+                    "description": "Lead digital marketing initiatives for luxury fragrance brands. Manage social media campaigns, analyze digital performance metrics, and collaborate with creative teams."
+                },
+                {
+                    "salary": "$70,000 - $90,000 a year",
+                    "company": "NBCUniversal",
+                    "location": "New York, NY 10112",
+                    "rating": 4,
+                    "positionName": "Associate Manager, Digital Media Bus. Dev. & Licensing",
+                    "url": "https://www.indeed.com/viewjob?jk=0f5c68772b8d20e8",
+                    "description": "Drive digital media business development and licensing opportunities. Analyze market trends and develop strategic partnerships."
+                },
+                {
+                    "salary": "$72,600 - $155,200 a year",
+                    "company": "Amazon.com Services LLC",
+                    "location": "New York, NY",
+                    "rating": 3.5,
+                    "positionName": "Marketing Manager, Audience Development",
+                    "url": "https://www.indeed.com/viewjob?jk=b690ba1af7f68678",
+                    "description": "Develop and execute audience growth strategies for Amazon's marketing initiatives. Lead cross-functional teams to drive customer acquisition."
+                },
+                {
+                    "salary": "$65,000 - $75,000 a year",
+                    "company": "Sourcebooks",
+                    "location": "New York, NY",
+                    "rating": 1.9,
+                    "positionName": "Marketing and Publicity Manager",
+                    "url": "https://www.indeed.com/viewjob?jk=44c6ffcab8efdf07",
+                    "description": "Manage marketing campaigns and publicity efforts for book publishing. Coordinate with authors, media, and promotional partners."
+                },
+                {
+                    "salary": "$95,000 - $120,000 a year",
+                    "company": "Spring & Bond",
+                    "location": "New York, NY",
+                    "rating": 5,
+                    "positionName": "Technical Project Manager - Pharma Media",
+                    "url": "https://www.indeed.com/viewjob?jk=a8f1c73457b2841f",
+                    "description": "Manage technical projects in pharmaceutical media. Coordinate cross-functional teams and ensure project delivery."
+                }
+            ];
+        }
+
+        let filteredJobs = [...jobsData];
+        let currentUser = null;
+
+        // Generate star rating HTML
+        function generateStars(rating) {
+            if (!rating || rating === 0) return '<span class="rating-text">No rating</span>';
+            
+            const fullStars = Math.floor(rating);
+            const hasHalfStar = rating % 1 !== 0;
+            let starsHtml = '';
+            
+            for (let i = 0; i < fullStars; i++) {
+                starsHtml += '★';
+            }
+            
+            if (hasHalfStar) {
+                starsHtml += '☆';
+            }
+            
+            const emptyStars = 5 - Math.ceil(rating);
+            for (let i = 0; i < emptyStars; i++) {
+                starsHtml += '☆';
+            }
+            
+            return `<span class="stars">${starsHtml}</span><span class="rating-text">(${rating})</span>`;
+        }
+
+        // Display jobs
+        function displayJobs(jobs, append = false) {
+            const resultsContainer = document.getElementById('jobResults');
+            
+            if (!append) {
+                // Add results header
+                const resultsHeader = `
+                    <div class="results-header">
+                        <div class="results-count">
+                            ${jobs.length} jobs found
+                        </div>
+                        <div class="results-sort">
+                            <label for="sortBy">Sort by:</label>
+                            <select id="sortBy" onchange="sortJobs(this.value)">
+                                <option value="relevance">Relevance</option>
+                                <option value="date">Date</option>
+                                <option value="salary-high">Salary (High to Low)</option>
+                                <option value="salary-low">Salary (Low to High)</option>
+                                <option value="company">Company</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+                resultsContainer.innerHTML = resultsHeader;
+            }
+
+            if (jobs.length === 0) {
+                resultsContainer.innerHTML += `
+                    <div class="no-results">
+                        <h3>No jobs found</h3>
+                        <p>Try adjusting your search criteria or browse our job categories above.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const jobsHtml = jobs.map(job => {
+                const salaryDisplay = job.salary || 'Salary not disclosed';
+                const ratingHtml = generateStars(job.rating);
+                
+                return `
+                    <div class="job-card">
+                        <div class="job-title">${job.positionName}</div>
+                        <div class="job-company">${job.company}</div>
+                        <div class="job-location">📍 ${job.location}</div>
+                        <div class="job-salary">💰 ${salaryDisplay}</div>
+                        <div class="job-rating">${ratingHtml}</div>
+                        <div class="job-description">${job.description}</div>
+                        <a href="${job.url}" target="_blank" class="job-apply-btn" 
+                           onclick="trackJobClick('${job.positionName}', '${job.company}')">
+                            Apply on Indeed →
+                        </a>
+                    </div>
+                `;
+            }).join('');
+
+            if (append) {
+                resultsContainer.innerHTML += jobsHtml;
+            } else {
+                resultsContainer.innerHTML += jobsHtml;
+            }
+        }
+
+        // Sort jobs
+        function sortJobs(sortBy) {
+            let sortedJobs = [...filteredJobs];
+            
+            switch (sortBy) {
+                case 'salary-high':
+                    sortedJobs.sort((a, b) => {
+                        const getSalaryValue = (salary) => {
+                            if (!salary) return 0;
+                            const matches = salary.match(/\$(\d{1,3}(?:,\d{3})*)/g);
+                            if (matches) {
+                                const values = matches.map(m => parseInt(m.replace(/[$,]/g, '')));
+                                return Math.min(...values);
+                            }
+                            return 0;
+                        };
+                        return getSalaryValue(a.salary) - getSalaryValue(b.salary);
+                    });
+                    break;
+                case 'company':
+                    sortedJobs.sort((a, b) => a.company.localeCompare(b.company));
+                    break;
+                case 'date':
+                    // Since we don't have date data, we'll randomize to simulate recent posts
+                    sortedJobs.sort(() => Math.random() - 0.5);
+                    break;
+                default:
+                    // Relevance - no sorting needed as jobs are already in relevance order
+                    break;
+            }
+            
+            displayJobs(sortedJobs);
+        }
+
+        // Track job clicks for analytics
+        function trackJobClick(jobTitle, company) {
+            console.log(`Job clicked: ${jobTitle} at ${company}`);
+            // Here you would typically send data to analytics service
+        }
+
+        // Search functionality
+        function searchJobs(keyword = '', location = '', category = '') {
+            let results = jobsData;
+
+            // Filter by keyword
+            if (keyword) {
+                const keywordLower = keyword.toLowerCase();
+                results = results.filter(job => 
+                    job.positionName.toLowerCase().includes(keywordLower) ||
+                    job.company.toLowerCase().includes(keywordLower) ||
+                    job.description.toLowerCase().includes(keywordLower)
+                );
+            }
+
+            // Filter by location
+            if (location) {
+                const locationLower = location.toLowerCase();
+                results = results.filter(job =>
+                    job.location.toLowerCase().includes(locationLower)
+                );
+            }
+
+            // Filter by category (simple keyword matching)
+            if (category) {
+                const categoryKeywords = {
+                    'technology': ['software', 'technical', 'digital', 'tech', 'developer', 'engineer', 'data', 'analytics'],
+                    'business': ['business', 'manager', 'marketing', 'sales', 'finance', 'operations'],
+                    'healthcare': ['health', 'medical', 'care', 'clinical', 'hospital'],
+                    'education': ['education', 'teaching', 'academic', 'school', 'university'],
+                    'creative': ['creative', 'design', 'media', 'content', 'social media'],
+                    'internship': ['intern', 'entry', 'junior', 'assistant', 'associate']
+                };
+
+                const keywords = categoryKeywords[category] || [category];
+                results = results.filter(job => {
+                    const jobText = `${job.positionName} ${job.description}`.toLowerCase();
+                    return keywords.some(keyword => jobText.includes(keyword));
+                });
+            }
+
+            filteredJobs = results;
+            displayJobs(results);
+        }
+
+        // Search by category
+        function searchByCategory(category) {
+            document.getElementById('keyword').value = '';
+            document.getElementById('location').value = '';
+            searchJobs('', '', category);
+            
+            // Scroll to results
+            document.getElementById('jobResults').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Handle search form submission
+        document.getElementById('jobSearchForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const keyword = document.getElementById('keyword').value;
+            const location = document.getElementById('location').value;
+            searchJobs(keyword, location);
+        });
+
+        // Modal functionality
+        function openModal(type) {
+            const modal = document.getElementById('authModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalContent = document.getElementById('modalContent');
+            
+            let title = '';
+            let content = '';
+            
+            switch (type) {
+                case 'signin':
+                    title = 'Sign In to TalentSync';
+                    content = `
+                        <div id="alertContainer"></div>
+                        <form id="signinForm">
+                            <div class="form-group">
+                                <label for="signinEmail">Email</label>
+                                <input type="email" id="signinEmail" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="signinPassword">Password</label>
+                                <input type="password" id="signinPassword" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Sign In</button>
+                        </form>
+                        <p style="margin-top: 1rem; text-align: center;">
+                            Don't have an account? <a href="#" onclick="openModal('signup')">Sign Up</a>
+                        </p>
+                    `;
+                    break;
+                case 'signup':
+                    title = 'Join TalentSync';
+                    content = `
+                        <div id="alertContainer"></div>
+                        <form id="signupForm">
+                            <div class="form-group">
+                                <label for="signupName">Full Name</label>
+                                <input type="text" id="signupName" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="signupEmail">Email</label>
+                                <input type="email" id="signupEmail" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="signupPassword">Password</label>
+                                <input type="password" id="signupPassword" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="userType">I am a:</label>
+                                <select id="userType" required>
+                                    <option value="">Select...</option>
+                                    <option value="jobseeker">Job Seeker</option>
+                                    <option value="employer">Employer</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Create Account</button>
+                        </form>
+                        <p style="margin-top: 1rem; text-align: center;">
+                            Already have an account? <a href="#" onclick="openModal('signin')">Sign In</a>
+                        </p>
+                    `;
+                    break;
+                case 'resume':
+                    title = 'Post Your Resume';
+                    content = `
+                        <div id="alertContainer"></div>
+                        <form id="resumeForm">
+                            <div class="form-group">
+                                <label for="resumeTitle">Professional Title</label>
+                                <input type="text" id="resumeTitle" placeholder="e.g. Marketing Manager" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="resumeLocation">Location</label>
+                                <input type="text" id="resumeLocation" placeholder="e.g. New York, NY" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="resumeExperience">Years of Experience</label>
+                                <select id="resumeExperience" required>
+                                    <option value="">Select...</option>
+                                    <option value="0-1">0-1 years</option>
+                                    <option value="2-5">2-5 years</option>
+                                    <option value="6-10">6-10 years</option>
+                                    <option value="10+">10+ years</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="resumeSkills">Key Skills</label>
+                                <textarea id="resumeSkills" placeholder="e.g. Digital Marketing, Social Media, Analytics" required></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="resumeFile">Upload Resume (PDF)</label>
+                                <input type="file" id="resumeFile" accept=".pdf" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Post Resume</button>
+                        </form>
+                    `;
+                    break;
+                case 'job':
+                    title = 'Post a Job';
+                    content = `
+                        <div id="alertContainer"></div>
+                        <form id="jobForm">
+                            <div class="form-group">
+                                <label for="jobTitle">Job Title</label>
+                                <input type="text" id="jobTitle" placeholder="e.g. Marketing Manager" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="jobCompany">Company Name</label>
+                                <input type="text" id="jobCompany" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="jobLocation">Location</label>
+                                <input type="text" id="jobLocation" placeholder="e.g. New York, NY" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="jobType">Employment Type</label>
+                                <select id="jobType" required>
+                                    <option value="">Select...</option>
+                                    <option value="full-time">Full-time</option>
+                                    <option value="part-time">Part-time</option>
+                                    <option value="contract">Contract</option>
+                                    <option value="internship">Internship</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="jobSalary">Salary Range</label>
+                                <input type="text" id="jobSalary" placeholder="e.g. $50,000 - $70,000">
+                            </div>
+                            <div class="form-group">
+                                <label for="jobDescription">Job Description</label>
+                                <textarea id="jobDescription" rows="4" required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Post Job</button>
+                        </form>
+                    `;
+                    break;
+            }
+            
+            modalTitle.textContent = title;
+            modalContent.innerHTML = content;
+            modal.style.display = 'block';
+            
+            // Bind form events
+            bindModalForms();
+        }
+
+        function closeModal() {
+            document.getElementById('authModal').style.display = 'none';
+        }
+
+        function bindModalForms() {
+            // Sign in form
+            const signinForm = document.getElementById('signinForm');
+            if (signinForm) {
+                signinForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const email = document.getElementById('signinEmail').value;
+                    const password = document.getElementById('signinPassword').value;
+                    
+                    // Simulate sign in
+                    showAlert('success', 'Signed in successfully!');
+                    currentUser = { email: email, name: email.split('@')[0] };
+                    updateAuthState();
+                    setTimeout(closeModal, 1000);
+                });
+            }
+            
+            // Sign up form
+            const signupForm = document.getElementById('signupForm');
+            if (signupForm) {
+                signupForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const name = document.getElementById('signupName').value;
+                    const email = document.getElementById('signupEmail').value;
+                    
+                    showAlert('success', 'Account created successfully!');
+                    currentUser = { email: email, name: name };
+                    updateAuthState();
+                    setTimeout(closeModal, 1000);
+                });
+            }
+            
+            // Resume form
+            const resumeForm = document.getElementById('resumeForm');
+            if (resumeForm) {
+                resumeForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    showAlert('success', 'Resume posted successfully! Employers can now discover you.');
+                    setTimeout(closeModal, 2000);
+                });
+            }
+            
+            // Job form
+            const jobForm = document.getElementById('jobForm');
+            if (jobForm) {
+                jobForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    showAlert('success', 'Job posted successfully! It will be reviewed and published shortly.');
+                    setTimeout(closeModal, 2000);
+                });
+            }
+        }
+
+        function showAlert(type, message) {
+            const container = document.getElementById('alertContainer');
+            const alertClass = type === 'success' ? 'alert-success' : 'alert-error';
+            container.innerHTML = `<div class="alert ${alertClass}">${message}</div>`;
+        }
+
+        function checkAuthAndOpen(type) {
+            if (!currentUser) {
+                openModal('signin');
+            } else {
+                openModal(type);
+            }
+        }
+
+        function updateAuthState() {
+            const authButtons = document.getElementById('authButtons');
+            const userInfo = document.getElementById('userInfo');
+            const userName = document.getElementById('userName');
+            
+            if (currentUser) {
+                authButtons.classList.add('hidden');
+                userInfo.classList.remove('hidden');
+                userName.textContent = `Welcome, ${currentUser.name}`;
+            } else {
+                authButtons.classList.remove('hidden');
+                userInfo.classList.add('hidden');
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            updateAuthState();
+        }
+
+        // Close modal when clicking outside
+        window.addEventListener('click', function(e) {
+            const modal = document.getElementById('authModal');
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Display initial jobs (first 20)
+            displayJobs(jobsData.slice(0, 20));
+            
+            // Add some featured jobs on page load
+            console.log(`Loaded ${jobsData.length} jobs from Indeed`);
+        });
+    </script>
+
+    <!-- Modal HTML -->
+    <div id="authModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2 id="modalTitle"></h2>
+            <div id="modalContent"></div>
+        </div>
+    </div> parseInt(m.replace(/[$,]/g, '')));
+                                return Math.max(...values);
+                            }
+                            return 0;
+                        };
+                        return getSalaryValue(b.salary) - getSalaryValue(a.salary);
+                    });
+                    break;
+                case 'salary-low':
+                    sortedJobs.sort((a, b) => {
+                        const getSalaryValue = (salary) => {
+                            if (!salary) return 0;
+                            const matches = salary.match(/\$(\d{1,3}(?:,\d{3})*)/g);
+                            if (matches) {
+                                const values = matches.map(m =>        /* Job Results Styling */
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .results-count {
+            font-size: 1.1rem;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .results-sort {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .results-sort select {
+            padding: 0.5rem;
+            border: 1px solid #e1e5e9;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+
+        .job-salary {
+            color: #28a745;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .job-rating {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stars {
+            color: #ffc107;
+        }
+
+        .rating-text {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .job-apply-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s;
+            margin-top: 1rem;
+        }
+
+        .job-apply-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            color: white;
+            text-decoration: none;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+        }
+
+        .no-results h3 {
+            margin-bottom: 1rem;
+            color: #333;
+        }
+
+        /* Modal (same as before) */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }

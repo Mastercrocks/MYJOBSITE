@@ -3,58 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>#1 Job Site for College Students & Recent Graduates | TalentSync</title>
-    <meta name="description" content="Find your first job or internship with TalentSync - the premier job board for college students and recent graduates. Connect with top employers hiring entry-level talent.">
-    <meta name="keywords" content="college jobs, student jobs, entry level jobs, internships, recent graduate jobs, first job, college career, part time jobs, summer jobs, campus jobs">
-    
-    <!-- Open Graph Meta Tags for Social Media -->
-    <meta property="og:title" content="#1 Job Site for College Students & Recent Graduates | TalentSync">
-    <meta property="og:description" content="Find your first job or internship with TalentSync - the premier job board for college students and recent graduates.">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://talentsync.shop">
-    <meta property="og:image" content="https://talentsync.shop/img/og-image.jpg">
-    
-    <!-- Twitter Card Meta Tags -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="#1 Job Site for College Students & Recent Graduates | TalentSync">
-    <meta name="twitter:description" content="Find your first job or internship with TalentSync - the premier job board for college students and recent graduates.">
-    <meta name="twitter:image" content="https://talentsync.shop/img/twitter-image.jpg">
-    
-    <!-- Schema.org JSON-LD for Rich Snippets -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "JobBoard",
-      "name": "TalentSync",
-      "description": "Premier job board for college students and recent graduates",
-      "url": "https://talentsync.shop",
-      "sameAs": [
-        "https://www.facebook.com/talentsync",
-        "https://www.twitter.com/talentsync",
-        "https://www.linkedin.com/company/talentsync"
-      ],
-      "potentialAction": {
-        "@type": "SearchAction",
-        "target": "https://talentsync.shop/jobs?q={search_term_string}",
-        "query-input": "required name=search_term_string"
-      }
-    }
-    </script>
-    
-    <!-- Canonical URL -->
-    <link rel="canonical" href="https://talentsync.shop">
-    
-    <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'G-XXXXXXXXXX');
-    </script>
-    
-    <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <title>Browse Jobs - College Student & Entry-Level Positions | TalentSync</title>
+    <meta name="description" content="Browse thousands of entry-level jobs and internships perfect for college students and recent graduates. Find your first job with TalentSync.">
+    <meta name="keywords" content="college jobs, student jobs, entry level jobs, internships, recent graduate jobs, first job, college career">
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -102,7 +53,7 @@
             text-decoration: none;
         }
 
-        /* Hamburger Menu - Always visible */
+        /* Hamburger Menu */
         .menu-toggle {
             display: flex;
             flex-direction: column;
@@ -136,7 +87,7 @@
             transform: rotate(-45deg) translate(7px, -7px);
         }
 
-        /* Mobile Menu - Now the only menu */
+        /* Mobile Menu */
         .mobile-menu {
             position: fixed;
             top: 0;
@@ -233,28 +184,21 @@
             display: none;
         }
 
-        /* Main Hero Section */
-        .hero {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        /* Jobs Hero Section */
+        .jobs-hero {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
             color: white;
             text-align: center;
-            padding: 4rem 0 3rem;
+            padding: 3rem 0;
         }
 
-        .hero h1 {
-            font-size: 3rem;
+        .jobs-hero h1 {
+            font-size: 2.5rem;
             font-weight: 700;
             margin-bottom: 1rem;
-            line-height: 1.2;
         }
 
-        .hero-subtitle {
-            font-size: 1.2rem;
-            margin-bottom: 2rem;
-            opacity: 0.9;
-        }
-
-        /* Search Form */
+        /* Search Section */
         .search-section {
             background: white;
             padding: 2rem 0;
@@ -264,7 +208,7 @@
         .search-form {
             display: flex;
             gap: 1rem;
-            max-width: 600px;
+            max-width: 800px;
             margin: 0 auto;
             align-items: center;
         }
@@ -299,109 +243,32 @@
             background: #1d4ed8;
         }
 
-        /* Quick Actions */
-        .quick-actions {
-            padding: 2rem 0;
-            text-align: center;
+        /* Filter Section */
+        .filter-section {
             background: #f9fafb;
+            padding: 1.5rem 0;
+            border-bottom: 1px solid #e5e7eb;
         }
 
-        .quick-actions p {
-            margin-bottom: 1rem;
-            color: #6b7280;
-        }
-
-        .action-links {
+        .filters {
             display: flex;
-            justify-content: center;
-            gap: 2rem;
+            gap: 1rem;
+            align-items: center;
             flex-wrap: wrap;
         }
 
-        .action-link {
-            background: #2563eb;
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: 500;
-            transition: background 0.2s;
+        .filter-select {
+            padding: 0.5rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            background: white;
+            font-size: 0.9rem;
         }
 
-        .action-link:hover {
-            background: #1d4ed8;
-            color: white;
-        }
-
-        .action-link.secondary {
-            background: #10b981;
-        }
-
-        .action-link.secondary:hover {
-            background: #059669;
-        }
-
-        /* College Categories */
-        .college-categories {
+        /* Jobs Grid */
+        .jobs-section {
             padding: 3rem 0;
             background: white;
-        }
-
-        .college-categories h2 {
-            text-align: center;
-            margin-bottom: 2rem;
-            font-size: 2rem;
-            color: #1f2937;
-        }
-
-        .categories-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
-        .category-item {
-            background: #f8fafc;
-            padding: 1.5rem;
-            border-radius: 12px;
-            text-align: center;
-            text-decoration: none;
-            color: #374151;
-            transition: all 0.2s;
-            border: 2px solid transparent;
-        }
-
-        .category-item:hover {
-            background: #e0e7ff;
-            border-color: #2563eb;
-            transform: translateY(-2px);
-            color: #374151;
-        }
-
-        .category-item h3 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-
-        .category-item p {
-            font-size: 0.9rem;
-            color: #6b7280;
-        }
-
-        /* Featured Jobs */
-        .featured-jobs {
-            padding: 3rem 0;
-            background: #f9fafb;
-        }
-
-        .featured-jobs h2 {
-            text-align: center;
-            margin-bottom: 2rem;
-            font-size: 2rem;
-            color: #1f2937;
         }
 
         .jobs-grid {
@@ -417,6 +284,7 @@
             padding: 1.5rem;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             transition: all 0.2s;
+            border: 1px solid #e5e7eb;
         }
 
         .job-item:hover {
@@ -440,12 +308,22 @@
         .job-company {
             color: #6b7280;
             margin-bottom: 0.5rem;
+            font-weight: 500;
         }
 
         .job-location {
             color: #9ca3af;
             font-size: 0.9rem;
             margin-bottom: 1rem;
+        }
+
+        .job-description {
+            color: #4b5563;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+            max-height: 3em;
+            overflow: hidden;
         }
 
         .job-details {
@@ -474,6 +352,14 @@
             letter-spacing: 0.5px;
         }
 
+        /* Loading States */
+        .loading {
+            text-align: center;
+            padding: 4rem;
+            color: #6b7280;
+            font-style: italic;
+        }
+
         /* Footer */
         footer {
             background: #1f2937;
@@ -500,22 +386,9 @@
             color: white;
         }
 
-        .footer-bottom {
-            font-size: 0.85rem;
-            color: #9ca3af;
-        }
-
-        /* Loading States */
-        .loading {
-            text-align: center;
-            padding: 2rem;
-            color: #6b7280;
-            font-style: italic;
-        }
-
-        /* Responsive Design - Simplified */
+        /* Responsive Design */
         @media (max-width: 768px) {
-            .hero h1 {
+            .jobs-hero h1 {
                 font-size: 2rem;
             }
 
@@ -528,13 +401,11 @@
                 width: 100%;
             }
 
-            .action-links {
-                flex-direction: column;
-                align-items: center;
+            .filters {
+                justify-content: center;
             }
         }
 
-        /* Hamburger menu always visible on all screen sizes */
         @media (min-width: 769px) {
             /* Keep hamburger menu visible */
             .menu-toggle {
@@ -591,11 +462,11 @@
         </div>
     </header>
 
-    <!-- Hero Section -->
-    <section class="hero">
+    <!-- Jobs Hero -->
+    <section class="jobs-hero">
         <div class="container">
-            <h1>#1 job site for college students & grads</h1>
-            <p class="hero-subtitle">Launch your career with opportunities designed for students and recent graduates</p>
+            <h1>Find Your Perfect Job</h1>
+            <p style="font-size: 1.1rem; opacity: 0.9;">Browse thousands of entry-level positions and internships</p>
         </div>
     </section>
 
@@ -603,60 +474,56 @@
     <section class="search-section">
         <div class="container">
             <form class="search-form" id="jobSearchForm">
-                <input type="text" class="search-input" placeholder="Keyword or Company" id="searchKeyword">
-                <input type="text" class="search-input" placeholder="City" id="searchLocation">
-                <button type="submit" class="search-btn">Search</button>
+                <input type="text" class="search-input" placeholder="Job title, keywords, or company" id="searchKeyword">
+                <input type="text" class="search-input" placeholder="City or state" id="searchLocation">
+                <button type="submit" class="search-btn">Search Jobs</button>
             </form>
         </div>
     </section>
 
-    <!-- Quick Actions -->
-    <section class="quick-actions">
+    <!-- Filter Section -->
+    <section class="filter-section">
         <div class="container">
-            <p><strong>Post your resume</strong> - it only takes a few seconds</p>
-            <div class="action-links">
-                <a href="/register.html" class="action-link">Post Your Resume</a>
-                <a href="/post-job" class="action-link secondary">Employers - Post a Job</a>
+            <div class="filters">
+                <label for="jobType" style="font-weight: 500;">Job Type:</label>
+                <select id="jobType" class="filter-select">
+                    <option value="">All Types</option>
+                    <option value="internship">Internships</option>
+                    <option value="part-time">Part-time</option>
+                    <option value="full-time">Full-time</option>
+                    <option value="entry-level">Entry Level</option>
+                </select>
+
+                <label for="category" style="font-weight: 500;">Category:</label>
+                <select id="category" class="filter-select">
+                    <option value="">All Categories</option>
+                    <option value="marketing">Marketing</option>
+                    <option value="technology">Technology</option>
+                    <option value="finance">Finance</option>
+                    <option value="healthcare">Healthcare</option>
+                    <option value="education">Education</option>
+                    <option value="sales">Sales</option>
+                </select>
+
+                <button type="button" id="clearFilters" style="background: none; border: 1px solid #d1d5db; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer;">Clear Filters</button>
             </div>
         </div>
     </section>
 
-    <!-- College Categories -->
-    <section class="college-categories">
+    <!-- Jobs Section -->
+    <section class="jobs-section">
         <div class="container">
-            <h2>Find Jobs by Education Level</h2>
-            <div class="categories-grid">
-                <a href="/jobs?category=technical" class="category-item">
-                    <h3>Technical Colleges</h3>
-                    <p>Entry-level technical and trade positions</p>
-                </a>
-                <a href="/jobs?category=vocational" class="category-item">
-                    <h3>Vocational Colleges</h3>
-                    <p>Skilled trade and specialized careers</p>
-                </a>
-                <a href="/jobs?category=community" class="category-item">
-                    <h3>Community Colleges</h3>
-                    <p>Associate degree opportunities</p>
-                </a>
-                <a href="/jobs?category=public" class="category-item">
-                    <h3>Public Universities</h3>
-                    <p>Bachelor's degree entry-level roles</p>
-                </a>
-                <a href="/jobs?category=private" class="category-item">
-                    <h3>Private Universities</h3>
-                    <p>Premium graduate opportunities</p>
-                </a>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h2>Available Positions</h2>
+                <div id="jobCount" style="color: #6b7280;">Loading jobs...</div>
             </div>
-        </div>
-    </section>
-
-    <!-- Featured Jobs -->
-    <section class="featured-jobs">
-        <div class="container">
-            <h2>Latest Entry-Level Opportunities</h2>
-            <p style="text-align: center; color: #6b7280; margin-bottom: 2rem;">Browse thousands of student-friendly jobs and internships</p>
-            <div style="text-align: center;">
-                <a href="/jobs" class="action-link">Browse All Jobs</a>
+            
+            <div id="jobsContainer" class="jobs-grid">
+                <div class="loading">Loading jobs...</div>
+            </div>
+            
+            <div id="loadMore" style="text-align: center; margin-top: 2rem; display: none;">
+                <button style="background: #2563eb; color: white; border: none; padding: 1rem 2rem; border-radius: 8px; cursor: pointer;">Load More Jobs</button>
             </div>
         </div>
     </section>
@@ -665,6 +532,7 @@
     <footer>
         <div class="container">
             <div class="footer-links">
+                <a href="/">Home</a>
                 <a href="/employers">Employers</a>
                 <a href="/privacy">Privacy</a>
                 <a href="/terms">Terms</a>
@@ -677,6 +545,11 @@
     </footer>
 
     <script>
+        let allJobs = [];
+        let displayedJobs = [];
+        let currentPage = 1;
+        const jobsPerPage = 12;
+
         // Mobile menu functionality
         const menuToggle = document.getElementById('menuToggle');
         const mobileMenu = document.getElementById('mobileMenu');
@@ -687,7 +560,6 @@
             mobileMenu.classList.toggle('active');
             mobileMenuOverlay.classList.toggle('active');
             
-            // Prevent body scroll when menu is open
             if (mobileMenu.classList.contains('active')) {
                 document.body.style.overflow = 'hidden';
             } else {
@@ -698,7 +570,6 @@
         menuToggle.addEventListener('click', toggleMenu);
         mobileMenuOverlay.addEventListener('click', toggleMenu);
 
-        // Close menu when clicking on a link
         const mobileMenuLinks = mobileMenu.querySelectorAll('a');
         mobileMenuLinks.forEach(link => {
             link.addEventListener('click', () => {
@@ -708,6 +579,127 @@
             });
         });
 
+        // Load and display jobs
+        async function loadJobs() {
+            try {
+                const response = await fetch('/api/jobs/indeed');
+                const data = await response.json();
+                
+                if (data.success && data.jobs.length > 0) {
+                    allJobs = data.jobs;
+                    filterAndDisplayJobs();
+                } else {
+                    showNoJobsMessage();
+                }
+            } catch (error) {
+                console.error('Error loading jobs:', error);
+                showErrorMessage();
+            }
+        }
+
+        function filterAndDisplayJobs() {
+            const keyword = document.getElementById('searchKeyword').value.toLowerCase();
+            const location = document.getElementById('searchLocation').value.toLowerCase();
+            const jobType = document.getElementById('jobType').value.toLowerCase();
+            const category = document.getElementById('category').value.toLowerCase();
+
+            displayedJobs = allJobs.filter(job => {
+                const matchesKeyword = !keyword || 
+                    job.title.toLowerCase().includes(keyword) ||
+                    job.company.toLowerCase().includes(keyword) ||
+                    (job.description && job.description.toLowerCase().includes(keyword));
+                
+                const matchesLocation = !location || 
+                    job.location.toLowerCase().includes(location);
+                
+                const matchesType = !jobType || 
+                    job.title.toLowerCase().includes(jobType) ||
+                    (job.description && job.description.toLowerCase().includes(jobType));
+                
+                const matchesCategory = !category || 
+                    job.title.toLowerCase().includes(category) ||
+                    (job.description && job.description.toLowerCase().includes(category));
+
+                return matchesKeyword && matchesLocation && matchesType && matchesCategory;
+            });
+
+            currentPage = 1;
+            displayJobs();
+            updateJobCount();
+        }
+
+        function displayJobs() {
+            const container = document.getElementById('jobsContainer');
+            const startIndex = 0;
+            const endIndex = currentPage * jobsPerPage;
+            const jobsToShow = displayedJobs.slice(startIndex, endIndex);
+
+            if (jobsToShow.length === 0) {
+                container.innerHTML = '<div class="loading">No jobs found matching your criteria. Try adjusting your search.</div>';
+                document.getElementById('loadMore').style.display = 'none';
+                return;
+            }
+
+            container.innerHTML = jobsToShow.map(job => `
+                <div class="job-item">
+                    <a href="${job.url || '#'}" target="_blank" class="job-title">${job.title}</a>
+                    <div class="job-company">${job.company}</div>
+                    <div class="job-location">${job.location}</div>
+                    ${job.description ? `<div class="job-description">${job.description.substring(0, 120)}...</div>` : ''}
+                    <div class="job-details">
+                        ${job.salary ? `<span class="job-salary">${job.salary}</span>` : ''}
+                        <span class="job-source">${job.source || 'Indeed'}</span>
+                    </div>
+                </div>
+            `).join('');
+
+            // Show/hide load more button
+            if (endIndex < displayedJobs.length) {
+                document.getElementById('loadMore').style.display = 'block';
+            } else {
+                document.getElementById('loadMore').style.display = 'none';
+            }
+        }
+
+        function updateJobCount() {
+            const count = displayedJobs.length;
+            document.getElementById('jobCount').textContent = `${count} jobs found`;
+        }
+
+        function showNoJobsMessage() {
+            document.getElementById('jobsContainer').innerHTML = 
+                '<div class="loading">No jobs available at the moment. Check back soon for new opportunities!</div>';
+            document.getElementById('jobCount').textContent = '0 jobs found';
+        }
+
+        function showErrorMessage() {
+            document.getElementById('jobsContainer').innerHTML = 
+                '<div class="loading">Unable to load jobs. Please try again later.</div>';
+            document.getElementById('jobCount').textContent = 'Error loading jobs';
+        }
+
+        // Event listeners
+        document.getElementById('jobSearchForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            filterAndDisplayJobs();
+        });
+
+        document.getElementById('jobType').addEventListener('change', filterAndDisplayJobs);
+        document.getElementById('category').addEventListener('change', filterAndDisplayJobs);
+
+        document.getElementById('clearFilters').addEventListener('click', function() {
+            document.getElementById('searchKeyword').value = '';
+            document.getElementById('searchLocation').value = '';
+            document.getElementById('jobType').value = '';
+            document.getElementById('category').value = '';
+            filterAndDisplayJobs();
+        });
+
+        document.getElementById('loadMore').addEventListener('click', function() {
+            currentPage++;
+            displayJobs();
+        });
+
         // Check authentication status and update navigation
         function updateNavigation() {
             const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
@@ -715,29 +707,16 @@
             const authMenuItem = document.getElementById('authMenuItem');
             
             if (isLoggedIn && user.email) {
-                // User is logged in, show dashboard link
                 authMenuItem.innerHTML = `<a href="/dashboard">Dashboard</a>`;
             } else {
-                // User is not logged in, show sign in link
                 authMenuItem.innerHTML = `<a href="/login.html">Sign In</a>`;
             }
         }
 
-        // Call the function when page loads
-        updateNavigation();
-
-        // Handle search form submission
-        document.getElementById('jobSearchForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const keyword = document.getElementById('searchKeyword').value;
-            const location = document.getElementById('searchLocation').value;
-            
-            // Redirect to job search results page
-            let searchUrl = '/jobs?';
-            if (keyword) searchUrl += `q=${encodeURIComponent(keyword)}&`;
-            if (location) searchUrl += `location=${encodeURIComponent(location)}&`;
-            
-            window.location.href = searchUrl.slice(0, -1); // Remove trailing &
+        // Load jobs when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            loadJobs();
+            updateNavigation();
         });
     </script>
 </body>

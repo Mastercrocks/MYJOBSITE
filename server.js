@@ -24,13 +24,16 @@ function safeRequireRouter(path) {
 }
 
 const adminRoutes = safeRequireRouter('./routes/admin');
-const authRoutes = safeRequireRouter('./routes/auth');
+const authRoutes = safeRequireRouter('./routes/auth-mock'); // Using mock auth temporarily
 const jobsRoutes = safeRequireRouter('./routes/jobs');
 const seoRoutes = safeRequireRouter('./routes/seo');
 const PORT = process.env.PORT || 3000;
 
 // Enable compression for better performance
 app.use(compression());
+
+// Serve admin static files FIRST (before general static files)
+app.use('/admin', express.static(path.join(__dirname, 'Public/admin')));
 
 // Serve static files from Public directory (case-sensitive)
 app.use(express.static(path.join(__dirname, 'Public')));
@@ -41,14 +44,66 @@ app.use(express.json());
 // Parse URL-encoded bodies
 app.use(express.urlencoded({ extended: true }));
 
-// Serve admin static files BEFORE authentication middleware
-app.use('/admin', express.static(path.join(__dirname, 'Public/admin')));
-
 // Mount API and admin routes
 app.use('/admin/api', adminRoutes);
 app.use('/auth', authRoutes);
 app.use('/api/jobs', jobsRoutes);
 app.use('/seo', seoRoutes);
+
+// Main navigation routes
+app.get('/jobs', (req, res) => {
+    res.sendFile(path.join(__dirname, 'Public', 'jobs.html'));
+});
+
+app.get('/resumes', (req, res) => {
+    res.sendFile(path.join(__dirname, 'Public', 'resumes.html'));
+});
+
+app.get('/blog', (req, res) => {
+    res.sendFile(path.join(__dirname, 'Public', 'blog.html'));
+});
+
+// Employer routes
+app.get('/employers', (req, res) => {
+    res.sendFile(path.join(__dirname, 'Public', 'employers.html'));
+});
+
+app.get('/post-job', (req, res) => {
+    // Redirect to employers page with auth section focused
+    res.redirect('/employers#auth');
+});
+
+// Blog routes
+app.get('/blog/:article', (req, res) => {
+    const article = req.params.article;
+    const articlePath = path.join(__dirname, 'Public', 'blog', `${article}.html`);
+    
+    if (fs.existsSync(articlePath)) {
+        res.sendFile(articlePath);
+    } else {
+        res.status(404).sendFile(path.join(__dirname, 'Public', '404.html'));
+    }
+});
+
+// Job category routes
+app.get('/jobs/marketing', (req, res) => {
+    res.sendFile(path.join(__dirname, 'Public', 'jobs', 'marketing.html'));
+});
+
+app.get('/jobs/technology', (req, res) => {
+    res.sendFile(path.join(__dirname, 'Public', 'jobs', 'technology.html'));
+});
+
+// Add location-specific routes for SEO (now with 6 cities)
+const locations = [
+  'new-york-ny', 'los-angeles-ca', 'chicago-il', 'miami-fl', 'houston-tx', 'philadelphia-pa'
+];
+
+locations.forEach(location => {
+  app.get(`/jobs/${location}`, (req, res) => {
+    res.sendFile(path.join(__dirname, 'Public', 'jobs', `${location}.html`));
+  });
+});
 
 // SEO-optimized routes
 
@@ -431,6 +486,10 @@ app.get('/api/jobs', (req, res) => {
     res.json(jobs);
 });
 
+// Dashboard route
+app.get('/dashboard', (req, res) => {
+    res.sendFile(path.join(__dirname, 'Public', 'dashboard.html'));
+});
 
 // Serve static HTML files for direct requests (e.g., /admin/login.html)
 app.get('/*.html', (req, res, next) => {

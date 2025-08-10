@@ -5,53 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>#1 Job Site for College Students & Recent Graduates | TalentSync</title>
     <meta name="description" content="Find your first job or internship with TalentSync - the premier job board for college students and recent graduates. Connect with top employers hiring entry-level talent.">
-    <meta name="keywords" content="college jobs, student jobs, entry level jobs, internships, recent graduate jobs, first job, college career, part time jobs, summer jobs, campus jobs">
-    
-    <!-- Open Graph Meta Tags for Social Media -->
-    <meta property="og:title" content="#1 Job Site for College Students & Recent Graduates | TalentSync">
-    <meta property="og:description" content="Find your first job or internship with TalentSync - the premier job board for college students and recent graduates.">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://talentsync.shop">
-    <meta property="og:image" content="https://talentsync.shop/img/og-image.jpg">
-    
-    <!-- Twitter Card Meta Tags -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="#1 Job Site for College Students & Recent Graduates | TalentSync">
-    <meta name="twitter:description" content="Find your first job or internship with TalentSync - the premier job board for college students and recent graduates.">
-    <meta name="twitter:image" content="https://talentsync.shop/img/twitter-image.jpg">
-    
-    <!-- Schema.org JSON-LD for Rich Snippets -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "JobBoard",
-      "name": "TalentSync",
-      "description": "Premier job board for college students and recent graduates",
-      "url": "https://talentsync.shop",
-      "sameAs": [
-        "https://www.facebook.com/talentsync",
-        "https://www.twitter.com/talentsync",
-        "https://www.linkedin.com/company/talentsync"
-      ],
-      "potentialAction": {
-        "@type": "SearchAction",
-        "target": "https://talentsync.shop/jobs?q={search_term_string}",
-        "query-input": "required name=search_term_string"
-      }
-    }
-    </script>
-    
-    <!-- Canonical URL -->
-    <link rel="canonical" href="https://talentsync.shop">
-    
-    <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'G-XXXXXXXXXX');
-    </script>
+    <meta name="keywords" content="college jobs, student jobs, entry level jobs, internships, recent graduate jobs, first job, college career">
     
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
@@ -86,7 +40,6 @@
             background: white;
             border-bottom: 1px solid #e5e7eb;
             padding: 1rem 0;
-            position: relative;
         }
 
         .header-content {
@@ -102,135 +55,21 @@
             text-decoration: none;
         }
 
-        /* Hamburger Menu - Always visible */
-        .menu-toggle {
-            display: flex;
-            flex-direction: column;
-            justify-content: space-around;
-            width: 30px;
-            height: 30px;
-            background: none;
-            border: none;
-            cursor: pointer;
-            z-index: 1001;
-        }
-
-        .menu-toggle span {
-            display: block;
-            height: 3px;
-            width: 100%;
-            background: #2563eb;
-            transition: all 0.3s ease;
-            transform-origin: center;
-        }
-
-        .menu-toggle.active span:nth-child(1) {
-            transform: rotate(45deg) translate(7px, 7px);
-        }
-
-        .menu-toggle.active span:nth-child(2) {
-            opacity: 0;
-        }
-
-        .menu-toggle.active span:nth-child(3) {
-            transform: rotate(-45deg) translate(7px, -7px);
-        }
-
-        /* Mobile Menu - Now the only menu */
-        .mobile-menu {
-            position: fixed;
-            top: 0;
-            right: -100%;
-            width: 300px;
-            height: 100vh;
-            background: white;
-            z-index: 1000;
-            transition: right 0.3s ease;
-            box-shadow: -2px 0 10px rgba(0,0,0,0.1);
-            padding-top: 80px;
-        }
-
-        .mobile-menu.active {
-            right: 0;
-        }
-
-        .mobile-menu-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100vh;
-            background: rgba(0,0,0,0.5);
-            z-index: 999;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s ease;
-        }
-
-        .mobile-menu-overlay.active {
-            opacity: 1;
-            visibility: visible;
-        }
-
         .nav-links {
             display: flex;
-            flex-direction: column;
-            gap: 0;
+            gap: 2rem;
             list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .nav-links li {
-            border-bottom: 1px solid #e5e7eb;
         }
 
         .nav-links a {
-            display: block;
             color: #4b5563;
             text-decoration: none;
             font-weight: 500;
-            padding: 1.5rem 2rem;
-            transition: all 0.2s;
-            font-size: 1.1rem;
+            transition: color 0.2s;
         }
 
         .nav-links a:hover {
             color: #2563eb;
-            background: #f8fafc;
-        }
-
-        .nav-links .btn-primary {
-            background: #2563eb;
-            color: white;
-            margin: 1rem 2rem;
-            border-radius: 8px;
-            text-align: center;
-            padding: 1rem;
-        }
-
-        .nav-links .btn-primary:hover {
-            background: #1d4ed8;
-            color: white;
-        }
-
-        .nav-links .btn-secondary {
-            background: #10b981;
-            color: white;
-            margin: 0 2rem 1rem 2rem;
-            border-radius: 8px;
-            text-align: center;
-            padding: 1rem;
-        }
-
-        .nav-links .btn-secondary:hover {
-            background: #059669;
-            color: white;
-        }
-
-        /* Desktop menu hidden by default */
-        .desktop-nav {
-            display: none;
         }
 
         /* Main Hero Section */
@@ -513,7 +352,7 @@
             font-style: italic;
         }
 
-        /* Responsive Design - Simplified */
+        /* Responsive Design */
         @media (max-width: 768px) {
             .hero h1 {
                 font-size: 2rem;
@@ -532,23 +371,9 @@
                 flex-direction: column;
                 align-items: center;
             }
-        }
 
-        /* Hamburger menu always visible on all screen sizes */
-        @media (min-width: 769px) {
-            /* Keep hamburger menu visible */
-            .menu-toggle {
-                display: flex;
-            }
-
-            /* Keep mobile menu functional */
-            .mobile-menu {
-                display: block;
-            }
-
-            /* Hide desktop nav completely */
-            .desktop-nav {
-                display: none !important;
+            .nav-links {
+                display: none;
             }
         }
     </style>
@@ -559,35 +384,16 @@
         <div class="container">
             <div class="header-content">
                 <a href="/" class="logo">TalentSync</a>
-                
-                <!-- Hamburger Menu Toggle -->
-                <button class="menu-toggle" id="menuToggle">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </button>
-                
-                <!-- Desktop Navigation - Hidden, everything goes in hamburger menu -->
-                <nav class="desktop-nav" style="display: none;">
+                <nav>
+                    <ul class="nav-links">
+                        <li><a href="/employers">Employers</a></li>
+                        <li><a href="/privacy">Privacy</a></li>
+                        <li><a href="/terms">Terms</a></li>
+                        <li><a href="/contact">Contact Us</a></li>
+                        <li><a href="/admin/login.html">Admin</a></li>
+                    </ul>
                 </nav>
             </div>
-        </div>
-        
-        <!-- Mobile Menu Overlay -->
-        <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
-        
-        <!-- Mobile Menu -->
-        <div class="mobile-menu" id="mobileMenu">
-            <nav>
-                <ul class="nav-links">
-                    <li><a href="/jobs">Jobs</a></li>
-                    <li><a href="/resumes">Search Resumes</a></li>
-                    <li><a href="/blog">Blog</a></li>
-                    <li id="authMenuItem"><a href="/login.html">Sign In</a></li>
-                    <li><a href="/register.html" class="btn-primary">Post Resume</a></li>
-                    <li><a href="/employers" class="btn-secondary">Employers - Post Job</a></li>
-                </ul>
-            </nav>
         </div>
     </header>
 
@@ -654,9 +460,11 @@
     <section class="featured-jobs">
         <div class="container">
             <h2>Latest Entry-Level Opportunities</h2>
-            <p style="text-align: center; color: #6b7280; margin-bottom: 2rem;">Browse thousands of student-friendly jobs and internships</p>
-            <div style="text-align: center;">
-                <a href="/jobs" class="action-link">Browse All Jobs</a>
+            <div id="jobsContainer" class="jobs-grid">
+                <div class="loading">Loading jobs...</div>
+            </div>
+            <div style="text-align: center; margin-top: 2rem;">
+                <a href="/api/jobs/indeed" class="action-link" target="_blank">View All Jobs</a>
             </div>
         </div>
     </section>
@@ -677,54 +485,60 @@
     </footer>
 
     <script>
-        // Mobile menu functionality
-        const menuToggle = document.getElementById('menuToggle');
-        const mobileMenu = document.getElementById('mobileMenu');
-        const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
-
-        function toggleMenu() {
-            menuToggle.classList.toggle('active');
-            mobileMenu.classList.toggle('active');
-            mobileMenuOverlay.classList.toggle('active');
-            
-            // Prevent body scroll when menu is open
-            if (mobileMenu.classList.contains('active')) {
-                document.body.style.overflow = 'hidden';
-            } else {
-                document.body.style.overflow = '';
-            }
-        }
-
-        menuToggle.addEventListener('click', toggleMenu);
-        mobileMenuOverlay.addEventListener('click', toggleMenu);
-
-        // Close menu when clicking on a link
-        const mobileMenuLinks = mobileMenu.querySelectorAll('a');
-        mobileMenuLinks.forEach(link => {
-            link.addEventListener('click', () => {
-                if (mobileMenu.classList.contains('active')) {
-                    toggleMenu();
+        // Load and display Indeed jobs
+        async function loadIndeedJobs() {
+            try {
+                const response = await fetch('/api/jobs/indeed');
+                const data = await response.json();
+                
+                if (data.success && data.jobs.length > 0) {
+                    // Filter for entry-level and student-friendly jobs
+                    const studentJobs = data.jobs.filter(job => 
+                        job.title.toLowerCase().includes('entry') ||
+                        job.title.toLowerCase().includes('junior') ||
+                        job.title.toLowerCase().includes('associate') ||
+                        job.title.toLowerCase().includes('intern') ||
+                        job.title.toLowerCase().includes('trainee') ||
+                        job.title.toLowerCase().includes('assistant') ||
+                        job.title.toLowerCase().includes('coordinator')
+                    );
+                    
+                    // If we have student-friendly jobs, show them, otherwise show all
+                    const jobsToShow = studentJobs.length > 0 ? studentJobs.slice(0, 9) : data.jobs.slice(0, 9);
+                    displayJobs(jobsToShow);
+                } else {
+                    showNoJobsMessage();
                 }
-            });
-        });
-
-        // Check authentication status and update navigation
-        function updateNavigation() {
-            const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-            const user = JSON.parse(localStorage.getItem('user') || '{}');
-            const authMenuItem = document.getElementById('authMenuItem');
-            
-            if (isLoggedIn && user.email) {
-                // User is logged in, show dashboard link
-                authMenuItem.innerHTML = `<a href="/dashboard">Dashboard</a>`;
-            } else {
-                // User is not logged in, show sign in link
-                authMenuItem.innerHTML = `<a href="/login.html">Sign In</a>`;
+            } catch (error) {
+                console.error('Error loading jobs:', error);
+                showErrorMessage();
             }
         }
 
-        // Call the function when page loads
-        updateNavigation();
+        function displayJobs(jobs) {
+            const container = document.getElementById('jobsContainer');
+            container.innerHTML = jobs.map(job => `
+                <div class="job-item">
+                    <a href="${job.url}" target="_blank" class="job-title">${job.title}</a>
+                    <div class="job-company">${job.company}</div>
+                    <div class="job-location">${job.location}</div>
+                    <div class="job-details">
+                        ${job.salary ? `<span class="job-salary">${job.salary}</span>` : ''}
+                        <span class="job-source">${job.source}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function showNoJobsMessage() {
+            document.getElementById('jobsContainer').innerHTML = 
+                '<div class="loading">No jobs available at the moment. Check back soon for new opportunities!</div>';
+        }
+
+        function showErrorMessage() {
+            document.getElementById('jobsContainer').innerHTML = 
+                '<div class="loading">Unable to load jobs. Please try again later.</div>';
+        }
 
         // Handle search form submission
         document.getElementById('jobSearchForm').addEventListener('submit', function(e) {
@@ -739,6 +553,9 @@
             
             window.location.href = searchUrl.slice(0, -1); // Remove trailing &
         });
+
+        // Load jobs when page loads
+        document.addEventListener('DOMContentLoaded', loadIndeedJobs);
     </script>
 </body>
 </html>

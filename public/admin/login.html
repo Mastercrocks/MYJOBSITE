@@ -30,10 +30,23 @@
       e.preventDefault();
       const pin = document.getElementById('pin').value;
       if (pin === '251996') {
+        // Clear any existing auth data
+        localStorage.clear();
+        sessionStorage.clear();
+        
         // Store admin session
         localStorage.setItem('adminSession', 'true');
         localStorage.setItem('adminLoginTime', Date.now());
-        window.location.href = '/admin/dashboard.html';
+        localStorage.setItem('userType', 'admin');
+        
+        // Show success message
+        document.getElementById('error').style.color = 'green';
+        document.getElementById('error').textContent = 'Login successful! Redirecting...';
+        
+        // Redirect after a short delay
+        setTimeout(() => {
+          window.location.href = '/admin/dashboard.html';
+        }, 1000);
       } else {
         document.getElementById('error').textContent = 'Invalid PIN.';
       }

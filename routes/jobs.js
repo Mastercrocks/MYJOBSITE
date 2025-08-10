@@ -2,8 +2,45 @@ const express = require('express');
 const { pool } = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
 const jobApiService = require('../services/jobApiService');
+const fs = require('fs');
+const path = require('path');
 
 const router = express.Router();
+
+// GET /api/jobs/indeed - Get Indeed jobs from JSON file
+router.get('/indeed', async (req, res) => {
+  try {
+    const indeedJobsPath = path.join(__dirname, '..', 'data', 'indeed_jobs.json');
+    const indeedData = JSON.parse(fs.readFileSync(indeedJobsPath, 'utf8'));
+    
+    // Format jobs for frontend
+    const formattedJobs = indeedData.map((job, index) => ({
+      id: `indeed_${index}`,
+      title: job.positionName || job.title,
+      company: job.company,
+      location: job.location,
+      description: job.description || '',
+      salary: job.salary,
+      rating: job.rating,
+      source: 'indeed',
+      url: job.url,
+      posted_date: new Date().toISOString().split('T')[0] // Today's date as fallback
+    }));
+
+    res.json({
+      success: true,
+      jobs: formattedJobs,
+      total: formattedJobs.length
+    });
+  } catch (error) {
+    console.error('Error loading Indeed jobs:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to load Indeed jobs',
+      jobs: []
+    });
+  }
+});
 
 // GET /api/jobs - Search jobs (both internal and external)
 router.get('/', async (req, res) => {

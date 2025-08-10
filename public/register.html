@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join TalentSync - Register</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .user-type-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .user-type-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .user-type-card.selected {
+            border-color: #3B82F6;
+            background-color: #EFF6FF;
+        }
+        .step { display: none; }
+        .step.active { display: block; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">🎯 Join TalentSync</h1>
+            <p class="text-gray-600">Connect with opportunities or find the perfect talent</p>
+        </div>
+
+        <!-- Registration Form Container -->
+        <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
+            
+            <!-- Progress Bar -->
+            <div class="bg-gray-100 px-6 py-4">
+                <div class="flex items-center">
+                    <div class="flex items-center text-sm font-medium text-blue-600">
+                        <span class="flex items-center justify-center w-6 h-6 bg-blue-600 text-white rounded-full mr-2">1</span>
+                        Choose Type
+                    </div>
+                    <div class="flex-1 h-px bg-gray-300 mx-4"></div>
+                    <div id="step2-indicator" class="flex items-center text-sm font-medium text-gray-400">
+                        <span class="flex items-center justify-center w-6 h-6 bg-gray-300 text-white rounded-full mr-2">2</span>
+                        Your Details
+                    </div>
+                    <div class="flex-1 h-px bg-gray-300 mx-4"></div>
+                    <div id="step3-indicator" class="flex items-center text-sm font-medium text-gray-400">
+                        <span class="flex items-center justify-center w-6 h-6 bg-gray-300 text-white rounded-full mr-2">3</span>
+                        Complete
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 1: Choose User Type -->
+            <div id="step1" class="step active p-8">
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">What brings you to TalentSync?</h2>
+                    <p class="text-gray-600">Choose the option that best describes you</p>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+                    <!-- Job Seeker Card -->
+                    <div class="user-type-card border-2 border-gray-200 rounded-xl p-6 text-center" onclick="selectUserType('job_seeker')">
+                        <div class="text-4xl mb-4">👨‍💼</div>
+                        <h3 class="text-xl font-semibold text-gray-800 mb-2">I'm Looking for Work</h3>
+                        <p class="text-gray-600 mb-4">Find your dream job from thousands of opportunities</p>
+                        <ul class="text-sm text-gray-500 text-left space-y-1">
+                            <li>✓ Browse job openings</li>
+                            <li>✓ Apply with one click</li>
+                            <li>✓ Track applications</li>
+                            <li>✓ Get matched with employers</li>
+                        </ul>
+                    </div>
+
+                    <!-- Employer Card -->
+                    <div class="user-type-card border-2 border-gray-200 rounded-xl p-6 text-center" onclick="selectUserType('employer')">
+                        <div class="text-4xl mb-4">🏢</div>
+                        <h3 class="text-xl font-semibold text-gray-800 mb-2">I'm Hiring Talent</h3>
+                        <p class="text-gray-600 mb-4">Find qualified candidates for your open positions</p>
+                        <ul class="text-sm text-gray-500 text-left space-y-1">
+                            <li>✓ Post unlimited jobs</li>
+                            <li>✓ Review applications</li>
+                            <li>✓ Company branding</li>
+                            <li>✓ Candidate matching</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Registration Form -->
+            <div id="step2" class="step p-8">
+                <form id="registrationForm" onsubmit="handleRegistration(event)">
+                    <div class="max-w-2xl mx-auto">
+                        <div class="text-center mb-6">
+                            <h2 id="step2Title" class="text-2xl font-bold text-gray-800 mb-2">Create Your Account</h2>
+                            <p class="text-gray-600">Let's get you set up on TalentSync</p>
+                        </div>
+
+                        <!-- Basic Information -->
+                        <div class="grid md:grid-cols-2 gap-4 mb-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">First Name *</label>
+                                <input type="text" id="firstName" required 
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Last Name *</label>
+                                <input type="text" id="lastName" required 
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                        </div>
+
+                        <div class="grid md:grid-cols-2 gap-4 mb-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Username *</label>
+                                <input type="text" id="username" required 
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <p class="text-xs text-gray-500 mt-1">This will be your unique identifier</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
+                                <input type="email" id="email" required 
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                        </div>
+
+                        <div class="grid md:grid-cols-2 gap-4 mb-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Password *</label>
+                                <input type="password" id="password" required minlength="6"
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <p class="text-xs text-gray-500 mt-1">Minimum 6 characters</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Phone (Optional)</label>
+                                <input type="tel" id="phone" 
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                        </div>
+
+                        <!-- Employer-specific fields -->
+                        <div id="employerFields" class="hidden">
+                            <div class="border-t pt-6 mb-6">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4">Company Information</h3>
+                                
+                                <div class="grid md:grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Company Name *</label>
+                                        <input type="text" id="companyName" 
+                                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Your Job Title</label>
+                                        <input type="text" id="jobTitle" placeholder="e.g., HR Manager, CEO" 
+                                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    </div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Company Website (Optional)</label>
+                                    <input type="url" id="companyWebsite" placeholder="https://yourcompany.com" 
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Terms and conditions -->
+                        <div class="mb-6">
+                            <label class="flex items-start space-x-3">
+                                <input type="checkbox" id="agreeTerms" required class="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                                <span class="text-sm text-gray-700">
+                                    I agree to TalentSync's <a href="/terms" class="text-blue-600 hover:underline">Terms of Service</a> 
+                                    and <a href="/privacy" class="text-blue-600 hover:underline">Privacy Policy</a>
+                                </span>
+                            </label>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="submit" id="submitBtn" 
+                                class="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 transition duration-200">
+                            Create My Account
+                        </button>
+
+                        <!-- Error Display -->
+                        <div id="errorMessage" class="hidden mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                            <p class="text-red-600 text-sm"></p>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Step 3: Success -->
+            <div id="step3" class="step p-8 text-center">
+                <div class="max-w-md mx-auto">
+                    <div class="text-6xl mb-4">🎉</div>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Welcome to TalentSync!</h2>
+                    <p class="text-gray-600 mb-6">Your account has been created successfully. You can now start exploring opportunities.</p>
+                    
+                    <div class="space-y-3">
+                        <button onclick="window.location.href='/login.html'" 
+                                class="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700">
+                            Sign In to Your Account
+                        </button>
+                        <button onclick="window.location.href='/'" 
+                                class="w-full bg-gray-100 text-gray-700 py-3 px-6 rounded-lg font-semibold hover:bg-gray-200">
+                            Back to Homepage
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Already have account -->
+        <div class="text-center mt-6">
+            <p class="text-gray-600">
+                Already have an account? 
+                <a href="/login.html" class="text-blue-600 hover:underline font-medium">Sign In</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        let selectedUserType = null;
+
+        function selectUserType(type) {
+            selectedUserType = type;
+            
+            // Update visual selection
+            document.querySelectorAll('.user-type-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            event.currentTarget.classList.add('selected');
+            
+            // Auto-advance after selection
+            setTimeout(() => {
+                goToStep(2);
+                updateFormForUserType(type);
+            }, 500);
+        }
+
+        function updateFormForUserType(type) {
+            const employerFields = document.getElementById('employerFields');
+            const step2Title = document.getElementById('step2Title');
+            const companyName = document.getElementById('companyName');
+            
+            if (type === 'employer') {
+                step2Title.textContent = 'Create Your Employer Account';
+                employerFields.classList.remove('hidden');
+                companyName.required = true;
+            } else {
+                step2Title.textContent = 'Create Your Job Seeker Account';
+                employerFields.classList.add('hidden');
+                companyName.required = false;
+            }
+        }
+
+        function goToStep(stepNumber) {
+            // Hide all steps
+            document.querySelectorAll('.step').forEach(step => {
+                step.classList.remove('active');
+            });
+            
+            // Show target step
+            document.getElementById(`step${stepNumber}`).classList.add('active');
+            
+            // Update progress indicators
+            updateProgressIndicators(stepNumber);
+        }
+
+        function updateProgressIndicators(currentStep) {
+            const indicators = ['step2-indicator', 'step3-indicator'];
+            
+            indicators.forEach((id, index) => {
+                const indicator = document.getElementById(id);
+                const stepNum = index + 2;
+                
+                if (stepNum <= currentStep) {
+                    indicator.classList.remove('text-gray-400');
+                    indicator.classList.add('text-blue-600');
+                    indicator.querySelector('span').classList.remove('bg-gray-300');
+                    indicator.querySelector('span').classList.add('bg-blue-600');
+                } else {
+                    indicator.classList.add('text-gray-400');
+                    indicator.classList.remove('text-blue-600');
+                    indicator.querySelector('span').classList.add('bg-gray-300');
+                    indicator.querySelector('span').classList.remove('bg-blue-600');
+                }
+            });
+        }
+
+        async function handleRegistration(event) {
+            event.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const errorDiv = document.getElementById('errorMessage');
+            
+            // Show loading state
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Creating Account...';
+            errorDiv.classList.add('hidden');
+            
+            try {
+                const formData = {
+                    username: document.getElementById('username').value,
+                    email: document.getElementById('email').value,
+                    password: document.getElementById('password').value,
+                    firstName: document.getElementById('firstName').value,
+                    lastName: document.getElementById('lastName').value,
+                    phone: document.getElementById('phone').value,
+                    userType: selectedUserType
+                };
+                
+                // Add employer-specific data
+                if (selectedUserType === 'employer') {
+                    formData.companyName = document.getElementById('companyName').value;
+                    formData.companyWebsite = document.getElementById('companyWebsite').value;
+                    formData.jobTitle = document.getElementById('jobTitle').value;
+                }
+                
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Store token for auto-login
+                    localStorage.setItem('authToken', data.token);
+                    goToStep(3);
+                } else {
+                    throw new Error(data.error || 'Registration failed');
+                }
+                
+            } catch (error) {
+                errorDiv.querySelector('p').textContent = error.message;
+                errorDiv.classList.remove('hidden');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Create My Account';
+            }
+        }
+    </script>
+</body>
+</html>
