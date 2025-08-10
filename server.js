@@ -444,6 +444,7 @@ app.listen(PORT, () => {
     console.log(`   - Sitemap: http://localhost:${PORT}/sitemap.xml`);
     console.log(`   - Robots: http://localhost:${PORT}/robots.txt`);
     console.log(`   - Location pages: http://localhost:${PORT}/jobs/new-york-ny`);
+    console.log(`🔧 Admin routing fix deployed - ${new Date().toISOString()}`);
 });
 
 module.exports = app;
