@@ -156,6 +156,10 @@ app.get('/jobs', (req, res) => {
     res.sendFile(path.join(__dirname, 'Public', 'jobs.html'));
 });
 
+app.get('/employers', (req, res) => {
+    res.sendFile(path.join(__dirname, 'Public', 'employers.html'));
+});
+
 app.get('/login', (req, res) => {
     res.sendFile(path.join(__dirname, 'Public', 'login.html'));
 });
@@ -174,6 +178,28 @@ app.get('/terms', (req, res) => {
 
 app.get('/contact', (req, res) => {
     res.sendFile(path.join(__dirname, 'Public', 'contact.html'));
+});
+
+app.get('/blog', (req, res) => {
+    res.sendFile(path.join(__dirname, 'Public', 'blog.html'));
+});
+
+app.get('/resumes', (req, res) => {
+    res.sendFile(path.join(__dirname, 'Public', 'resumes.html'));
+});
+
+app.get('/dashboard', (req, res) => {
+    res.sendFile(path.join(__dirname, 'Public', 'dashboard.html'));
+});
+
+// Employer dashboard
+app.get('/employer/dashboard', (req, res) => {
+    res.sendFile(path.join(__dirname, 'Public', 'employer', 'dashboard.html'));
+});
+
+// Jobseeker dashboard  
+app.get('/jobseeker/dashboard', (req, res) => {
+    res.sendFile(path.join(__dirname, 'Public', 'jobseeker', 'dashboard.html'));
 });
 
 // Initialize job scraping if enabled
