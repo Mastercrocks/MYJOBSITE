@@ -12,6 +12,29 @@
     </style>
 </head>
 <body class="bg-gray-100">
+    <!-- Check admin session -->
+    <script>
+        function checkAdminSession() {
+            const adminSession = localStorage.getItem('adminSession');
+            const loginTime = localStorage.getItem('adminLoginTime');
+            const currentTime = Date.now();
+            
+            // Session expires after 8 hours (8 * 60 * 60 * 1000)
+            if (!adminSession || !loginTime || (currentTime - loginTime) > 28800000) {
+                localStorage.removeItem('adminSession');
+                localStorage.removeItem('adminLoginTime');
+                window.location.href = '/admin/login.html';
+                return false;
+            }
+            return true;
+        }
+        
+        // Check session on page load
+        if (!checkAdminSession()) {
+            // Redirect handled in function
+        }
+    </script>
+    
     <div class="min-h-screen flex">
         <div style="position: absolute; top: 1rem; right: 1rem;">
             <a href="/admin/forgot-password.html" class="text-blue-600 hover:underline text-sm">Forgot password?</a>
@@ -624,6 +647,13 @@
                 console.error('Failed to update job status:', error);
                 alert('Failed to update job status. Please try again.');
             }
+        }
+
+        // Logout function
+        function logout() {
+            localStorage.removeItem('adminSession');
+            localStorage.removeItem('adminLoginTime');
+            window.location.href = '/admin/login.html';
         }
 
         // Initialize dashboard when page loads

@@ -30,6 +30,9 @@
       e.preventDefault();
       const pin = document.getElementById('pin').value;
       if (pin === '251996') {
+        // Store admin session
+        localStorage.setItem('adminSession', 'true');
+        localStorage.setItem('adminLoginTime', Date.now());
         window.location.href = '/admin/dashboard.html';
       } else {
         document.getElementById('error').textContent = 'Invalid PIN.';

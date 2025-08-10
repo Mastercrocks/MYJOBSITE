@@ -41,8 +41,11 @@ app.use(express.json());
 // Parse URL-encoded bodies
 app.use(express.urlencoded({ extended: true }));
 
+// Serve admin static files BEFORE authentication middleware
+app.use('/admin', express.static(path.join(__dirname, 'Public/admin')));
+
 // Mount API and admin routes
-app.use('/admin', adminRoutes);
+app.use('/admin/api', adminRoutes);
 app.use('/auth', authRoutes);
 app.use('/api/jobs', jobsRoutes);
 app.use('/seo', seoRoutes);
