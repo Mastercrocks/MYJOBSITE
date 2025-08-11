@@ -121,6 +121,14 @@ app.get('/dashboard', (req, res) => {
     res.sendFile(path.join(__dirname, 'Public', 'dashboard.html'));
 });
 
+app.get('/reset-password', (req, res) => {
+    res.sendFile(path.join(__dirname, 'Public', 'reset-password.html'));
+});
+
+app.get('/forgot-password', (req, res) => {
+    res.sendFile(path.join(__dirname, 'Public', 'forgot-password.html'));
+});
+
 // Employer dashboard
 app.get('/employer/dashboard', (req, res) => {
     res.sendFile(path.join(__dirname, 'Public', 'employer', 'dashboard.html'));
@@ -203,8 +211,13 @@ app.post('/auth/register', async (req, res) => {
         }
         
         // Check if user already exists
-        if (users.find(u => u.email === email)) {
-            return res.status(400).json({ success: false, message: 'User already exists' });
+        const existingUser = users.find(u => u.email === email);
+        if (existingUser) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'An account with this email already exists. Try logging in or use the "Forgot Password" option to reset your password.',
+                showLogin: true
+            });
         }
         
         // Hash password
@@ -266,6 +279,141 @@ app.post('/auth/register', async (req, res) => {
     } catch (error) {
         console.error('Registration error:', error);
         res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+// Forgot password route
+app.post('/auth/forgot-password', async (req, res) => {
+    const { email } = req.body;
+    
+    try {
+        const usersPath = path.join(__dirname, 'data', 'users.json');
+        let users = [];
+        
+        if (fs.existsSync(usersPath)) {
+            users = JSON.parse(fs.readFileSync(usersPath, 'utf8'));
+        }
+        
+        const user = users.find(u => u.email === email);
+        
+        if (!user) {
+            // Don't reveal if email exists or not for security
+            return res.json({
+                success: true,
+                message: 'If an account with this email exists, you will receive a password reset link.'
+            });
+        }
+        
+        // Generate a temporary reset token (valid for 1 hour)
+        const resetToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        const resetExpiry = Date.now() + 3600000; // 1 hour from now
+        
+        // Update user with reset token
+        user.resetToken = resetToken;
+        user.resetExpiry = resetExpiry;
+        
+        // Ensure data directory exists
+        const dataDir = path.join(__dirname, 'data');
+        if (!fs.existsSync(dataDir)) {
+            fs.mkdirSync(dataDir, { recursive: true });
+        }
+        
+        fs.writeFileSync(usersPath, JSON.stringify(users, null, 2));
+        
+        // Send password reset email
+        try {
+            const { sendAccountEmail } = require('./services/emailService');
+            const resetLink = `http://localhost:3000/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
+            
+            await sendAccountEmail({
+                to: email,
+                subject: 'TalentSync - Password Reset Request',
+                text: `Hello,\n\nYou requested a password reset for your TalentSync account.\n\nClick the link below to reset your password:\n${resetLink}\n\nThis link will expire in 1 hour.\n\nIf you didn't request this, please ignore this email.\n\nBest regards,\nTalentSync Team`,
+                html: `
+                    <h2>Password Reset Request</h2>
+                    <p>Hello,</p>
+                    <p>You requested a password reset for your TalentSync account.</p>
+                    <p><a href="${resetLink}" style="background: #8b5cf6; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Reset Your Password</a></p>
+                    <p><small>This link will expire in 1 hour.</small></p>
+                    <p>If you didn't request this, please ignore this email.</p>
+                    <br>
+                    <p>Best regards,<br>TalentSync Team</p>
+                `
+            });
+            console.log('📧 Password reset email sent to:', email);
+        } catch (emailError) {
+            console.error('❌ Failed to send password reset email:', emailError.message);
+            return res.status(500).json({
+                success: false,
+                message: 'Unable to send password reset email. Please try again later.'
+            });
+        }
+        
+        res.json({
+            success: true,
+            message: 'Password reset link has been sent to your email address.'
+        });
+        
+    } catch (error) {
+        console.error('Forgot password error:', error);
+        res.status(500).json({ success: false, message: 'Server error. Please try again later.' });
+    }
+});
+
+// Reset password route
+app.post('/auth/reset-password', async (req, res) => {
+    const { token, email, newPassword } = req.body;
+    
+    try {
+        const usersPath = path.join(__dirname, 'data', 'users.json');
+        let users = [];
+        
+        if (fs.existsSync(usersPath)) {
+            users = JSON.parse(fs.readFileSync(usersPath, 'utf8'));
+        }
+        
+        const user = users.find(u => u.email === email && u.resetToken === token);
+        
+        if (!user) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid or expired reset token.'
+            });
+        }
+        
+        // Check if token is expired
+        if (!user.resetExpiry || Date.now() > user.resetExpiry) {
+            return res.status(400).json({
+                success: false,
+                message: 'Reset token has expired. Please request a new one.'
+            });
+        }
+        
+        // Hash new password
+        const bcrypt = require('bcrypt');
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        
+        // Update user password and remove reset token
+        user.password = hashedPassword;
+        delete user.resetToken;
+        delete user.resetExpiry;
+        
+        // Ensure data directory exists
+        const dataDir = path.join(__dirname, 'data');
+        if (!fs.existsSync(dataDir)) {
+            fs.mkdirSync(dataDir, { recursive: true });
+        }
+        
+        fs.writeFileSync(usersPath, JSON.stringify(users, null, 2));
+        
+        res.json({
+            success: true,
+            message: 'Password has been reset successfully. You can now log in with your new password.'
+        });
+        
+    } catch (error) {
+        console.error('Reset password error:', error);
+        res.status(500).json({ success: false, message: 'Server error. Please try again later.' });
     }
 });
 
