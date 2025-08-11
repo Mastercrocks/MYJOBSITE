@@ -143,6 +143,22 @@
     </div>
 
     <script>
+        // Check if already authenticated
+        function checkExistingAuth() {
+            const adminSession = localStorage.getItem('adminSession');
+            const loginTime = localStorage.getItem('adminLoginTime');
+            const currentTime = Date.now();
+            
+            // Session expires after 8 hours (8 * 60 * 60 * 1000)
+            if (adminSession && loginTime && (currentTime - loginTime) <= 28800000) {
+                window.location.href = '/admin/dashboard.html';
+                return;
+            }
+        }
+        
+        // Check on page load
+        checkExistingAuth();
+        
         document.getElementById('pinForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
@@ -151,8 +167,8 @@
             
             if (pin === '251996') {
                 // Correct PIN
-                localStorage.setItem('adminAuth', 'authenticated');
-                localStorage.setItem('adminTime', Date.now());
+                localStorage.setItem('adminSession', 'authenticated');
+                localStorage.setItem('adminLoginTime', Date.now());
                 window.location.href = '/admin/dashboard.html';
             } else {
                 // Wrong PIN
