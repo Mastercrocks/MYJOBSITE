@@ -13,19 +13,7 @@ app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Serve static files
-app.use(express.static(path.join(__dirname, 'Public'), {
-    caseSensitive: false,
-    dotfiles: 'deny'
-}));
-
-// Serve admin static files
-app.use('/admin', express.static(path.join(__dirname, 'Public/admin'), {
-    caseSensitive: false,
-    dotfiles: 'deny'
-}));
-
-// Basic API routes
+// API routes FIRST (before static files)
 app.get('/api/fresh', (req, res) => {
     try {
         const scrapedJobsPath = path.join(__dirname, 'data', 'scraped_jobs.json');
@@ -77,6 +65,73 @@ app.get('/api/stats', (req, res) => {
         res.json({ total: 0, linkedin: 0, indeed: 0, ziprecruiter: 0, google: 0 });
     }
 });
+
+// Page routes BEFORE static files
+app.get('/jobs', (req, res) => {
+    res.sendFile(path.join(__dirname, 'Public', 'jobs.html'));
+});
+
+app.get('/employers', (req, res) => {
+    res.sendFile(path.join(__dirname, 'Public', 'employers.html'));
+});
+
+app.get('/post-job', (req, res) => {
+    res.sendFile(path.join(__dirname, 'Public', 'employers.html'));
+});
+
+app.get('/blog', (req, res) => {
+    res.sendFile(path.join(__dirname, 'Public', 'blog.html'));
+});
+
+app.get('/login', (req, res) => {
+    res.sendFile(path.join(__dirname, 'Public', 'login.html'));
+});
+
+app.get('/register', (req, res) => {
+    res.sendFile(path.join(__dirname, 'Public', 'register.html'));
+});
+
+app.get('/privacy', (req, res) => {
+    res.sendFile(path.join(__dirname, 'Public', 'privacy.html'));
+});
+
+app.get('/terms', (req, res) => {
+    res.sendFile(path.join(__dirname, 'Public', 'terms.html'));
+});
+
+app.get('/contact', (req, res) => {
+    res.sendFile(path.join(__dirname, 'Public', 'contact.html'));
+});
+
+app.get('/resumes', (req, res) => {
+    res.sendFile(path.join(__dirname, 'Public', 'resumes.html'));
+});
+
+app.get('/dashboard', (req, res) => {
+    res.sendFile(path.join(__dirname, 'Public', 'dashboard.html'));
+});
+
+// Employer dashboard
+app.get('/employer/dashboard', (req, res) => {
+    res.sendFile(path.join(__dirname, 'Public', 'employer', 'dashboard.html'));
+});
+
+// Jobseeker dashboard  
+app.get('/jobseeker/dashboard', (req, res) => {
+    res.sendFile(path.join(__dirname, 'Public', 'jobseeker', 'dashboard.html'));
+});
+
+// Serve static files AFTER routes
+app.use(express.static(path.join(__dirname, 'Public'), {
+    caseSensitive: false,
+    dotfiles: 'deny'
+}));
+
+// Serve admin static files
+app.use('/admin', express.static(path.join(__dirname, 'Public/admin'), {
+    caseSensitive: false,
+    dotfiles: 'deny'
+}));
 
 // Basic auth routes
 app.post('/auth/login', (req, res) => {
@@ -149,61 +204,6 @@ app.post('/auth/register', (req, res) => {
         console.error('Registration error:', error);
         res.status(500).json({ success: false, message: 'Server error' });
     }
-});
-
-// Page routes
-app.get('/jobs', (req, res) => {
-    res.sendFile(path.join(__dirname, 'Public', 'jobs.html'));
-});
-
-app.get('/employers', (req, res) => {
-    res.sendFile(path.join(__dirname, 'Public', 'employers.html'));
-});
-
-app.get('/post-job', (req, res) => {
-    res.sendFile(path.join(__dirname, 'Public', 'employers.html'));
-});
-
-app.get('/login', (req, res) => {
-    res.sendFile(path.join(__dirname, 'Public', 'login.html'));
-});
-
-app.get('/register', (req, res) => {
-    res.sendFile(path.join(__dirname, 'Public', 'register.html'));
-});
-
-app.get('/privacy', (req, res) => {
-    res.sendFile(path.join(__dirname, 'Public', 'privacy.html'));
-});
-
-app.get('/terms', (req, res) => {
-    res.sendFile(path.join(__dirname, 'Public', 'terms.html'));
-});
-
-app.get('/contact', (req, res) => {
-    res.sendFile(path.join(__dirname, 'Public', 'contact.html'));
-});
-
-app.get('/blog', (req, res) => {
-    res.sendFile(path.join(__dirname, 'Public', 'blog.html'));
-});
-
-app.get('/resumes', (req, res) => {
-    res.sendFile(path.join(__dirname, 'Public', 'resumes.html'));
-});
-
-app.get('/dashboard', (req, res) => {
-    res.sendFile(path.join(__dirname, 'Public', 'dashboard.html'));
-});
-
-// Employer dashboard
-app.get('/employer/dashboard', (req, res) => {
-    res.sendFile(path.join(__dirname, 'Public', 'employer', 'dashboard.html'));
-});
-
-// Jobseeker dashboard  
-app.get('/jobseeker/dashboard', (req, res) => {
-    res.sendFile(path.join(__dirname, 'Public', 'jobseeker', 'dashboard.html'));
 });
 
 // Initialize job scraping if enabled
