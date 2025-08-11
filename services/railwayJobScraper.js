@@ -209,20 +209,26 @@ class RailwayJobScraper {
                 existingJobs = JSON.parse(existingData);
             } catch (err) {
                 // File doesn't exist yet, start fresh
+                console.log('📝 No existing jobs file found, starting fresh');
             }
 
             // Merge with new jobs (avoid duplicates)
             const allJobs = [...existingJobs, ...jobs];
             const uniqueAllJobs = this.removeDuplicates(allJobs);
 
-            // Keep only recent jobs (last 30 days)
-            const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+            // Keep jobs from last 90 days instead of 30 (to accumulate more)
+            const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
             const recentJobs = uniqueAllJobs.filter(job => 
-                new Date(job.posted_date || job.scraped_at) > thirtyDaysAgo
+                new Date(job.posted_date || job.scraped_at) > ninetyDaysAgo
             );
 
-            await fs.writeFile(this.jobsFilePath, JSON.stringify(recentJobs, null, 2));
-            console.log(`💾 Saved ${recentJobs.length} jobs to database`);
+            // Limit to max 200 jobs to prevent excessive storage
+            const finalJobs = recentJobs
+                .sort((a, b) => new Date(b.scraped_at) - new Date(a.scraped_at))
+                .slice(0, 200);
+
+            await fs.writeFile(this.jobsFilePath, JSON.stringify(finalJobs, null, 2));
+            console.log(`💾 Saved ${finalJobs.length} jobs to database (${jobs.length} new, ${existingJobs.length} existing)`);
             
         } catch (error) {
             console.error('❌ Error saving jobs:', error);
