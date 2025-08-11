@@ -442,27 +442,42 @@
 
             if (hasError) return;
 
-            // For now, just store the user info locally and redirect
-            // Later you can add real backend authentication
-            
             // Show loading
             document.getElementById('loadingMessage').style.display = 'block';
 
-            // Simulate API call delay
-            setTimeout(() => {
-                // Store user info in localStorage
-                const user = {
-                    name: email.split('@')[0], // Use part of email as name for now
-                    email: email,
-                    id: Date.now() // Simple ID for now
-                };
-                
-                localStorage.setItem('user', JSON.stringify(user));
-                localStorage.setItem('isLoggedIn', 'true');
-                
-                // Redirect to home page (or dashboard if you create one)
-                window.location.href = '/';
-            }, 1000);
+            try {
+                const response = await fetch('/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Store user info in localStorage
+                    localStorage.setItem('user', JSON.stringify(result.user));
+                    localStorage.setItem('isLoggedIn', 'true');
+                    
+                    // Redirect based on user type
+                    if (result.user.userType === 'employer') {
+                        window.location.href = '/employer/dashboard.html';
+                    } else if (result.user.userType === 'admin') {
+                        window.location.href = '/admin/dashboard.html';
+                    } else {
+                        window.location.href = '/jobseeker/dashboard.html';
+                    }
+                } else {
+                    showError('signinPassword', result.message || 'Login failed');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showError('signinPassword', 'Network error. Please try again.');
+            } finally {
+                document.getElementById('loadingMessage').style.display = 'none';
+            }
         });
 
         // Sign Up Form

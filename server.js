@@ -5,6 +5,7 @@ const express = require('express');
 const compression = require('compression');
 const path = require('path');
 const fs = require('fs');
+const multer = require('multer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -158,6 +159,9 @@ app.use('/admin', express.static(path.join(__dirname, 'Public/admin'), {
 app.post('/auth/login', async (req, res) => {
     const { email, password } = req.body;
     
+    console.log('🔐 Login attempt for email:', email);
+    console.log('📝 Password received (length):', password ? password.length : 'no password');
+    
     try {
         const usersPath = path.join(__dirname, 'data', 'users.json');
         let users = [];
@@ -166,21 +170,32 @@ app.post('/auth/login', async (req, res) => {
             users = JSON.parse(fs.readFileSync(usersPath, 'utf8'));
         }
         
+        console.log('👥 Total users in database:', users.length);
+        
         const user = users.find(u => u.email === email);
         
         if (user) {
+            console.log('✅ User found:', user.email, 'UserType:', user.userType);
+            console.log('🔑 Stored password type:', user.password.startsWith('$2b$') ? 'bcrypt hashed' : 'plaintext');
+            console.log('🔑 Stored password length:', user.password.length);
+            
             // Check if password is hashed (starts with $2b$) or plaintext
             let isValidPassword = false;
             if (user.password.startsWith('$2b$')) {
                 // Hashed password - use bcrypt
                 const bcrypt = require('bcrypt');
+                console.log('🔓 Using bcrypt comparison...');
                 isValidPassword = await bcrypt.compare(password, user.password);
+                console.log('🔓 Bcrypt comparison result:', isValidPassword);
             } else {
                 // Plaintext password - direct comparison
+                console.log('🔓 Using plaintext comparison...');
                 isValidPassword = user.password === password;
+                console.log('🔓 Plaintext comparison result:', isValidPassword);
             }
             
             if (isValidPassword) {
+                console.log('✅ Login successful for:', email);
                 res.json({
                     success: true,
                     user: { 
@@ -191,9 +206,11 @@ app.post('/auth/login', async (req, res) => {
                     }
                 });
             } else {
+                console.log('❌ Invalid password for:', email);
                 res.status(401).json({ success: false, message: 'Invalid credentials' });
             }
         } else {
+            console.log('❌ User not found:', email);
             res.status(401).json({ success: false, message: 'Invalid credentials' });
         }
     } catch (error) {
@@ -417,6 +434,333 @@ app.post('/auth/reset-password', async (req, res) => {
     } catch (error) {
         console.error('Reset password error:', error);
         res.status(500).json({ success: false, message: 'Server error. Please try again later.' });
+    }
+});
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        const uploadDir = path.join(__dirname, 'uploads', 'resumes');
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        cb(null, uploadDir);
+    },
+    filename: function (req, file, cb) {
+        // Create unique filename with timestamp
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, 'resume-' + uniqueSuffix + path.extname(file.originalname));
+    }
+});
+
+const fileFilter = (req, file, cb) => {
+    // Accept only PDF, DOC, and DOCX files
+    if (file.mimetype === 'application/pdf' || 
+        file.mimetype === 'application/msword' || 
+        file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+        cb(null, true);
+    } else {
+        cb(new Error('Only PDF, DOC, and DOCX files are allowed!'), false);
+    }
+};
+
+const upload = multer({ 
+    storage: storage,
+    fileFilter: fileFilter,
+    limits: {
+        fileSize: 5 * 1024 * 1024 // 5MB limit
+    }
+});
+
+// API Routes for Dashboard Functionality
+
+// Get user profile
+app.get('/api/profile/:userId', (req, res) => {
+    try {
+        const userId = req.params.userId;
+        const usersPath = path.join(__dirname, 'data', 'users.json');
+        
+        if (!fs.existsSync(usersPath)) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+        
+        const users = JSON.parse(fs.readFileSync(usersPath, 'utf8'));
+        const user = users.find(u => u.id.toString() === userId);
+        
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+        
+        // Don't send password
+        const { password, ...userProfile } = user;
+        res.json({ success: true, profile: userProfile });
+        
+    } catch (error) {
+        console.error('Get profile error:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+// Update user profile
+app.put('/api/profile/:userId', (req, res) => {
+    try {
+        const userId = req.params.userId;
+        const { name, email, phone, location, skills, bio } = req.body;
+        const usersPath = path.join(__dirname, 'data', 'users.json');
+        
+        if (!fs.existsSync(usersPath)) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+        
+        let users = JSON.parse(fs.readFileSync(usersPath, 'utf8'));
+        const userIndex = users.findIndex(u => u.id.toString() === userId);
+        
+        if (userIndex === -1) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+        
+        // Update user data
+        users[userIndex] = {
+            ...users[userIndex],
+            name: name || users[userIndex].name,
+            email: email || users[userIndex].email,
+            phone: phone || users[userIndex].phone,
+            location: location || users[userIndex].location,
+            skills: skills || users[userIndex].skills,
+            bio: bio || users[userIndex].bio,
+            updatedAt: new Date().toISOString()
+        };
+        
+        fs.writeFileSync(usersPath, JSON.stringify(users, null, 2));
+        
+        // Don't send password back
+        const { password, ...updatedProfile } = users[userIndex];
+        res.json({ success: true, profile: updatedProfile });
+        
+    } catch (error) {
+        console.error('Update profile error:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+// Upload resume
+app.post('/api/resume/upload/:userId', upload.single('resume'), (req, res) => {
+    try {
+        const userId = req.params.userId;
+        
+        if (!req.file) {
+            return res.status(400).json({ success: false, message: 'No file uploaded' });
+        }
+        
+        const usersPath = path.join(__dirname, 'data', 'users.json');
+        
+        if (!fs.existsSync(usersPath)) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+        
+        let users = JSON.parse(fs.readFileSync(usersPath, 'utf8'));
+        const userIndex = users.findIndex(u => u.id.toString() === userId);
+        
+        if (userIndex === -1) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+        
+        // Delete old resume if exists
+        if (users[userIndex].resumePath) {
+            const oldResumePath = path.join(__dirname, users[userIndex].resumePath);
+            if (fs.existsSync(oldResumePath)) {
+                fs.unlinkSync(oldResumePath);
+            }
+        }
+        
+        // Update user with new resume info
+        const resumePath = path.relative(__dirname, req.file.path);
+        users[userIndex].resumePath = resumePath;
+        users[userIndex].resumeOriginalName = req.file.originalname;
+        users[userIndex].resumeUploadDate = new Date().toISOString();
+        
+        fs.writeFileSync(usersPath, JSON.stringify(users, null, 2));
+        
+        res.json({ 
+            success: true, 
+            message: 'Resume uploaded successfully',
+            resumeInfo: {
+                originalName: req.file.originalname,
+                uploadDate: users[userIndex].resumeUploadDate
+            }
+        });
+        
+    } catch (error) {
+        console.error('Resume upload error:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+// Get user applications
+app.get('/api/applications/:userId', (req, res) => {
+    try {
+        const userId = req.params.userId;
+        const applicationsPath = path.join(__dirname, 'data', 'applications.json');
+        
+        let applications = [];
+        if (fs.existsSync(applicationsPath)) {
+            applications = JSON.parse(fs.readFileSync(applicationsPath, 'utf8'));
+        }
+        
+        const userApplications = applications.filter(app => app.userId.toString() === userId);
+        res.json({ success: true, applications: userApplications });
+        
+    } catch (error) {
+        console.error('Get applications error:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+// Apply for a job
+app.post('/api/jobs/:jobId/apply', (req, res) => {
+    try {
+        const jobId = req.params.jobId;
+        const { userId, coverLetter } = req.body;
+        
+        const applicationsPath = path.join(__dirname, 'data', 'applications.json');
+        let applications = [];
+        
+        if (fs.existsSync(applicationsPath)) {
+            applications = JSON.parse(fs.readFileSync(applicationsPath, 'utf8'));
+        }
+        
+        // Check if user already applied for this job
+        const existingApplication = applications.find(app => 
+            app.userId.toString() === userId && app.jobId.toString() === jobId
+        );
+        
+        if (existingApplication) {
+            return res.status(400).json({ success: false, message: 'You have already applied for this job' });
+        }
+        
+        // Create new application
+        const newApplication = {
+            id: Date.now(),
+            userId: parseInt(userId),
+            jobId: parseInt(jobId),
+            coverLetter: coverLetter || '',
+            appliedAt: new Date().toISOString(),
+            status: 'applied'
+        };
+        
+        applications.push(newApplication);
+        fs.writeFileSync(applicationsPath, JSON.stringify(applications, null, 2));
+        
+        res.json({ success: true, message: 'Application submitted successfully' });
+        
+    } catch (error) {
+        console.error('Job application error:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+// Get saved jobs
+app.get('/api/saved-jobs/:userId', (req, res) => {
+    try {
+        const userId = req.params.userId;
+        const savedJobsPath = path.join(__dirname, 'data', 'saved_jobs.json');
+        
+        let savedJobs = [];
+        if (fs.existsSync(savedJobsPath)) {
+            savedJobs = JSON.parse(fs.readFileSync(savedJobsPath, 'utf8'));
+        }
+        
+        const userSavedJobs = savedJobs.filter(saved => saved.userId.toString() === userId);
+        res.json({ success: true, savedJobs: userSavedJobs });
+        
+    } catch (error) {
+        console.error('Get saved jobs error:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+// Save/unsave a job
+app.post('/api/jobs/:jobId/save', (req, res) => {
+    try {
+        const jobId = req.params.jobId;
+        const { userId } = req.body;
+        
+        const savedJobsPath = path.join(__dirname, 'data', 'saved_jobs.json');
+        let savedJobs = [];
+        
+        if (fs.existsSync(savedJobsPath)) {
+            savedJobs = JSON.parse(fs.readFileSync(savedJobsPath, 'utf8'));
+        }
+        
+        // Check if job is already saved
+        const existingIndex = savedJobs.findIndex(saved => 
+            saved.userId.toString() === userId && saved.jobId.toString() === jobId
+        );
+        
+        if (existingIndex !== -1) {
+            // Remove from saved jobs
+            savedJobs.splice(existingIndex, 1);
+            fs.writeFileSync(savedJobsPath, JSON.stringify(savedJobs, null, 2));
+            res.json({ success: true, message: 'Job removed from saved jobs', saved: false });
+        } else {
+            // Add to saved jobs
+            const newSavedJob = {
+                id: Date.now(),
+                userId: parseInt(userId),
+                jobId: parseInt(jobId),
+                savedAt: new Date().toISOString()
+            };
+            
+            savedJobs.push(newSavedJob);
+            fs.writeFileSync(savedJobsPath, JSON.stringify(savedJobs, null, 2));
+            res.json({ success: true, message: 'Job saved successfully', saved: true });
+        }
+        
+    } catch (error) {
+        console.error('Save job error:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+// Get dashboard statistics
+app.get('/api/dashboard-stats/:userId', (req, res) => {
+    try {
+        const userId = req.params.userId;
+        
+        // Get applications count
+        const applicationsPath = path.join(__dirname, 'data', 'applications.json');
+        let applications = [];
+        if (fs.existsSync(applicationsPath)) {
+            applications = JSON.parse(fs.readFileSync(applicationsPath, 'utf8'));
+        }
+        const userApplications = applications.filter(app => app.userId.toString() === userId);
+        
+        // Get saved jobs count
+        const savedJobsPath = path.join(__dirname, 'data', 'saved_jobs.json');
+        let savedJobs = [];
+        if (fs.existsSync(savedJobsPath)) {
+            savedJobs = JSON.parse(fs.readFileSync(savedJobsPath, 'utf8'));
+        }
+        const userSavedJobs = savedJobs.filter(saved => saved.userId.toString() === userId);
+        
+        // Count interviews (applications with interview status)
+        const interviews = userApplications.filter(app => app.status === 'interview' || app.status === 'interviewed');
+        
+        // Calculate profile views (mock data for now)
+        const profileViews = Math.floor(Math.random() * 50) + userApplications.length * 3;
+        
+        const stats = {
+            applied: userApplications.length,
+            saved: userSavedJobs.length,
+            interviews: interviews.length,
+            profileViews: profileViews
+        };
+        
+        res.json({ success: true, stats });
+        
+    } catch (error) {
+        console.error('Get dashboard stats error:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
     }
 });
 
