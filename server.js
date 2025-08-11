@@ -144,7 +144,7 @@ app.use('/admin', express.static(path.join(__dirname, 'Public/admin'), {
 }));
 
 // Basic auth routes
-app.post('/auth/login', (req, res) => {
+app.post('/auth/login', async (req, res) => {
     const { email, password } = req.body;
     
     try {
@@ -155,13 +155,33 @@ app.post('/auth/login', (req, res) => {
             users = JSON.parse(fs.readFileSync(usersPath, 'utf8'));
         }
         
-        const user = users.find(u => u.email === email && u.password === password);
+        const user = users.find(u => u.email === email);
         
         if (user) {
-            res.json({
-                success: true,
-                user: { id: user.id, email: user.email, name: user.name }
-            });
+            // Check if password is hashed (starts with $2b$) or plaintext
+            let isValidPassword = false;
+            if (user.password.startsWith('$2b$')) {
+                // Hashed password - use bcrypt
+                const bcrypt = require('bcrypt');
+                isValidPassword = await bcrypt.compare(password, user.password);
+            } else {
+                // Plaintext password - direct comparison
+                isValidPassword = user.password === password;
+            }
+            
+            if (isValidPassword) {
+                res.json({
+                    success: true,
+                    user: { 
+                        id: user.id, 
+                        email: user.email, 
+                        name: user.name, 
+                        userType: user.userType 
+                    }
+                });
+            } else {
+                res.status(401).json({ success: false, message: 'Invalid credentials' });
+            }
         } else {
             res.status(401).json({ success: false, message: 'Invalid credentials' });
         }
@@ -171,8 +191,8 @@ app.post('/auth/login', (req, res) => {
     }
 });
 
-app.post('/auth/register', (req, res) => {
-    const { name, email, password } = req.body;
+app.post('/auth/register', async (req, res) => {
+    const { name, email, password, userType = 'job_seeker', companyName } = req.body;
     
     try {
         const usersPath = path.join(__dirname, 'data', 'users.json');
@@ -187,12 +207,18 @@ app.post('/auth/register', (req, res) => {
             return res.status(400).json({ success: false, message: 'User already exists' });
         }
         
+        // Hash password
+        const bcrypt = require('bcrypt');
+        const hashedPassword = await bcrypt.hash(password, 10);
+        
         // Create new user
         const newUser = {
             id: Date.now().toString(),
             name,
             email,
-            password,
+            password: hashedPassword,
+            userType,
+            companyName: companyName || null,
             createdAt: new Date().toISOString()
         };
         
@@ -206,9 +232,36 @@ app.post('/auth/register', (req, res) => {
         
         fs.writeFileSync(usersPath, JSON.stringify(users, null, 2));
         
+        // Send welcome email for employers
+        if (userType === 'employer') {
+            try {
+                const { sendAccountEmail } = require('./services/emailService');
+                await sendAccountEmail({
+                    to: email,
+                    subject: 'Welcome to TalentSync - Employer Account Created',
+                    text: `Welcome to TalentSync!\n\nYour employer account has been created successfully.\n\nEmail: ${email}\nCompany: ${companyName || 'Not specified'}\n\nYou can now log in at http://localhost:3000/login\n\nBest regards,\nTalentSync Team`,
+                    html: `
+                        <h2>Welcome to TalentSync!</h2>
+                        <p>Your employer account has been created successfully.</p>
+                        <ul>
+                            <li><strong>Email:</strong> ${email}</li>
+                            <li><strong>Company:</strong> ${companyName || 'Not specified'}</li>
+                        </ul>
+                        <p><a href="http://localhost:3000/login">Click here to log in</a></p>
+                        <p>Best regards,<br>TalentSync Team</p>
+                    `
+                });
+                console.log('📧 Welcome email sent to:', email);
+            } catch (emailError) {
+                console.error('❌ Failed to send welcome email:', emailError.message);
+                // Continue registration even if email fails
+            }
+        }
+        
         res.json({
             success: true,
-            user: { id: newUser.id, email: newUser.email, name: newUser.name }
+            message: `${userType === 'employer' ? 'Employer' : 'User'} account created successfully${userType === 'employer' ? '. Welcome email sent!' : ''}`,
+            user: { id: newUser.id, email: newUser.email, name: newUser.name, userType: newUser.userType }
         });
     } catch (error) {
         console.error('Registration error:', error);
