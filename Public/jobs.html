@@ -912,26 +912,8 @@
         }
 
         function showJobStats(sources) {
-            if (!sources) return;
-            
-            // Add stats display to the top of the jobs container
-            const statsDiv = document.createElement('div');
-            statsDiv.className = 'job-stats alert alert-info';
-            statsDiv.style.cssText = 'margin-bottom: 20px; padding: 10px; background: #e3f2fd; border-left: 4px solid #2196f3; font-size: 14px;';
-            statsDiv.innerHTML = `
-                <strong>📊 Fresh Job Data:</strong> 
-                ${sources.scraped || 0} recently scraped + ${sources.api || 0} API jobs = ${(sources.scraped || 0) + (sources.api || 0)} total opportunities
-                <small style="display: block; color: #666; margin-top: 5px;">
-                    ✨ Automatically updated every 2 hours with entry-level positions for college students
-                </small>
-            `;
-            
-            const container = document.getElementById('jobsContainer');
-            // Remove any existing stats
-            const existingStats = container.querySelector('.job-stats');
-            if (existingStats) existingStats.remove();
-            
-            container.insertBefore(statsDiv, container.firstChild);
+            // Stats display hidden for cleaner user interface
+            return;
         }
 
         // Event listeners

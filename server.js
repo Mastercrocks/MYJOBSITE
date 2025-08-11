@@ -80,7 +80,13 @@ app.get('/post-job', (req, res) => {
 });
 
 app.get('/blog', (req, res) => {
-    res.sendFile(path.join(__dirname, 'Public', 'blog.html'));
+    console.log('📝 Blog route accessed');
+    try {
+        res.sendFile(path.join(__dirname, 'Public', 'blog.html'));
+    } catch (error) {
+        console.error('❌ Blog route error:', error);
+        res.status(500).send('Blog page error: ' + error.message);
+    }
 });
 
 app.get('/login', (req, res) => {
