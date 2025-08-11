@@ -80,9 +80,13 @@ app.get('/post-job', (req, res) => {
 });
 
 app.get('/blog', (req, res) => {
-    console.log('📝 Blog route accessed');
+    console.log('📝 Blog route accessed from:', req.get('User-Agent'));
+    console.log('📝 Referer:', req.get('Referer'));
+    console.log('📝 Full URL:', req.url);
     try {
-        res.sendFile(path.join(__dirname, 'Public', 'blog.html'));
+        const blogPath = path.join(__dirname, 'Public', 'blog.html');
+        console.log('📝 Serving blog from:', blogPath);
+        res.sendFile(blogPath);
     } catch (error) {
         console.error('❌ Blog route error:', error);
         res.status(500).send('Blog page error: ' + error.message);
