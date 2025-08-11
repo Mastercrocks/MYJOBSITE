@@ -4,8 +4,9 @@
   "description": "SEO-optimized job board platform",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
+    "start": "node init-data.js && node server.js",
+    "dev": "node server.js",
+    "init": "node init-data.js"
   },
   "keywords": [
     "jobs",
