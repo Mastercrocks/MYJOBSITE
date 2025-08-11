@@ -12,8 +12,14 @@ yarn-error.log*
 .env.production.local
 
 # Data files (contains user data and uploads)
-data/
+data/users.json
+data/employers.json
 uploads/
+
+# Allow sample job data for deployment
+!data/scraped_jobs.json
+!data/jobs.json
+!data/indeed_jobs.json
 
 # Logs
 logs
