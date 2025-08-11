@@ -133,6 +133,10 @@ app.get('/forgot-password', (req, res) => {
     res.sendFile(path.join(__dirname, 'Public', 'forgot-password.html'));
 });
 
+app.get('/careers', (req, res) => {
+    res.sendFile(path.join(__dirname, 'Public', 'careers.html'));
+});
+
 // Employer dashboard
 app.get('/employer/dashboard', (req, res) => {
     res.sendFile(path.join(__dirname, 'Public', 'employer', 'dashboard.html'));
@@ -473,6 +477,176 @@ const upload = multer({
 });
 
 // API Routes for Dashboard Functionality
+
+// Career application endpoint
+app.post('/api/careers/apply', upload.single('resume'), async (req, res) => {
+    try {
+        const {
+            firstName, lastName, email, phone, location, timezone,
+            position, experience, skills, linkedIn, portfolio,
+            salary, availability, coverLetter
+        } = req.body;
+
+        if (!req.file) {
+            return res.status(400).json({ success: false, message: 'Resume file is required' });
+        }
+
+        // Validate required fields
+        const requiredFields = { firstName, lastName, email, location, timezone, position, experience, skills, availability, coverLetter };
+        for (const [field, value] of Object.entries(requiredFields)) {
+            if (!value || !value.trim()) {
+                return res.status(400).json({ success: false, message: `${field} is required` });
+            }
+        }
+
+        // Create career application object
+        const careerApplication = {
+            id: Date.now(),
+            firstName: firstName.trim(),
+            lastName: lastName.trim(),
+            email: email.trim().toLowerCase(),
+            phone: phone?.trim() || '',
+            location: location.trim(),
+            timezone: timezone.trim(),
+            position: position.trim(),
+            experience: experience.trim(),
+            skills: skills.trim(),
+            linkedIn: linkedIn?.trim() || '',
+            portfolio: portfolio?.trim() || '',
+            salary: salary?.trim() || '',
+            availability: availability.trim(),
+            coverLetter: coverLetter.trim(),
+            resumePath: path.relative(__dirname, req.file.path),
+            resumeOriginalName: req.file.originalname,
+            appliedAt: new Date().toISOString(),
+            status: 'pending',
+            reviewed: false
+        };
+
+        // Save to career applications file
+        const careerApplicationsPath = path.join(__dirname, 'data', 'career_applications.json');
+        let careerApplications = [];
+        
+        if (fs.existsSync(careerApplicationsPath)) {
+            careerApplications = JSON.parse(fs.readFileSync(careerApplicationsPath, 'utf8'));
+        }
+
+        careerApplications.push(careerApplication);
+        fs.writeFileSync(careerApplicationsPath, JSON.stringify(careerApplications, null, 2));
+
+        // Send email notification
+        try {
+            const emailService = require('./services/emailService');
+            
+            const emailContent = `
+                <h2>New Career Application Received</h2>
+                <p><strong>Name:</strong> ${firstName} ${lastName}</p>
+                <p><strong>Email:</strong> ${email}</p>
+                <p><strong>Phone:</strong> ${phone || 'Not provided'}</p>
+                <p><strong>Location:</strong> ${location}</p>
+                <p><strong>Timezone:</strong> ${timezone}</p>
+                <p><strong>Position:</strong> ${position}</p>
+                <p><strong>Experience:</strong> ${experience}</p>
+                <p><strong>Skills:</strong> ${skills}</p>
+                <p><strong>LinkedIn:</strong> ${linkedIn || 'Not provided'}</p>
+                <p><strong>Portfolio:</strong> ${portfolio || 'Not provided'}</p>
+                <p><strong>Expected Salary:</strong> ${salary || 'Not specified'}</p>
+                <p><strong>Availability:</strong> ${availability}</p>
+                <p><strong>Cover Letter:</strong></p>
+                <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 10px 0;">
+                    ${coverLetter.replace(/\n/g, '<br>')}
+                </div>
+                <p><strong>Resume:</strong> ${req.file.originalname} (saved on server)</p>
+                <p><strong>Application ID:</strong> ${careerApplication.id}</p>
+                <p><strong>Applied:</strong> ${new Date().toLocaleString()}</p>
+                
+                <p style="margin-top: 20px;">
+                    <a href="https://talentsync.shop/admin/dashboard.html" style="background: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+                        View in Admin Dashboard
+                    </a>
+                </p>
+            `;
+
+            await emailService.sendEmail(
+                'talentsync@talentsync.shop',
+                `New Career Application - ${position}`,
+                emailContent
+            );
+
+            console.log('✅ Career application email sent successfully');
+        } catch (emailError) {
+            console.error('❌ Failed to send career application email:', emailError);
+            // Don't fail the whole request if email fails
+        }
+
+        res.json({
+            success: true,
+            message: 'Application submitted successfully',
+            applicationId: careerApplication.id
+        });
+
+    } catch (error) {
+        console.error('Career application error:', error);
+        res.status(500).json({ success: false, message: 'Server error. Please try again.' });
+    }
+});
+
+// Get career applications for admin
+app.get('/api/admin/career-applications', (req, res) => {
+    try {
+        const careerApplicationsPath = path.join(__dirname, 'data', 'career_applications.json');
+        let careerApplications = [];
+        
+        if (fs.existsSync(careerApplicationsPath)) {
+            careerApplications = JSON.parse(fs.readFileSync(careerApplicationsPath, 'utf8'));
+        }
+
+        // Sort by most recent first
+        careerApplications.sort((a, b) => new Date(b.appliedAt) - new Date(a.appliedAt));
+
+        res.json({ success: true, applications: careerApplications });
+    } catch (error) {
+        console.error('Get career applications error:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+// Update career application status
+app.put('/api/admin/career-applications/:id', (req, res) => {
+    try {
+        const applicationId = req.params.id;
+        const { status, notes } = req.body;
+
+        const careerApplicationsPath = path.join(__dirname, 'data', 'career_applications.json');
+        
+        if (!fs.existsSync(careerApplicationsPath)) {
+            return res.status(404).json({ success: false, message: 'No applications found' });
+        }
+
+        let careerApplications = JSON.parse(fs.readFileSync(careerApplicationsPath, 'utf8'));
+        const applicationIndex = careerApplications.findIndex(app => app.id.toString() === applicationId);
+
+        if (applicationIndex === -1) {
+            return res.status(404).json({ success: false, message: 'Application not found' });
+        }
+
+        // Update application
+        careerApplications[applicationIndex] = {
+            ...careerApplications[applicationIndex],
+            status: status || careerApplications[applicationIndex].status,
+            notes: notes || careerApplications[applicationIndex].notes,
+            reviewed: true,
+            reviewedAt: new Date().toISOString()
+        };
+
+        fs.writeFileSync(careerApplicationsPath, JSON.stringify(careerApplications, null, 2));
+
+        res.json({ success: true, application: careerApplications[applicationIndex] });
+    } catch (error) {
+        console.error('Update career application error:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
 
 // Get user profile
 app.get('/api/profile/:userId', (req, res) => {

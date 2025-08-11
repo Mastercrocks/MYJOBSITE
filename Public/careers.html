@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Careers - Join Our Team | TalentSync</title>
+    <meta name="description" content="Join TalentSync's remote team! We're hiring talented professionals to help build the future of job search and recruitment.">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f8fafc;
+            color: #1f2937;
+            line-height: 1.6;
+        }
+
+        .navbar {
+            background: white;
+            padding: 1rem 0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2563eb;
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: #374151;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: #2563eb;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .hero-section {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white;
+            padding: 4rem 0;
+            text-align: center;
+        }
+
+        .hero-section h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .hero-section p {
+            font-size: 1.25rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto 2rem;
+        }
+
+        .content-section {
+            padding: 4rem 0;
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 1rem;
+            color: #1f2937;
+        }
+
+        .section-subtitle {
+            font-size: 1.1rem;
+            text-align: center;
+            color: #6b7280;
+            margin-bottom: 3rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .benefits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 4rem;
+        }
+
+        .benefit-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .benefit-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .benefit-card h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #1f2937;
+        }
+
+        .benefit-card p {
+            color: #6b7280;
+        }
+
+        .application-form {
+            background: white;
+            padding: 3rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .file-upload {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-upload input[type="file"] {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-upload-label {
+            display: block;
+            padding: 0.75rem;
+            border: 2px dashed #d1d5db;
+            border-radius: 6px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #f9fafb;
+        }
+
+        .file-upload-label:hover {
+            border-color: #2563eb;
+            background: #f0f9ff;
+        }
+
+        .submit-btn {
+            background: #2563eb;
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            width: 100%;
+        }
+
+        .submit-btn:hover {
+            background: #1d4ed8;
+        }
+
+        .submit-btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .error-message {
+            color: #ef4444;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            display: none;
+        }
+
+        .success-message {
+            background: #d1fae5;
+            color: #065f46;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .footer {
+            background: #1f2937;
+            color: white;
+            padding: 3rem 0 2rem;
+            margin-top: 4rem;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            text-align: center;
+        }
+
+        .footer p {
+            opacity: 0.8;
+        }
+
+        @media (max-width: 768px) {
+            .hero-section h1 {
+                font-size: 2rem;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .container {
+                padding: 0 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="logo">TalentSync</a>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <a href="/jobs.html">Jobs</a>
+                <a href="/blog.html">Blog</a>
+                <a href="/contact.html">Contact</a>
+                <a href="/login.html">Sign In</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container">
+            <h1>Join Our Remote Team</h1>
+            <p>We're building the future of job search and recruitment. Help us connect talented professionals with amazing opportunities from anywhere in the world.</p>
+        </div>
+    </section>
+
+    <!-- Benefits Section -->
+    <section class="content-section">
+        <div class="container">
+            <h2 class="section-title">Why Work With TalentSync?</h2>
+            <p class="section-subtitle">We believe in creating an environment where talented professionals can thrive while making a meaningful impact.</p>
+            
+            <div class="benefits-grid">
+                <div class="benefit-card">
+                    <div class="benefit-icon">🌍</div>
+                    <h3>100% Remote</h3>
+                    <p>Work from anywhere in the world. We believe the best talent shouldn't be limited by geography.</p>
+                </div>
+                <div class="benefit-card">
+                    <div class="benefit-icon">⚡</div>
+                    <h3>Flexible Hours</h3>
+                    <p>Choose your working hours that fit your lifestyle and productivity patterns.</p>
+                </div>
+                <div class="benefit-card">
+                    <div class="benefit-icon">🚀</div>
+                    <h3>Growth Opportunities</h3>
+                    <p>Join a fast-growing company with opportunities to learn, grow, and advance your career.</p>
+                </div>
+                <div class="benefit-card">
+                    <div class="benefit-icon">💰</div>
+                    <h3>Competitive Pay</h3>
+                    <p>We offer competitive salaries and benefits package for all our team members.</p>
+                </div>
+                <div class="benefit-card">
+                    <div class="benefit-icon">🎯</div>
+                    <h3>Meaningful Work</h3>
+                    <p>Help thousands of job seekers find their dream careers and companies find great talent.</p>
+                </div>
+                <div class="benefit-card">
+                    <div class="benefit-icon">🌟</div>
+                    <h3>Great Culture</h3>
+                    <p>Join a supportive team that values collaboration, innovation, and work-life balance.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Application Form Section -->
+    <section class="content-section">
+        <div class="container">
+            <h2 class="section-title">Apply to Join Our Team</h2>
+            <p class="section-subtitle">Ready to make an impact? Fill out the application below and we'll get back to you soon.</p>
+            
+            <form class="application-form" id="careerForm">
+                <div class="success-message" id="successMessage">
+                    Thank you for your application! We've received your information and will review it shortly. You'll hear from us within 3-5 business days.
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="firstName">First Name *</label>
+                        <input type="text" id="firstName" name="firstName" required>
+                        <div class="error-message" id="firstNameError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="lastName">Last Name *</label>
+                        <input type="text" id="lastName" name="lastName" required>
+                        <div class="error-message" id="lastNameError"></div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="email">Email Address *</label>
+                        <input type="email" id="email" name="email" required>
+                        <div class="error-message" id="emailError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Phone Number</label>
+                        <input type="tel" id="phone" name="phone">
+                        <div class="error-message" id="phoneError"></div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="location">Location (City, Country) *</label>
+                        <input type="text" id="location" name="location" required placeholder="e.g., New York, USA">
+                        <div class="error-message" id="locationError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="timezone">Timezone *</label>
+                        <select id="timezone" name="timezone" required>
+                            <option value="">Select your timezone</option>
+                            <option value="UTC-12">UTC-12 (Baker Island)</option>
+                            <option value="UTC-11">UTC-11 (Hawaii)</option>
+                            <option value="UTC-10">UTC-10 (Alaska)</option>
+                            <option value="UTC-9">UTC-9 (Pacific)</option>
+                            <option value="UTC-8">UTC-8 (Mountain)</option>
+                            <option value="UTC-7">UTC-7 (Central)</option>
+                            <option value="UTC-6">UTC-6 (Eastern)</option>
+                            <option value="UTC-5">UTC-5 (Colombia)</option>
+                            <option value="UTC-4">UTC-4 (Venezuela)</option>
+                            <option value="UTC-3">UTC-3 (Brazil)</option>
+                            <option value="UTC-2">UTC-2 (Mid-Atlantic)</option>
+                            <option value="UTC-1">UTC-1 (Azores)</option>
+                            <option value="UTC+0">UTC+0 (London)</option>
+                            <option value="UTC+1">UTC+1 (Paris)</option>
+                            <option value="UTC+2">UTC+2 (Cairo)</option>
+                            <option value="UTC+3">UTC+3 (Moscow)</option>
+                            <option value="UTC+4">UTC+4 (Dubai)</option>
+                            <option value="UTC+5">UTC+5 (Pakistan)</option>
+                            <option value="UTC+6">UTC+6 (Bangladesh)</option>
+                            <option value="UTC+7">UTC+7 (Thailand)</option>
+                            <option value="UTC+8">UTC+8 (Singapore)</option>
+                            <option value="UTC+9">UTC+9 (Japan)</option>
+                            <option value="UTC+10">UTC+10 (Australia)</option>
+                            <option value="UTC+11">UTC+11 (Pacific)</option>
+                            <option value="UTC+12">UTC+12 (New Zealand)</option>
+                        </select>
+                        <div class="error-message" id="timezoneError"></div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="position">Position Interested In *</label>
+                    <select id="position" name="position" required>
+                        <option value="">Select a position</option>
+                        <option value="Frontend Developer">Frontend Developer</option>
+                        <option value="Backend Developer">Backend Developer</option>
+                        <option value="Full Stack Developer">Full Stack Developer</option>
+                        <option value="UI/UX Designer">UI/UX Designer</option>
+                        <option value="Product Manager">Product Manager</option>
+                        <option value="Marketing Specialist">Marketing Specialist</option>
+                        <option value="Content Writer">Content Writer</option>
+                        <option value="Customer Support">Customer Support</option>
+                        <option value="Sales Representative">Sales Representative</option>
+                        <option value="Data Analyst">Data Analyst</option>
+                        <option value="DevOps Engineer">DevOps Engineer</option>
+                        <option value="Quality Assurance">Quality Assurance</option>
+                        <option value="Other">Other (specify in cover letter)</option>
+                    </select>
+                    <div class="error-message" id="positionError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="experience">Years of Experience *</label>
+                    <select id="experience" name="experience" required>
+                        <option value="">Select experience level</option>
+                        <option value="0-1">0-1 years (Entry Level)</option>
+                        <option value="2-3">2-3 years (Junior)</option>
+                        <option value="4-6">4-6 years (Mid-level)</option>
+                        <option value="7-10">7-10 years (Senior)</option>
+                        <option value="10+">10+ years (Expert)</option>
+                    </select>
+                    <div class="error-message" id="experienceError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="skills">Key Skills *</label>
+                    <input type="text" id="skills" name="skills" required placeholder="e.g., JavaScript, React, Node.js, Python">
+                    <div class="error-message" id="skillsError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="linkedIn">LinkedIn Profile</label>
+                    <input type="url" id="linkedIn" name="linkedIn" placeholder="https://linkedin.com/in/yourprofile">
+                    <div class="error-message" id="linkedInError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="portfolio">Portfolio/Website</label>
+                    <input type="url" id="portfolio" name="portfolio" placeholder="https://yourportfolio.com">
+                    <div class="error-message" id="portfolioError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="salary">Expected Salary (USD/year)</label>
+                    <input type="text" id="salary" name="salary" placeholder="e.g., $50,000 - $70,000">
+                    <div class="error-message" id="salaryError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="availability">When can you start? *</label>
+                    <select id="availability" name="availability" required>
+                        <option value="">Select availability</option>
+                        <option value="Immediately">Immediately</option>
+                        <option value="Within 2 weeks">Within 2 weeks</option>
+                        <option value="Within 1 month">Within 1 month</option>
+                        <option value="Within 2 months">Within 2 months</option>
+                        <option value="Other">Other (specify in cover letter)</option>
+                    </select>
+                    <div class="error-message" id="availabilityError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="coverLetter">Cover Letter *</label>
+                    <textarea id="coverLetter" name="coverLetter" required placeholder="Tell us about yourself, why you're interested in this position, and what makes you a great fit for our remote team..."></textarea>
+                    <div class="error-message" id="coverLetterError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="resume">Upload Resume *</label>
+                    <div class="file-upload">
+                        <input type="file" id="resume" name="resume" accept=".pdf,.doc,.docx" required>
+                        <label for="resume" class="file-upload-label">
+                            <span id="fileLabel">📄 Click to upload your resume (PDF, DOC, DOCX)</span>
+                        </label>
+                    </div>
+                    <div class="error-message" id="resumeError"></div>
+                </div>
+
+                <button type="submit" class="submit-btn" id="submitBtn">
+                    Submit Application
+                </button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2025 TalentSync. All rights reserved. | Building the future of remote work.</p>
+        </div>
+    </footer>
+
+    <script>
+        // File upload handling
+        document.getElementById('resume').addEventListener('change', function(e) {
+            const fileName = e.target.files[0]?.name || 'Click to upload your resume (PDF, DOC, DOCX)';
+            document.getElementById('fileLabel').textContent = fileName;
+        });
+
+        // Form validation
+        function validateForm() {
+            let isValid = true;
+            const requiredFields = ['firstName', 'lastName', 'email', 'location', 'timezone', 'position', 'experience', 'skills', 'availability', 'coverLetter'];
+            
+            // Clear previous errors
+            document.querySelectorAll('.error-message').forEach(error => {
+                error.style.display = 'none';
+            });
+
+            // Validate required fields
+            requiredFields.forEach(field => {
+                const input = document.getElementById(field);
+                const error = document.getElementById(field + 'Error');
+                
+                if (!input.value.trim()) {
+                    error.textContent = 'This field is required';
+                    error.style.display = 'block';
+                    isValid = false;
+                }
+            });
+
+            // Validate email format
+            const email = document.getElementById('email');
+            const emailError = document.getElementById('emailError');
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            
+            if (email.value && !emailRegex.test(email.value)) {
+                emailError.textContent = 'Please enter a valid email address';
+                emailError.style.display = 'block';
+                isValid = false;
+            }
+
+            // Validate resume upload
+            const resume = document.getElementById('resume');
+            const resumeError = document.getElementById('resumeError');
+            
+            if (!resume.files[0]) {
+                resumeError.textContent = 'Please upload your resume';
+                resumeError.style.display = 'block';
+                isValid = false;
+            } else {
+                const file = resume.files[0];
+                const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+                
+                if (!allowedTypes.includes(file.type)) {
+                    resumeError.textContent = 'Please upload a PDF, DOC, or DOCX file';
+                    resumeError.style.display = 'block';
+                    isValid = false;
+                }
+                
+                if (file.size > 5 * 1024 * 1024) {
+                    resumeError.textContent = 'File size must be less than 5MB';
+                    resumeError.style.display = 'block';
+                    isValid = false;
+                }
+            }
+
+            return isValid;
+        }
+
+        // Form submission
+        document.getElementById('careerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (!validateForm()) {
+                return;
+            }
+
+            const submitBtn = document.getElementById('submitBtn');
+            const successMessage = document.getElementById('successMessage');
+            
+            // Disable submit button
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+
+            try {
+                const formData = new FormData(this);
+                
+                const response = await fetch('/api/careers/apply', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    successMessage.style.display = 'block';
+                    this.reset();
+                    document.getElementById('fileLabel').textContent = 'Click to upload your resume (PDF, DOC, DOCX)';
+                    
+                    // Scroll to success message
+                    successMessage.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    alert('Error submitting application: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error submitting application:', error);
+                alert('Network error. Please try again.');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit Application';
+            }
+        });
+    </script>
+</body>
+</html>
