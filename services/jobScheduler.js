@@ -176,6 +176,11 @@ class JobScrapingScheduler {
         };
     }
 
+    // Alias for compatibility with existing tests
+    getScrapingStats() {
+        return this.getStats();
+    }
+
     delay(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
     }

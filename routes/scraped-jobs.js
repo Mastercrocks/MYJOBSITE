@@ -70,7 +70,23 @@ router.post('/scrape-now', async (req, res) => {
     }
 });
 
-// GET /api/scraping-stats - Get scraping statistics
+// GET /api/scraping/stats - Get scraping statistics (matches test expectations)
+router.get('/scraping/stats', (req, res) => {
+    try {
+        const stats = scheduler.getStats();
+        res.json({
+            success: true,
+            stats: stats
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get stats'
+        });
+    }
+});
+
+// GET /api/scraping-stats - Alternative endpoint (for backwards compatibility)
 router.get('/scraping-stats', (req, res) => {
     try {
         const stats = scheduler.getStats();

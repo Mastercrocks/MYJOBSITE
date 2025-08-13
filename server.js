@@ -950,6 +950,15 @@ if (process.env.ENABLE_AUTO_SCRAPING === 'true') {
     }
 }
 
+// Mount scraped jobs API routes
+try {
+    const scrapedJobsRoutes = require('./routes/scraped-jobs');
+    app.use('/api', scrapedJobsRoutes);
+    console.log('✅ Scraped jobs API routes mounted');
+} catch (error) {
+    console.warn('⚠️ Scraped jobs routes not available:', error.message);
+}
+
 // Root route
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'Public', 'index.html'));
