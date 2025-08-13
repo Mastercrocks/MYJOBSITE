@@ -474,6 +474,81 @@
     </footer>
 
     <script>
+        // Check if user is already logged in
+        function checkAuthStatus() {
+            const authToken = localStorage.getItem('authToken');
+            const userType = localStorage.getItem('userType');
+            const userName = localStorage.getItem('userName');
+            
+            if (authToken && userType) {
+                // User is logged in - hide auth section and show logged-in state
+                hideAuthSection();
+                showLoggedInState(userType, userName);
+                return true;
+            }
+            return false;
+        }
+
+        function hideAuthSection() {
+            const authSection = document.getElementById('auth');
+            if (authSection) {
+                authSection.style.display = 'none';
+            }
+            
+            // Update hero CTA button
+            const heroBtn = document.querySelector('.hero-cta .btn-primary');
+            if (heroBtn) {
+                const userType = localStorage.getItem('userType');
+                if (userType === 'employer') {
+                    heroBtn.textContent = 'Go to Dashboard';
+                    heroBtn.href = '/employer/dashboard.html';
+                } else {
+                    heroBtn.textContent = 'View Jobs';
+                    heroBtn.href = '/jobs.html';
+                }
+            }
+        }
+
+        function showLoggedInState(userType, userName) {
+            // Create logged-in status section
+            const authSection = document.getElementById('auth');
+            if (authSection) {
+                authSection.innerHTML = `
+                    <div class="container">
+                        <div class="auth-container" style="max-width: 600px;">
+                            <h2 style="color: #059669; margin-bottom: 1rem;">✅ Welcome Back!</h2>
+                            <div style="background: #f0fdf4; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #059669;">
+                                <p style="margin: 0; font-size: 1.1rem;">
+                                    <strong>Logged in as:</strong> ${userType === 'employer' ? 'Employer' : 'Job Seeker'}
+                                    ${userName ? ` (${userName})` : ''}
+                                </p>
+                                <div style="margin-top: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;">
+                                    ${userType === 'employer' ? `
+                                        <a href="/employer/dashboard.html" class="btn btn-primary">Go to Dashboard</a>
+                                        <a href="/jobs.html" class="btn btn-secondary" style="background: #6b7280; border-color: #6b7280;">Browse Jobs</a>
+                                    ` : `
+                                        <a href="/jobseeker/dashboard.html" class="btn btn-primary">Go to Dashboard</a>
+                                        <a href="/jobs.html" class="btn btn-secondary" style="background: #6b7280; border-color: #6b7280;">Browse Jobs</a>
+                                    `}
+                                    <button onclick="logout()" class="btn" style="background: #dc2626; color: white; border: none;">Logout</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                authSection.style.display = 'block';
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('userType');
+            localStorage.removeItem('userName');
+            localStorage.removeItem('userId');
+            window.location.reload();
+        }
+
+        // Tab switching functions
         function showLogin() {
             document.getElementById('loginTab').classList.add('active');
             document.getElementById('registerTab').classList.remove('active');
@@ -488,8 +563,13 @@
             document.getElementById('loginForm').classList.remove('active');
         }
 
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuthStatus();
+        });
+
         // Handle Login
-        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        document.getElementById('loginForm')?.addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const username = document.getElementById('loginUsername').value;
@@ -512,9 +592,11 @@
                 const data = await response.json();
                 
                 if (response.ok) {
-                    // Store token
-                    localStorage.setItem('authToken', data.token);
+                    // Store user info
+                    localStorage.setItem('authToken', data.user?.id || 'logged-in');
                     localStorage.setItem('userType', data.user.userType);
+                    localStorage.setItem('userName', data.user.name || data.user.email);
+                    localStorage.setItem('userId', data.user.id);
                     
                     // Show success message
                     successDiv.textContent = 'Login successful! Redirecting...';
@@ -541,7 +623,7 @@
         });
 
         // Handle Registration
-        document.getElementById('registerForm').addEventListener('submit', async function(e) {
+        document.getElementById('registerForm')?.addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const formData = {

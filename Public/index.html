@@ -711,13 +711,28 @@
 
         // Check authentication status and update navigation
         function updateNavigation() {
-            const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            const authToken = localStorage.getItem('authToken');
+            const userType = localStorage.getItem('userType');
+            const userName = localStorage.getItem('userName');
             const authMenuItem = document.getElementById('authMenuItem');
             
-            if (isLoggedIn && user.email) {
-                // User is logged in, show dashboard link
-                authMenuItem.innerHTML = `<a href="/dashboard">Dashboard</a>`;
+            if (authToken && userType) {
+                // User is logged in, show appropriate dashboard link
+                if (userType === 'employer') {
+                    authMenuItem.innerHTML = `<a href="/employer/dashboard.html">Dashboard</a>`;
+                } else {
+                    authMenuItem.innerHTML = `<a href="/jobseeker/dashboard.html">Dashboard</a>`;
+                }
+                
+                // Update "Post Resume" button for logged in users
+                const postResumeBtn = document.querySelector('.action-link[href="/register.html"]');
+                if (postResumeBtn && userType === 'job_seeker') {
+                    postResumeBtn.textContent = 'Update Resume';
+                    postResumeBtn.href = '/jobseeker/dashboard.html';
+                } else if (postResumeBtn && userType === 'employer') {
+                    postResumeBtn.textContent = 'Post Jobs';
+                    postResumeBtn.href = '/employer/dashboard.html';
+                }
             } else {
                 // User is not logged in, show sign in link
                 authMenuItem.innerHTML = `<a href="/login.html">Sign In</a>`;

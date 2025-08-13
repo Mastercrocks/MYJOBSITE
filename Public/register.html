@@ -222,6 +222,28 @@
     </div>
 
     <script>
+        // Check if user is already logged in
+        function checkAuthStatus() {
+            const authToken = localStorage.getItem('authToken');
+            const userType = localStorage.getItem('userType');
+            
+            if (authToken && userType) {
+                // User is already logged in - redirect to appropriate dashboard
+                if (userType === 'employer') {
+                    window.location.href = '/employer/dashboard.html';
+                } else {
+                    window.location.href = '/jobseeker/dashboard.html';
+                }
+                return true;
+            }
+            return false;
+        }
+
+        // Check auth status when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuthStatus();
+        });
+
         let selectedUserType = null;
 
         function selectUserType(type) {
