@@ -226,6 +226,8 @@ app.post('/auth/login', async (req, res) => {
 app.post('/auth/register', async (req, res) => {
     const { name, email, password, userType = 'job_seeker', companyName } = req.body;
     
+    console.log('📝 Registration attempt:', { email, userType, name, companyName });
+    
     try {
         const usersPath = path.join(__dirname, 'data', 'users.json');
         let users = [];
@@ -234,15 +236,23 @@ app.post('/auth/register', async (req, res) => {
             users = JSON.parse(fs.readFileSync(usersPath, 'utf8'));
         }
         
+        console.log('👥 Total users loaded:', users.length);
+        console.log('🔍 Checking for existing email:', email);
+        
         // Check if user already exists
         const existingUser = users.find(u => u.email === email);
+        console.log('🔍 Existing user found:', existingUser ? 'YES' : 'NO');
+        
         if (existingUser) {
+            console.log('❌ Registration blocked - email already exists:', email);
             return res.status(400).json({ 
                 success: false, 
                 message: 'An account with this email already exists. Try logging in or use the "Forgot Password" option to reset your password.',
                 showLogin: true
             });
         }
+        
+        console.log('✅ Email available, proceeding with registration...');
         
         // Hash password
         const bcrypt = require('bcrypt');
