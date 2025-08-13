@@ -276,7 +276,7 @@ app.post('/auth/register', async (req, res) => {
                 await sendAccountEmail({
                     to: email,
                     subject: 'Welcome to TalentSync - Employer Account Created',
-                    text: `Welcome to TalentSync!\n\nYour employer account has been created successfully.\n\nEmail: ${email}\nCompany: ${companyName || 'Not specified'}\n\nYou can now log in at http://localhost:3000/login\n\nBest regards,\nTalentSync Team`,
+                    text: `Welcome to TalentSync!\n\nYour employer account has been created successfully.\n\nEmail: ${email}\nCompany: ${companyName || 'Not specified'}\n\nYou can now log in at https://talentsync.shop/post-job#auth\n\nBest regards,\nTalentSync Team`,
                     html: `
                         <h2>Welcome to TalentSync!</h2>
                         <p>Your employer account has been created successfully.</p>
@@ -284,7 +284,7 @@ app.post('/auth/register', async (req, res) => {
                             <li><strong>Email:</strong> ${email}</li>
                             <li><strong>Company:</strong> ${companyName || 'Not specified'}</li>
                         </ul>
-                        <p><a href="http://localhost:3000/login">Click here to log in</a></p>
+                        <p><a href="https://talentsync.shop/post-job#auth">Click here to log in</a></p>
                         <p>Best regards,<br>TalentSync Team</p>
                     `
                 });
@@ -347,7 +347,7 @@ app.post('/auth/forgot-password', async (req, res) => {
         // Send password reset email
         try {
             const { sendAccountEmail } = require('./services/emailService');
-            const resetLink = `http://localhost:3000/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
+            const resetLink = `https://talentsync.shop/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
             
             await sendAccountEmail({
                 to: email,
