@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="pageTitle">Job Details - TalentSync</title>
+    <meta name="description" id="pageDescription" content="View job details and apply for entry-level positions on TalentSync.">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f9fafb;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header */
+        header {
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 1rem 0;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2563eb;
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: #4b5563;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: #2563eb;
+        }
+
+        /* Job Detail Section */
+        .job-detail {
+            background: white;
+            margin: 2rem 0;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .job-header {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white;
+            padding: 2rem;
+        }
+
+        .job-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .job-company {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 1rem;
+        }
+
+        .job-meta {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .job-content {
+            padding: 2rem;
+        }
+
+        .section {
+            margin-bottom: 2rem;
+        }
+
+        .section h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #1f2937;
+        }
+
+        .section p {
+            color: #6b7280;
+            margin-bottom: 1rem;
+        }
+
+        .requirements-list, .benefits-list {
+            list-style: none;
+            margin-left: 0;
+        }
+
+        .requirements-list li, .benefits-list li {
+            background: #f3f4f6;
+            margin: 0.5rem 0;
+            padding: 0.75rem;
+            border-radius: 6px;
+            position: relative;
+            padding-left: 2rem;
+        }
+
+        .requirements-list li:before {
+            content: "✓";
+            position: absolute;
+            left: 0.75rem;
+            color: #059669;
+            font-weight: bold;
+        }
+
+        .benefits-list li:before {
+            content: "★";
+            position: absolute;
+            left: 0.75rem;
+            color: #f59e0b;
+            font-weight: bold;
+        }
+
+        .apply-section {
+            background: #f9fafb;
+            padding: 2rem;
+            text-align: center;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .apply-btn {
+            background: #2563eb;
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            text-decoration: none;
+            display: inline-block;
+            margin: 0.5rem;
+        }
+
+        .apply-btn:hover {
+            background: #1d4ed8;
+        }
+
+        .back-btn {
+            background: #6b7280;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 1rem;
+        }
+
+        .back-btn:hover {
+            background: #4b5563;
+        }
+
+        .badge {
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .remote-badge {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+
+        .error {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #dc2626;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .job-meta {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .job-title {
+                font-size: 1.5rem;
+            }
+            
+            .nav-links {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <a href="/" class="logo">TalentSync</a>
+                <nav>
+                    <ul class="nav-links">
+                        <li><a href="/">Home</a></li>
+                        <li><a href="/jobs.html">Browse Jobs</a></li>
+                        <li><a href="/employers.html">For Employers</a></li>
+                        <li><a href="/contact.html">Contact</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div id="loadingState" class="loading">
+            <h2>Loading job details...</h2>
+        </div>
+
+        <div id="errorState" class="error" style="display: none;">
+            <h2>Job Not Found</h2>
+            <p>Sorry, we couldn't find the job you're looking for.</p>
+            <a href="/jobs.html" class="apply-btn">Browse All Jobs</a>
+        </div>
+
+        <div id="jobContent" style="display: none;">
+            <a href="/jobs.html" class="back-btn">← Back to Jobs</a>
+            
+            <div class="job-detail">
+                <div class="job-header">
+                    <h1 id="jobTitle" class="job-title">Loading...</h1>
+                    <div id="jobCompany" class="job-company">Loading...</div>
+                    <div class="job-meta">
+                        <div class="meta-item">
+                            📍 <span id="jobLocation">Loading...</span>
+                        </div>
+                        <div class="meta-item">
+                            💰 <span id="jobSalary">Loading...</span>
+                        </div>
+                        <div class="meta-item">
+                            🕒 <span id="jobType">Loading...</span>
+                        </div>
+                        <div id="remoteBadge" class="meta-item" style="display: none;">
+                            <span class="badge remote-badge">Remote</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="job-content">
+                    <div class="section">
+                        <h3>Job Description</h3>
+                        <p id="jobDescription">Loading...</p>
+                    </div>
+
+                    <div id="requirementsSection" class="section">
+                        <h3>Requirements</h3>
+                        <ul id="jobRequirements" class="requirements-list">
+                            <!-- Requirements will be loaded here -->
+                        </ul>
+                    </div>
+
+                    <div id="benefitsSection" class="section">
+                        <h3>Benefits & Perks</h3>
+                        <ul id="jobBenefits" class="benefits-list">
+                            <!-- Benefits will be loaded here -->
+                        </ul>
+                    </div>
+
+                    <div class="section">
+                        <h3>About This Position</h3>
+                        <p><strong>Source:</strong> <span id="jobSource">Loading...</span></p>
+                        <p><strong>Posted:</strong> <span id="jobPosted">Loading...</span></p>
+                        <p><strong>Category:</strong> <span class="badge" id="jobCategory">Loading...</span></p>
+                    </div>
+                </div>
+
+                <div class="apply-section">
+                    <h3 style="margin-bottom: 1rem;">Ready to Apply?</h3>
+                    <p style="margin-bottom: 1.5rem; color: #6b7280;">This position is perfect for college students and recent graduates!</p>
+                    <button id="applyBtn" class="apply-btn">Apply for This Position</button>
+                    <a href="/jobs.html" class="apply-btn" style="background: #6b7280;">Browse More Jobs</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get job ID from URL
+        function getJobIdFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('id');
+        }
+
+        // Load and display job details
+        async function loadJobDetails() {
+            const jobId = getJobIdFromURL();
+            
+            if (!jobId) {
+                showError();
+                return;
+            }
+
+            try {
+                // Load jobs data
+                const response = await fetch('/api/jobs/fresh');
+                const data = await response.json();
+                
+                if (!data.success || !data.jobs) {
+                    throw new Error('Failed to load jobs');
+                }
+
+                // Find the specific job
+                const job = data.jobs.find(j => j.id === jobId);
+                
+                if (!job) {
+                    throw new Error('Job not found');
+                }
+
+                displayJobDetails(job);
+                
+            } catch (error) {
+                console.error('Error loading job:', error);
+                showError();
+            }
+        }
+
+        function displayJobDetails(job) {
+            // Update page title and meta
+            document.getElementById('pageTitle').textContent = `${job.title} at ${job.company} - TalentSync`;
+            document.getElementById('pageDescription').content = `${job.title} position at ${job.company} in ${job.location}. ${job.description.substring(0, 150)}...`;
+
+            // Fill in job details
+            document.getElementById('jobTitle').textContent = job.title;
+            document.getElementById('jobCompany').textContent = job.company;
+            document.getElementById('jobLocation').textContent = job.location;
+            document.getElementById('jobSalary').textContent = job.salary || 'Competitive salary';
+            document.getElementById('jobType').textContent = job.job_type || 'Full-time';
+            document.getElementById('jobDescription').textContent = job.description;
+            document.getElementById('jobSource').textContent = job.source || 'TalentSync';
+            document.getElementById('jobCategory').textContent = job.category || 'General';
+
+            // Format posted date
+            if (job.posted_date) {
+                const date = new Date(job.posted_date);
+                document.getElementById('jobPosted').textContent = date.toLocaleDateString();
+            }
+
+            // Show remote badge if applicable
+            if (job.remote) {
+                document.getElementById('remoteBadge').style.display = 'block';
+            }
+
+            // Fill requirements
+            const requirementsList = document.getElementById('jobRequirements');
+            if (job.requirements && job.requirements.length > 0) {
+                requirementsList.innerHTML = '';
+                job.requirements.forEach(req => {
+                    const li = document.createElement('li');
+                    li.textContent = req;
+                    requirementsList.appendChild(li);
+                });
+            } else {
+                document.getElementById('requirementsSection').style.display = 'none';
+            }
+
+            // Fill benefits
+            const benefitsList = document.getElementById('jobBenefits');
+            if (job.benefits && job.benefits.length > 0) {
+                benefitsList.innerHTML = '';
+                job.benefits.forEach(benefit => {
+                    const li = document.createElement('li');
+                    li.textContent = benefit;
+                    benefitsList.appendChild(li);
+                });
+            } else {
+                document.getElementById('benefitsSection').style.display = 'none';
+            }
+
+            // Set up apply button
+            const applyBtn = document.getElementById('applyBtn');
+            applyBtn.onclick = () => {
+                // Check if user is logged in
+                const authToken = localStorage.getItem('authToken');
+                if (!authToken) {
+                    alert('Please sign in to apply for jobs!');
+                    window.location.href = '/login.html';
+                } else {
+                    alert('Application submitted! The employer will be notified of your interest.');
+                }
+            };
+
+            // Show content and hide loading
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('jobContent').style.display = 'block';
+        }
+
+        function showError() {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('errorState').style.display = 'block';
+        }
+
+        // Load job details when page loads
+        document.addEventListener('DOMContentLoaded', loadJobDetails);
+    </script>
+</body>
+</html>

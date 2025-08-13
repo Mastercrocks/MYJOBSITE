@@ -82,40 +82,16 @@ class SmartJobPopulator {
         const baseSalary = Math.floor(Math.random() * 25000) + 35000; // $35k-$60k range
         const maxSalary = baseSalary + Math.floor(Math.random() * 15000) + 5000;
         
-        // Choose job source and generate appropriate URL
-        const sources = ['Indeed', 'LinkedIn', 'Glassdoor', 'ZipRecruiter'];
-        const source = this.getRandomItem(sources);
-        let url;
-        
-        switch (source) {
-            case 'Indeed':
-                // Real Indeed URL format
-                const jobKey = this.generateJobKey();
-                url = `https://www.indeed.com/viewjob?jk=${jobKey}`;
-                break;
-            case 'LinkedIn':
-                // Real LinkedIn URL format
-                const jobId = Math.floor(Math.random() * 9999999999);
-                url = `https://www.linkedin.com/jobs/view/${jobId}`;
-                break;
-            case 'Glassdoor':
-                // Real Glassdoor URL format
-                const glassId = Math.floor(Math.random() * 9999999);
-                url = `https://www.glassdoor.com/job-listing/JV_IC${glassId}`;
-                break;
-            case 'ZipRecruiter':
-                // Real ZipRecruiter URL format
-                const zipId = Math.floor(Math.random() * 999999999);
-                url = `https://www.ziprecruiter.com/c/${company.replace(/\s+/g, '-').toLowerCase()}/jobs/${title.replace(/\s+/g, '-').toLowerCase()}-${zipId}`;
-                break;
-        }
+        // Generate job with internal URL pointing to job detail page
+        const jobId = `${source.toLowerCase()}_${Date.now()}_${index}_${Math.random().toString(36).substr(2, 9)}`;
+        const url = `https://talentsync.shop/job-detail.html?id=${jobId}`;
 
         // Generate realistic posted date (within last 30 days)
         const daysAgo = Math.floor(Math.random() * 30);
         const postedDate = new Date(Date.now() - (daysAgo * 24 * 60 * 60 * 1000));
 
         return {
-            id: `${source.toLowerCase()}_${Date.now()}_${index}_${Math.random().toString(36).substr(2, 9)}`,
+            id: jobId,
             title: title,
             company: company,
             location: location,
