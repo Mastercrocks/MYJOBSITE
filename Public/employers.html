@@ -281,6 +281,18 @@
             display: none;
         }
 
+        .forgot-password-link a {
+            color: #2563eb;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.2s ease;
+        }
+
+        .forgot-password-link a:hover {
+            color: #1d4ed8;
+            text-decoration: underline;
+        }
+
         /* Footer */
         footer {
             background: #1f2937;
@@ -402,6 +414,9 @@
                         <input type="password" id="loginPassword" required>
                     </div>
                     <button type="submit" class="form-submit">Login</button>
+                    <div class="forgot-password-link" style="text-align: center; margin-top: 1rem;">
+                        <a href="/forgot-password.html" style="color: #2563eb; text-decoration: none; font-size: 0.9rem;">Forgot your password?</a>
+                    </div>
                     <div class="error-message" id="loginError"></div>
                     <div class="success-message" id="loginSuccess"></div>
                 </form>
