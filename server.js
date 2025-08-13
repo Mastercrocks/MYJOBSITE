@@ -239,11 +239,23 @@ app.post('/auth/register', async (req, res) => {
         console.log('👥 Total users loaded:', users.length);
         console.log('🔍 Checking for existing email:', email);
         
-        // Check if user already exists
+        // Check if user already exists in users.json
         const existingUser = users.find(u => u.email === email);
-        console.log('🔍 Existing user found:', existingUser ? 'YES' : 'NO');
         
-        if (existingUser) {
+        // Also check employers.json for duplicates
+        let existingEmployer = null;
+        if (userType === 'employer') {
+            const employersPath = path.join(__dirname, 'data', 'employers.json');
+            if (fs.existsSync(employersPath)) {
+                const employers = JSON.parse(fs.readFileSync(employersPath, 'utf8'));
+                existingEmployer = employers.find(e => e.email === email);
+            }
+        }
+        
+        console.log('🔍 Existing user found in users.json:', existingUser ? 'YES' : 'NO');
+        console.log('🔍 Existing employer found in employers.json:', existingEmployer ? 'YES' : 'NO');
+        
+        if (existingUser || existingEmployer) {
             console.log('❌ Registration blocked - email already exists:', email);
             return res.status(400).json({ 
                 success: false, 
@@ -278,6 +290,36 @@ app.post('/auth/register', async (req, res) => {
         }
         
         fs.writeFileSync(usersPath, JSON.stringify(users, null, 2));
+        
+        // Also save to employers.json if userType is employer
+        if (userType === 'employer') {
+            console.log('💼 Saving employer to employers.json...');
+            const employersPath = path.join(__dirname, 'data', 'employers.json');
+            let employers = [];
+            
+            if (fs.existsSync(employersPath)) {
+                employers = JSON.parse(fs.readFileSync(employersPath, 'utf8'));
+            }
+            
+            // Create employer entry with additional fields
+            const newEmployer = {
+                id: parseInt(newUser.id),
+                username: email, // Use email as username for compatibility
+                email: email,
+                password: hashedPassword,
+                firstName: name ? name.split(' ')[0] : '',
+                lastName: name ? name.split(' ').slice(1).join(' ') : '',
+                userType: 'employer',
+                companyName: companyName || null,
+                jobTitle: null, // Can be updated later
+                status: 'active',
+                createdAt: new Date().toISOString()
+            };
+            
+            employers.push(newEmployer);
+            fs.writeFileSync(employersPath, JSON.stringify(employers, null, 2));
+            console.log('✅ Employer saved to employers.json');
+        }
         
         // Send welcome email for employers
         if (userType === 'employer') {
