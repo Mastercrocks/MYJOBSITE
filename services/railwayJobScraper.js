@@ -116,7 +116,7 @@ class RailwayJobScraper {
                 job_type: Math.random() > 0.15 ? 'Full-time' : 'Part-time',
                 remote: location === 'Remote',
                 scraped_at: new Date().toISOString(),
-                url: `https://example.com/jobs/${source.toLowerCase()}/${i}`,
+                url: `https://www.indeed.com/viewjob?jk=${Date.now()}${i}${Math.random().toString(36).substr(2, 9)}`,
                 entryLevel: true
             });
         }

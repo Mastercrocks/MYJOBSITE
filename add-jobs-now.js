@@ -108,7 +108,7 @@ class QuickJobAdder {
                 ],
                 posted: postedDate.toISOString(),
                 source: 'Auto-Generated',
-                url: `https://example.com/jobs/${i}`,
+                url: `https://www.indeed.com/viewjob?jk=${Date.now()}${i}${Math.random().toString(36).substr(2, 9)}`,
                 fresh: true,
                 entryLevel: true
             });
