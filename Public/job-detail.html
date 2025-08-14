@@ -6,6 +6,16 @@
     <title id="pageTitle">Job Details - TalentSync</title>
     <meta name="description" id="pageDescription" content="View job details and apply for entry-level positions on TalentSync.">
     
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-P5ETS8QMP7"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-P5ETS8QMP7');
+    </script>
+    
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -374,6 +384,18 @@
         }
 
         function displayJobDetails(job) {
+            // Track job view event for analytics
+            if (typeof gtag !== 'undefined') {
+                gtag('event', 'job_view', {
+                    'job_id': job.id,
+                    'job_title': job.title,
+                    'company': job.company,
+                    'location': job.location,
+                    'category': job.category,
+                    'source': job.source
+                });
+            }
+
             // Update page title and meta
             document.getElementById('pageTitle').textContent = `${job.title} at ${job.company} - TalentSync`;
             document.getElementById('pageDescription').content = `${job.title} position at ${job.company} in ${job.location}. ${job.description.substring(0, 150)}...`;
