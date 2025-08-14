@@ -1,0 +1,47 @@
+{
+  "immediate_posts": [
+    {
+      "title": "15 Entry-Level Jobs Hiring Now in 2024",
+      "description": "Highlight your best entry-level positions",
+      "keywords": [
+        "entry level jobs",
+        "hiring now",
+        "college graduates"
+      ],
+      "urgency": "This Week"
+    },
+    {
+      "title": "How to Land Your First Job Out of College",
+      "description": "Job search guide targeting your audience",
+      "keywords": [
+        "first job",
+        "college graduates",
+        "job search tips"
+      ],
+      "urgency": "This Week"
+    },
+    {
+      "title": "Top 10 Companies Hiring College Students Remote",
+      "description": "Remote work opportunities for students",
+      "keywords": [
+        "remote jobs",
+        "college students",
+        "work from home"
+      ],
+      "urgency": "Next Week"
+    }
+  ],
+  "weekly_content": [
+    "Monday: Featured Job Spotlight",
+    "Tuesday: Resume Tips",
+    "Wednesday: Interview Preparation",
+    "Thursday: Company Spotlights",
+    "Friday: Career Success Stories"
+  ],
+  "social_media_strategy": {
+    "linkedin": "Professional job posts, career advice, industry insights",
+    "instagram": "Visual job posts, behind-the-scenes, career tips in stories",
+    "tiktok": "Quick job search tips, resume hacks, interview prep",
+    "twitter": "Job alerts, industry news, career advice threads"
+  }
+}

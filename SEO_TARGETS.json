@@ -1,0 +1,31 @@
+{
+  "primary_keywords": [
+    "entry level jobs",
+    "college student jobs",
+    "recent graduate jobs",
+    "first job",
+    "internships",
+    "part time jobs for students"
+  ],
+  "long_tail_keywords": [
+    "entry level marketing jobs for college graduates",
+    "part time jobs near me for college students",
+    "internships for computer science students",
+    "first job out of college tips",
+    "how to find entry level jobs",
+    "best job sites for college students"
+  ],
+  "location_targets": [
+    "entry level jobs in New York",
+    "college student jobs Los Angeles",
+    "internships Chicago",
+    "part time jobs Miami",
+    "graduate jobs Houston"
+  ],
+  "competitor_analysis": {
+    "indeed": "Broad job board - target 'college specific' angle",
+    "linkedin": "Professional network - target 'entry level' focus",
+    "ziprecruiter": "Quick apply - target 'student friendly' approach",
+    "glassdoor": "Company reviews - target 'first job guidance'"
+  }
+}
