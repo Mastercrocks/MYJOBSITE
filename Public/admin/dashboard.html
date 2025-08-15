@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TalentSync Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .section { display: none; }
+        .section.active { display: block; }
+        .nav-item.active { background-color: #374151; }
+        .stats-card { transition: transform 0.2s; }
+        .stats-card:hover { transform: translateY(-2px); }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- Test to ensure page loads -->
+    <div class="min-h-screen flex">
+        <!-- Sidebar -->
+        <div class="bg-gray-800 text-white w-64 py-7 px-2">
+            <div class="text-white flex items-center space-x-2 px-4 mb-8">
+                <span class="text-2xl font-bold">🎯 TalentSync Admin</span>
+            </div>
+            
+            <nav class="space-y-2">
+                <a href="#" onclick="showSection('overview')" class="nav-item block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 bg-gray-700">
+                    📊 Dashboard Overview
+                </a>
+                <a href="#" onclick="showSection('users')" class="nav-item block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700">
+                    👥 User Management
+                </a>
+                <a href="#" onclick="showSection('jobs')" class="nav-item block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700">
+                    💼 Job Management
+                </a>
+                <a href="#" onclick="showSection('applications')" class="nav-item block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700">
+                    🚀 Applications
+                </a>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Top bar -->
+            <header class="bg-white shadow-sm border-b">
+                <div class="flex justify-between items-center px-6 py-4">
+                    <h1 id="pageTitle" class="text-2xl font-semibold text-gray-800">Dashboard Overview</h1>
+                    <div class="flex items-center space-x-4">
+                        <span class="text-gray-600">Admin User</span>
+                        <a href="/" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                            View Site
+                        </a>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6">
+                
+                <!-- Dashboard Overview Section -->
+                <div id="overview-section" class="section active">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <!-- Stats Cards -->
+                        <div class="bg-white p-6 rounded-lg shadow stats-card">
+                            <h3 class="text-lg font-medium text-gray-900">Total Users</h3>
+                            <p class="text-3xl font-bold text-blue-600">Loading...</p>
+                            <p class="text-sm text-gray-500">Job seekers registered</p>
+                        </div>
+                        
+                        <div class="bg-white p-6 rounded-lg shadow stats-card">
+                            <h3 class="text-lg font-medium text-gray-900">Jobs</h3>
+                            <p class="text-3xl font-bold text-green-600">Loading...</p>
+                            <p class="text-sm text-gray-500">Active job listings</p>
+                        </div>
+                        
+                        <div class="bg-white p-6 rounded-lg shadow stats-card">
+                            <h3 class="text-lg font-medium text-gray-900">Applications</h3>
+                            <p class="text-3xl font-bold text-purple-600">Loading...</p>
+                            <p class="text-sm text-gray-500">Total applications</p>
+                        </div>
+                        
+                        <div class="bg-white p-6 rounded-lg shadow stats-card">
+                            <h3 class="text-lg font-medium text-gray-900">Companies</h3>
+                            <p class="text-3xl font-bold text-indigo-600">Loading...</p>
+                            <p class="text-sm text-gray-500">Registered employers</p>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-4">Quick Actions</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <button onclick="showSection('users')" class="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition">
+                                Manage Users
+                            </button>
+                            <button onclick="showSection('jobs')" class="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition">
+                                Manage Jobs
+                            </button>
+                            <button onclick="showSection('applications')" class="bg-purple-500 text-white px-6 py-3 rounded-lg hover:bg-purple-600 transition">
+                                View Applications
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Users Management Section -->
+                <div id="users-section" class="section">
+                    <div class="bg-white rounded-lg shadow">
+                        <div class="px-6 py-4 border-b">
+                            <h2 class="text-xl font-semibold text-gray-800">User Management</h2>
+                        </div>
+                        <div class="p-6">
+                            <p class="text-gray-600 mb-4">Manage all registered users on your platform.</p>
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <p class="text-gray-500">User management interface would be implemented here.</p>
+                                <p class="text-sm text-gray-400 mt-2">Connect to your user database to display and manage users.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Jobs Management Section -->
+                <div id="jobs-section" class="section">
+                    <div class="bg-white rounded-lg shadow">
+                        <div class="px-6 py-4 border-b">
+                            <h2 class="text-xl font-semibold text-gray-800">Job Management</h2>
+                        </div>
+                        <div class="p-6">
+                            <p class="text-gray-600 mb-4">Manage all job postings on your platform.</p>
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <p class="text-gray-500">Job management interface would be implemented here.</p>
+                                <p class="text-sm text-gray-400 mt-2">Connect to your jobs database to display and manage job listings.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Applications Management Section -->
+                <div id="applications-section" class="section">
+                    <div class="bg-white rounded-lg shadow">
+                        <div class="px-6 py-4 border-b">
+                            <h2 class="text-xl font-semibold text-gray-800">Application Management</h2>
+                        </div>
+                        <div class="p-6">
+                            <p class="text-gray-600 mb-4">View and manage all job applications.</p>
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <p class="text-gray-500">Application management interface would be implemented here.</p>
+                                <p class="text-sm text-gray-400 mt-2">Connect to your applications database to display and manage applications.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // Navigation functionality
+        function showSection(sectionName) {
+            // Hide all sections
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Remove active class from all nav items
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active', 'bg-gray-700');
+            });
+            
+            // Show selected section
+            document.getElementById(sectionName + '-section').classList.add('active');
+            
+            // Add active class to clicked nav item
+            event.target.classList.add('active', 'bg-gray-700');
+            
+            // Update page title
+            const titles = {
+                'overview': 'Dashboard Overview',
+                'users': 'User Management',
+                'jobs': 'Job Management',
+                'applications': 'Application Management'
+            };
+            document.getElementById('pageTitle').textContent = titles[sectionName];
+        }
+
+        // Simple test to show the page is working
+        console.log('TalentSync Admin Dashboard loaded successfully!');
+        
+        // You can add API calls here later to load real data
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Dashboard initialized');
+        });
+    </script>
+</body>
+</html>
