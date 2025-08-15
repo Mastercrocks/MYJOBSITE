@@ -12,6 +12,16 @@ const router = express.Router();
 
 // Google OAuth routes
 router.get('/google', (req, res, next) => {
+  // Check if Google OAuth is configured
+  if (!process.env.GOOGLE_CLIENT_ID || 
+      !process.env.GOOGLE_CLIENT_SECRET || 
+      process.env.GOOGLE_CLIENT_ID === 'your-google-client-id-here.apps.googleusercontent.com' ||
+      process.env.GOOGLE_CLIENT_SECRET === 'your-google-client-secret-here') {
+    return res.status(500).json({ 
+      error: 'Google OAuth not configured. Please set up GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in .env file.' 
+    });
+  }
+
   // Store referrer to determine user type after OAuth
   req.session.authReferrer = req.get('Referer') || req.query.redirect;
   
