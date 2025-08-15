@@ -7,8 +7,11 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const session = require('express-session');
-const passport = require('./config/passport');
+const passport = require('passport');
 const cookieParser = require('cookie-parser');
+
+// Import and configure passport
+require('./Config/passport');
 
 const app = express();
 const PORT = process.env.PORT || 3000;

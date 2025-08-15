@@ -7,7 +7,7 @@ const { pool } = require('../Config/database');
 const { authenticateToken } = require('../middleware/auth');
 const crypto = require('crypto');
 const { sendAccountEmail } = require('../services/emailService');
-const passport = require('../config/passport');
+const passport = require('passport');
 const router = express.Router();
 
 // Google OAuth routes
