@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .login-form {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            width: 300px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .error {
+            color: red;
+            margin-top: 10px;
+            display: none;
+        }
+        .success {
+            color: green;
+            margin-top: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-form">
+        <h2>Admin Login Test</h2>
+        <form id="testForm">
+            <div class="form-group">
+                <label for="testPin">Enter PIN (251996):</label>
+                <input type="password" id="testPin" name="testPin" required>
+            </div>
+            <button type="submit">Login</button>
+            <div id="error" class="error">Invalid PIN!</div>
+            <div id="success" class="success">Login successful!</div>
+        </form>
+    </div>
+
+    <script>
+        console.log('Test page loaded');
+        
+        document.getElementById('testForm').addEventListener('submit', function(e) {
+            console.log('Form submitted in test page');
+            e.preventDefault();
+            
+            const pin = document.getElementById('testPin').value;
+            console.log('PIN entered:', pin);
+            
+            const errorDiv = document.getElementById('error');
+            const successDiv = document.getElementById('success');
+            
+            // Hide previous messages
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+            
+            if (pin === '251996') {
+                console.log('PIN correct, redirecting...');
+                successDiv.style.display = 'block';
+                localStorage.setItem('adminSession', 'authenticated');
+                setTimeout(() => {
+                    window.location.href = '/admin/dashboard.html';
+                }, 1000);
+            } else {
+                console.log('PIN incorrect');
+                errorDiv.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>

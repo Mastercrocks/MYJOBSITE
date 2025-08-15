@@ -215,12 +215,27 @@
     </div>
 
     <script>
-        document.getElementById('adminLoginForm').addEventListener('submit', function(e) {
-            e.preventDefault();
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, setting up event listeners');
             
-            const pin = document.getElementById('pin').value;
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
+            const form = document.getElementById('adminLoginForm');
+            if (!form) {
+                console.error('Form not found!');
+                return;
+            }
+            
+            form.addEventListener('submit', function(e) {
+                console.log('Form submitted!');
+                e.preventDefault();
+                
+                // Check if form is valid
+                console.log('Form validity:', form.checkValidity());
+                
+                const pin = document.getElementById('pin').value;
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                
+                console.log('Values:', { pin, username, password });
             const errorMessage = document.getElementById('errorMessage');
             const ADMIN_PIN = '251996';
             const ADMIN_USERNAME = 'admin';
@@ -289,6 +304,19 @@
                 document.querySelector('.login-button').style.background = '#3b82f6';
             }
         });
+        
+        // Also add a click event listener as backup
+        const loginButton = document.querySelector('.login-button');
+        if (loginButton) {
+            loginButton.addEventListener('click', function(e) {
+                console.log('Button clicked directly!');
+                if (e.target.type === 'submit') {
+                    console.log('Submit button clicked, form should submit');
+                }
+            });
+        }
+        
+        }); // End DOMContentLoaded
 
         // Toggle Authentication Method
         function toggleAuthMethod() {
@@ -355,6 +383,10 @@
 
         // Auto-focus PIN field on load
         document.getElementById('pin').focus();
+        
+        // Add debugging for button
+        console.log('Login button found:', document.querySelector('.login-button'));
+        console.log('Form found:', document.getElementById('adminLoginForm'));
     </script>
 </body>
 </html>

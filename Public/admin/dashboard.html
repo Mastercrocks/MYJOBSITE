@@ -2176,7 +2176,7 @@
             if (jobDetails.company) document.getElementById('companyName').value = jobDetails.company;
             if (jobDetails.location) document.getElementById('jobLocation').value = jobDetails.location;
             if (jobDetails.description) document.getElementById('jobDescription').value = jobDetails.description;
-            if (jobDetails.salary) document.getElementById('jobSalary').value = jobDetails.salary;
+            if (jobDetails.salary) document.getElementById('salaryRange').value = jobDetails.salary;
             
             // Fill select fields
             if (jobDetails.job_type) {
@@ -2216,10 +2216,17 @@
                 }
             }
             
-            // Fill checkboxes
+            // Handle remote work (set job type to remote if specified)
             if (jobDetails.remote) {
-                const remoteCheckbox = document.getElementById('isRemote');
-                if (remoteCheckbox) remoteCheckbox.checked = true;
+                const jobTypeSelect = document.getElementById('jobType');
+                if (jobTypeSelect) {
+                    for (let option of jobTypeSelect.options) {
+                        if (option.value === 'remote') {
+                            option.selected = true;
+                            break;
+                        }
+                    }
+                }
             }
             
             // Fill application URL
