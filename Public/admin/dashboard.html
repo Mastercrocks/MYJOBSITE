@@ -363,8 +363,8 @@
                                 <p class="text-sm text-gray-600">Manage all registered users and their activities</p>
                             </div>
                             <div class="flex space-x-2">
-                                <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">Export Users</button>
-                                <button class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm">Add User</button>
+                                <button onclick="exportUsers()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">Export Users</button>
+                                <button onclick="showAddUserModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm">Add User</button>
                             </div>
                         </div>
                         <div class="p-6">
@@ -409,8 +409,8 @@
                                 <p class="text-sm text-gray-600">Manage companies and employer accounts</p>
                             </div>
                             <div class="flex space-x-2">
-                                <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">Export Employers</button>
-                                <button class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm">Verify Company</button>
+                                <button onclick="exportEmployers()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">Export Employers</button>
+                                <button onclick="showVerifyCompanyModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm">Verify Company</button>
                             </div>
                         </div>
                         <div class="p-6">
@@ -465,8 +465,8 @@
                                 <p class="text-sm text-gray-600">Manage all job postings and their status</p>
                             </div>
                             <div class="flex space-x-2">
-                                <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">Bulk Actions</button>
-                                <button class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm">Featured Jobs</button>
+                                <button onclick="showBulkActionsModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">Bulk Actions</button>
+                                <button onclick="toggleFeaturedJobs()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm">Featured Jobs</button>
                             </div>
                         </div>
                         <div class="p-6">
@@ -489,6 +489,9 @@
                                 <table class="min-w-full data-table">
                                     <thead class="bg-gray-50">
                                         <tr>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                                <input type="checkbox" id="selectAllJobs" onchange="toggleAllJobsSelection()" class="rounded">
+                                            </th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Job Title</th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Company</th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
@@ -500,7 +503,7 @@
                                     </thead>
                                     <tbody id="jobsTable" class="bg-white divide-y divide-gray-200">
                                         <tr>
-                                            <td colspan="7" class="px-6 py-8 text-center text-gray-500">Loading jobs...</td>
+                                            <td colspan="8" class="px-6 py-8 text-center text-gray-500">Loading jobs...</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -730,7 +733,7 @@
                                             <span>Interview Preparation</span>
                                             <button class="text-blue-600 hover:text-blue-800">Edit</button>
                                         </div>
-                                        <button class="w-full bg-blue-600 text-white px-4 py-2 rounded mt-2 hover:bg-blue-700">Add New Post</button>
+                                        <button onclick="showAddBlogPostModal()" class="w-full bg-blue-600 text-white px-4 py-2 rounded mt-2 hover:bg-blue-700">Add New Post</button>
                                     </div>
                                 </div>
                                 
@@ -741,7 +744,7 @@
                                         <p>Storage Used: 1.2 GB</p>
                                         <p>Images: 198</p>
                                         <p>Documents: 36</p>
-                                        <button class="w-full bg-green-600 text-white px-4 py-2 rounded mt-2 hover:bg-green-700">Upload Files</button>
+                                        <button onclick="showUploadFilesModal()" class="w-full bg-green-600 text-white px-4 py-2 rounded mt-2 hover:bg-green-700">Upload Files</button>
                                     </div>
                                 </div>
                             </div>
@@ -1708,12 +1711,15 @@
                     
                     row.innerHTML = `
                         <td class="px-6 py-4">
+                            <input type="checkbox" name="jobSelect" value="${job.id}" class="rounded">
+                        </td>
+                        <td class="px-6 py-4">
                             <div class="text-sm font-medium text-gray-900">${escapeHtml(job.title)}</div>
                             <div class="text-xs text-gray-500">#${job.id.substring(0, 8)}...</div>
                         </td>
                         <td class="px-6 py-4 text-sm text-gray-900">${escapeHtml(job.company)}</td>
-                        <td class="px-6 py-4 text-sm text-gray-900">${escapeHtml(job.location)}</td>
                         <td class="px-6 py-4 text-sm text-gray-900">${escapeHtml(job.category)}</td>
+                        <td class="px-6 py-4 text-sm text-gray-900">0</td>
                         <td class="px-6 py-4"><span class="badge ${statusClass}">${getJobStatus(job)}</span></td>
                         <td class="px-6 py-4 text-sm text-gray-500">${postedDate}</td>
                         <td class="px-6 py-4 text-sm">
@@ -1734,7 +1740,7 @@
                 console.error('Error loading jobs data:', error);
                 const tableBody = document.getElementById('jobsTable');
                 if (tableBody) {
-                    tableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-red-600">Error loading jobs data</td></tr>';
+                    tableBody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-red-600">Error loading jobs data</td></tr>';
                 }
             }
         }
@@ -2046,6 +2052,576 @@
                 });
             }
         }
+
+        // Export Users Function
+        async function exportUsers() {
+            try {
+                const response = await fetch('/api/admin/users/export');
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'users_export.csv';
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                } else {
+                    alert('Failed to export users');
+                }
+            } catch (error) {
+                console.error('Error exporting users:', error);
+                alert('Failed to export users');
+            }
+        }
+
+        // Export Employers Function
+        async function exportEmployers() {
+            try {
+                const response = await fetch('/api/admin/employers/export');
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'employers_export.csv';
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                } else {
+                    alert('Failed to export employers');
+                }
+            } catch (error) {
+                console.error('Error exporting employers:', error);
+                alert('Failed to export employers');
+            }
+        }
+
+        // Show Add User Modal
+        function showAddUserModal() {
+            document.getElementById('addUserModal').style.display = 'flex';
+        }
+
+        // Close Add User Modal
+        function closeAddUserModal() {
+            document.getElementById('addUserModal').style.display = 'none';
+            document.getElementById('addUserForm').reset();
+        }
+
+        // Add User Function
+        async function addUser() {
+            const form = document.getElementById('addUserForm');
+            const formData = new FormData(form);
+            
+            const userData = {
+                name: formData.get('name'),
+                email: formData.get('email'),
+                password: formData.get('password'),
+                type: formData.get('type'),
+                status: formData.get('status'),
+                phone: formData.get('phone'),
+                location: formData.get('location'),
+                skills: formData.get('skills')
+            };
+
+            try {
+                const response = await fetch('/api/admin/users', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(userData)
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    alert('User added successfully!');
+                    closeAddUserModal();
+                    loadUsers(); // Refresh user list
+                } else {
+                    alert('Failed to add user: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error adding user:', error);
+                alert('Failed to add user');
+            }
+        }
+
+        // Show Bulk Actions Modal
+        function showBulkActionsModal() {
+            const selectedJobs = document.querySelectorAll('input[name="jobSelect"]:checked');
+            if (selectedJobs.length === 0) {
+                alert('Please select jobs to perform bulk actions');
+                return;
+            }
+            document.getElementById('bulkActionsModal').style.display = 'flex';
+        }
+
+        // Close Bulk Actions Modal
+        function closeBulkActionsModal() {
+            document.getElementById('bulkActionsModal').style.display = 'none';
+        }
+
+        // Perform Bulk Action
+        async function performBulkAction() {
+            const selectedJobs = Array.from(document.querySelectorAll('input[name="jobSelect"]:checked'))
+                .map(checkbox => checkbox.value);
+            const action = document.getElementById('bulkActionSelect').value;
+
+            if (!action) {
+                alert('Please select an action');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/admin/jobs/bulk', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: action,
+                        jobIds: selectedJobs
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    alert(result.message);
+                    closeBulkActionsModal();
+                    loadJobsData(); // Refresh job list
+                } else {
+                    alert('Failed to perform bulk action: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error performing bulk action:', error);
+                alert('Failed to perform bulk action');
+            }
+        }
+
+        // Update Application Status
+        async function updateApplicationStatus(appId, status) {
+            try {
+                const response = await fetch(`/api/admin/applications/${appId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        status: status,
+                        adminNotes: prompt('Add admin notes (optional):') || ''
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    alert('Application status updated successfully!');
+                    loadApplications(); // Refresh applications list
+                } else {
+                    alert('Failed to update application: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error updating application:', error);
+                alert('Failed to update application');
+            }
+        }
+
+        // Download Resume
+        function downloadResume(filename) {
+            window.open(`/api/admin/resumes/${filename}`, '_blank');
+        }
+
+        // Show Add Blog Post Modal
+        function showAddBlogPostModal() {
+            document.getElementById('addBlogPostModal').style.display = 'flex';
+        }
+
+        // Close Add Blog Post Modal
+        function closeAddBlogPostModal() {
+            document.getElementById('addBlogPostModal').style.display = 'none';
+            document.getElementById('addBlogPostForm').reset();
+        }
+
+        // Add Blog Post
+        async function addBlogPost() {
+            const form = document.getElementById('addBlogPostForm');
+            const formData = new FormData(form);
+            
+            const postData = {
+                title: formData.get('title'),
+                content: formData.get('content'),
+                excerpt: formData.get('excerpt'),
+                category: formData.get('category'),
+                tags: formData.get('tags'),
+                status: formData.get('status')
+            };
+
+            try {
+                const response = await fetch('/api/admin/content/blog', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(postData)
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    alert('Blog post created successfully!');
+                    closeAddBlogPostModal();
+                    loadBlogPosts(); // Refresh blog posts list
+                } else {
+                    alert('Failed to create blog post: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error creating blog post:', error);
+                alert('Failed to create blog post');
+            }
+        }
+
+        // Load Blog Posts
+        async function loadBlogPosts() {
+            try {
+                const response = await fetch('/api/admin/content/blog');
+                const data = await response.json();
+                
+                const blogList = document.getElementById('blogPostsList');
+                if (blogList && data.posts) {
+                    blogList.innerHTML = data.posts.map(post => `
+                        <div class="flex justify-between">
+                            <span>${post.title}</span>
+                            <button onclick="editBlogPost('${post.id}')" class="text-blue-600 hover:text-blue-800">Edit</button>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error loading blog posts:', error);
+            }
+        }
+
+        // Verify Company
+        async function verifyCompany(employerId) {
+            if (confirm('Are you sure you want to verify this company?')) {
+                try {
+                    const response = await fetch(`/api/admin/employers/${employerId}/verify`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    const result = await response.json();
+                    if (result.success) {
+                        alert('Company verified successfully!');
+                        loadEmployers(); // Refresh employers list
+                    } else {
+                        alert('Failed to verify company: ' + result.error);
+                    }
+                } catch (error) {
+                    console.error('Error verifying company:', error);
+                    alert('Failed to verify company');
+                }
+            }
+        }
+
+        // Edit Job Function
+        function editJob(jobId) {
+            // You can implement this to open an edit modal or navigate to edit page
+            alert('Edit job functionality - Job ID: ' + jobId);
+        }
+
+        // Delete Job Function
+        async function deleteJob(jobId) {
+            if (confirm('Are you sure you want to delete this job?')) {
+                try {
+                    const response = await fetch(`/api/admin/jobs/${jobId}`, {
+                        method: 'DELETE'
+                    });
+
+                    const result = await response.json();
+                    if (result.success) {
+                        alert('Job deleted successfully!');
+                        loadJobsData(); // Refresh jobs list
+                    } else {
+                        alert('Failed to delete job: ' + result.error);
+                    }
+                } catch (error) {
+                    console.error('Error deleting job:', error);
+                    alert('Failed to delete job');
+                }
+            }
+        }
+
+        // Toggle All Jobs Selection
+        function toggleAllJobsSelection() {
+            const selectAll = document.getElementById('selectAllJobs');
+            const checkboxes = document.querySelectorAll('input[name="jobSelect"]');
+            
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAll.checked;
+            });
+        }
+
+        // Load Users function reference update
+        function loadUsers() {
+            loadUsersData();
+        }
+
+        // Load Employers function
+        function loadEmployers() {
+            loadEmployersData();
+        }
+
+        // Load Applications function  
+        function loadApplications() {
+            loadApplicationsData();
+        }
+
+        // Load Applications Data
+        async function loadApplicationsData() {
+            try {
+                const response = await fetch('/api/admin/applications');
+                const data = await response.json();
+                
+                const tableBody = document.getElementById('applicationsTable');
+                if (!tableBody) return;
+                
+                tableBody.innerHTML = '';
+                
+                data.applications.forEach(app => {
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-gray-50';
+                    
+                    const appliedDate = new Date(app.createdAt).toLocaleDateString();
+                    const statusClass = getApplicationStatusClass(app.status);
+                    
+                    row.innerHTML = `
+                        <td class="px-6 py-4">
+                            <div class="text-sm font-medium text-gray-900">${escapeHtml(app.applicantName || app.name || 'Unknown')}</div>
+                            <div class="text-xs text-gray-500">${escapeHtml(app.email || '')}</div>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-900">${escapeHtml(app.jobTitle || 'N/A')}</td>
+                        <td class="px-6 py-4 text-sm text-gray-900">${escapeHtml(app.company || 'N/A')}</td>
+                        <td class="px-6 py-4"><span class="badge ${statusClass}">${app.status || 'Pending'}</span></td>
+                        <td class="px-6 py-4 text-sm text-gray-500">${appliedDate}</td>
+                        <td class="px-6 py-4 text-sm">
+                            <button onclick="updateApplicationStatus('${app.id}', 'approved')" class="text-green-600 hover:text-green-800 mr-2">Approve</button>
+                            <button onclick="updateApplicationStatus('${app.id}', 'rejected')" class="text-red-600 hover:text-red-800 mr-2">Deny</button>
+                            ${app.resumeFile ? `<button onclick="downloadResume('${app.resumeFile}')" class="text-blue-600 hover:text-blue-800">Resume</button>` : ''}
+                        </td>
+                    `;
+                    
+                    tableBody.appendChild(row);
+                });
+                
+                console.log(`Loaded ${data.applications.length} applications`);
+                
+            } catch (error) {
+                console.error('Error loading applications data:', error);
+                const tableBody = document.getElementById('applicationsTable');
+                if (tableBody) {
+                    tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-red-600">Error loading applications data</td></tr>';
+                }
+            }
+        }
+
+        // Load Employers Data
+        async function loadEmployersData() {
+            try {
+                const response = await fetch('/api/admin/employers');
+                const data = await response.json();
+                
+                const tableBody = document.getElementById('employersTable');
+                if (!tableBody) return;
+                
+                tableBody.innerHTML = '';
+                
+                data.employers.forEach(employer => {
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-gray-50';
+                    
+                    const joinedDate = new Date(employer.createdAt).toLocaleDateString();
+                    const verifiedBadge = employer.verified ? 
+                        '<span class="badge badge-success">Verified</span>' : 
+                        '<span class="badge badge-warning">Unverified</span>';
+                    
+                    row.innerHTML = `
+                        <td class="px-6 py-4">
+                            <div class="text-sm font-medium text-gray-900">${escapeHtml(employer.companyName || employer.company || 'Unknown')}</div>
+                            <div class="text-xs text-gray-500">${verifiedBadge}</div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="text-sm text-gray-900">${escapeHtml(employer.contactName || 'N/A')}</div>
+                            <div class="text-xs text-gray-500">${escapeHtml(employer.contactEmail || employer.email || '')}</div>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-900">${employer.jobsPosted || 0}</td>
+                        <td class="px-6 py-4"><span class="badge badge-${employer.status === 'active' ? 'success' : 'warning'}">${employer.status || 'Active'}</span></td>
+                        <td class="px-6 py-4 text-sm text-gray-500">${joinedDate}</td>
+                        <td class="px-6 py-4 text-sm">
+                            ${!employer.verified ? `<button onclick="verifyCompany('${employer.id}')" class="text-green-600 hover:text-green-800 mr-2">Verify</button>` : ''}
+                            <button onclick="editEmployer('${employer.id}')" class="text-blue-600 hover:text-blue-800 mr-2">Edit</button>
+                            <button onclick="viewEmployerJobs('${employer.id}')" class="text-purple-600 hover:text-purple-800">View Jobs</button>
+                        </td>
+                    `;
+                    
+                    tableBody.appendChild(row);
+                });
+                
+                console.log(`Loaded ${data.employers.length} employers`);
+                
+            } catch (error) {
+                console.error('Error loading employers data:', error);
+                const tableBody = document.getElementById('employersTable');
+                if (tableBody) {
+                    tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-red-600">Error loading employers data</td></tr>';
+                }
+            }
+        }
+
+        // Get Application Status Class
+        function getApplicationStatusClass(status) {
+            switch(status?.toLowerCase()) {
+                case 'approved': return 'badge-success';
+                case 'rejected': case 'denied': return 'badge-danger';
+                case 'pending': return 'badge-warning';
+                default: return 'badge-info';
+            }
+        }
+
+        // Edit Employer Function
+        function editEmployer(employerId) {
+            alert('Edit employer functionality - Employer ID: ' + employerId);
+        }
+
+        // View Employer Jobs Function
+        function viewEmployerJobs(employerId) {
+            alert('View employer jobs functionality - Employer ID: ' + employerId);
+        }
     </script>
+
+    <!-- Add User Modal -->
+    <div id="addUserModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="display: none;">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 class="text-lg font-semibold mb-4">Add New User</h3>
+            <form id="addUserForm" onsubmit="event.preventDefault(); addUser();">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Name</label>
+                    <input type="text" name="name" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Email</label>
+                    <input type="email" name="email" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Password</label>
+                    <input type="password" name="password" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Type</label>
+                    <select name="type" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <option value="User">User</option>
+                        <option value="Employer">Employer</option>
+                        <option value="Admin">Admin</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Status</label>
+                    <select name="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                        <option value="Suspended">Suspended</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Phone (Optional)</label>
+                    <input type="tel" name="phone" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Location (Optional)</label>
+                    <input type="text" name="location" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Skills (Optional, comma-separated)</label>
+                    <input type="text" name="skills" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                </div>
+                <div class="flex justify-end space-x-2">
+                    <button type="button" onclick="closeAddUserModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Add User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bulk Actions Modal -->
+    <div id="bulkActionsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="display: none;">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 class="text-lg font-semibold mb-4">Bulk Actions</h3>
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-2">Select Action</label>
+                <select id="bulkActionSelect" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <option value="">Choose an action...</option>
+                    <option value="feature">Feature Jobs</option>
+                    <option value="unfeature">Remove Featured</option>
+                    <option value="activate">Activate Jobs</option>
+                    <option value="deactivate">Deactivate Jobs</option>
+                    <option value="delete">Delete Jobs</option>
+                </select>
+            </div>
+            <div class="flex justify-end space-x-2">
+                <button type="button" onclick="closeBulkActionsModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">Cancel</button>
+                <button type="button" onclick="performBulkAction()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Apply Action</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Blog Post Modal -->
+    <div id="addBlogPostModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="display: none;">
+        <div class="bg-white rounded-lg p-6 w-full max-w-2xl max-h-96 overflow-y-auto">
+            <h3 class="text-lg font-semibold mb-4">Add New Blog Post</h3>
+            <form id="addBlogPostForm" onsubmit="event.preventDefault(); addBlogPost();">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Title</label>
+                    <input type="text" name="title" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Content</label>
+                    <textarea name="content" required rows="6" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Excerpt (Optional)</label>
+                    <textarea name="excerpt" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Category</label>
+                        <select name="category" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                            <option value="Career Tips">Career Tips</option>
+                            <option value="Interview Guide">Interview Guide</option>
+                            <option value="Resume Writing">Resume Writing</option>
+                            <option value="Job Search">Job Search</option>
+                            <option value="General">General</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Status</label>
+                        <select name="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                            <option value="published">Published</option>
+                            <option value="draft">Draft</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Tags (comma-separated)</label>
+                    <input type="text" name="tags" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                </div>
+                <div class="flex justify-end space-x-2">
+                    <button type="button" onclick="closeAddBlogPostModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Create Post</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </body>
 </html>
