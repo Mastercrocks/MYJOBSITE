@@ -30,7 +30,7 @@
             const currentTime = Date.now();
             
             // Session expires after 8 hours (8 * 60 * 60 * 1000)
-            if (!adminSession || !loginTime || (currentTime - loginTime) > 28800000) {
+            if (!adminSession || !loginTime || (currentTime - parseInt(loginTime)) > 28800000) {
                 localStorage.removeItem('adminSession');
                 localStorage.removeItem('adminLoginTime');
                 window.location.href = '/admin/login.html';
