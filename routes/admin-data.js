@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const fs = require('fs').promises;
 const path = require('path');
+const https = require('https');
+const http = require('http');
 
 // Helper function to read JSON files
 async function readJSONFile(filename) {
@@ -613,5 +615,292 @@ router.get('/content/blog', async (req, res) => {
         res.json({ posts: [] }); // Return empty array if file doesn't exist
     }
 });
+
+// Scrape job from URL endpoint
+router.post('/scrape-job-url', async (req, res) => {
+    try {
+        const { url } = req.body;
+        
+        if (!url) {
+            return res.status(400).json({ error: 'URL is required' });
+        }
+
+        // Validate URL and determine job site
+        const jobSite = detectJobSite(url);
+        if (!jobSite) {
+            return res.status(400).json({ error: 'Unsupported job site. Please use LinkedIn, Indeed, or ZipRecruiter URLs.' });
+        }
+
+        console.log(`Scraping ${jobSite} job from: ${url}`);
+
+        // Fetch the webpage content
+        const htmlContent = await fetchWebpage(url);
+        
+        // Extract job details based on the job site
+        const jobDetails = await extractJobDetails(htmlContent, jobSite, url);
+        
+        if (!jobDetails.title) {
+            return res.status(400).json({ error: 'Could not extract job details from the provided URL. Please check the URL and try again.' });
+        }
+
+        res.json({
+            success: true,
+            jobDetails: jobDetails,
+            source: jobSite,
+            originalUrl: url
+        });
+
+    } catch (error) {
+        console.error('Error scraping job URL:', error);
+        res.status(500).json({ 
+            error: 'Failed to scrape job details. Please try again or fill the form manually.',
+            details: error.message 
+        });
+    }
+});
+
+// Helper function to detect job site
+function detectJobSite(url) {
+    const urlLower = url.toLowerCase();
+    
+    if (urlLower.includes('linkedin.com')) {
+        return 'LinkedIn';
+    } else if (urlLower.includes('indeed.com')) {
+        return 'Indeed';
+    } else if (urlLower.includes('ziprecruiter.com')) {
+        return 'ZipRecruiter';
+    }
+    
+    return null;
+}
+
+// Helper function to fetch webpage content
+function fetchWebpage(url) {
+    return new Promise((resolve, reject) => {
+        const client = url.startsWith('https') ? https : http;
+        
+        const options = {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.5',
+                'Accept-Encoding': 'identity',
+                'Connection': 'keep-alive',
+                'Upgrade-Insecure-Requests': '1'
+            }
+        };
+
+        const req = client.get(url, options, (res) => {
+            let data = '';
+            
+            res.on('data', (chunk) => {
+                data += chunk;
+            });
+            
+            res.on('end', () => {
+                resolve(data);
+            });
+        });
+        
+        req.on('error', (error) => {
+            reject(error);
+        });
+        
+        req.setTimeout(10000, () => {
+            req.abort();
+            reject(new Error('Request timeout'));
+        });
+    });
+}
+
+// Helper function to extract job details based on job site
+async function extractJobDetails(html, jobSite, url) {
+    const jobDetails = {
+        title: '',
+        company: '',
+        location: '',
+        description: '',
+        salary: '',
+        job_type: 'Full-time',
+        remote: false,
+        category: 'General',
+        experience_level: 'Mid Level',
+        skills: '',
+        application_url: url,
+        application_email: ''
+    };
+
+    try {
+        switch (jobSite) {
+            case 'LinkedIn':
+                return extractLinkedInJobDetails(html, jobDetails);
+            case 'Indeed':
+                return extractIndeedJobDetails(html, jobDetails);
+            case 'ZipRecruiter':
+                return extractZipRecruiterJobDetails(html, jobDetails);
+            default:
+                return jobDetails;
+        }
+    } catch (error) {
+        console.error(`Error extracting ${jobSite} job details:`, error);
+        return jobDetails;
+    }
+}
+
+// Extract LinkedIn job details
+function extractLinkedInJobDetails(html, jobDetails) {
+    // LinkedIn job title
+    const titleMatch = html.match(/<h1[^>]*class="[^"]*job-details-jobs-unified-top-card__job-title[^"]*"[^>]*>([^<]+)<\/h1>/i) ||
+                     html.match(/<h1[^>]*>([^<]+job[^<]*)<\/h1>/i) ||
+                     html.match(/<title>([^|]+)\s*\|/i);
+    if (titleMatch) {
+        jobDetails.title = cleanText(titleMatch[1]);
+    }
+
+    // LinkedIn company
+    const companyMatch = html.match(/<span[^>]*class="[^"]*job-details-jobs-unified-top-card__company-name[^"]*"[^>]*>([^<]+)<\/span>/i) ||
+                        html.match(/<a[^>]*class="[^"]*company[^"]*"[^>]*>([^<]+)<\/a>/i);
+    if (companyMatch) {
+        jobDetails.company = cleanText(companyMatch[1]);
+    }
+
+    // LinkedIn location
+    const locationMatch = html.match(/<span[^>]*class="[^"]*job-details-jobs-unified-top-card__bullet[^"]*"[^>]*>([^<]+)<\/span>/i) ||
+                         html.match(/<span[^>]*class="[^"]*location[^"]*"[^>]*>([^<]+)<\/span>/i);
+    if (locationMatch) {
+        jobDetails.location = cleanText(locationMatch[1]);
+    }
+
+    // LinkedIn description
+    const descMatch = html.match(/<div[^>]*class="[^"]*job-details-jobs-unified-top-card__job-description[^"]*"[^>]*>([\s\S]*?)<\/div>/i) ||
+                     html.match(/<div[^>]*class="[^"]*description[^"]*"[^>]*>([\s\S]*?)<\/div>/i);
+    if (descMatch) {
+        jobDetails.description = cleanText(descMatch[1]).substring(0, 500);
+    }
+
+    // Detect job type
+    const jobTypeText = html.toLowerCase();
+    if (jobTypeText.includes('part-time') || jobTypeText.includes('part time')) {
+        jobDetails.job_type = 'Part-time';
+    } else if (jobTypeText.includes('contract') || jobTypeText.includes('freelance')) {
+        jobDetails.job_type = 'Contract';
+    } else if (jobTypeText.includes('internship')) {
+        jobDetails.job_type = 'Internship';
+    }
+
+    // Detect remote work
+    if (jobTypeText.includes('remote') || jobTypeText.includes('work from home')) {
+        jobDetails.remote = true;
+    }
+
+    return jobDetails;
+}
+
+// Extract Indeed job details
+function extractIndeedJobDetails(html, jobDetails) {
+    // Indeed job title
+    const titleMatch = html.match(/<h1[^>]*class="[^"]*jobsearch-JobInfoHeader-title[^"]*"[^>]*>([^<]+)<\/h1>/i) ||
+                     html.match(/<h1[^>]*>([^<]+)<\/h1>/i) ||
+                     html.match(/<title>([^|]+)\s*-/i);
+    if (titleMatch) {
+        jobDetails.title = cleanText(titleMatch[1]);
+    }
+
+    // Indeed company
+    const companyMatch = html.match(/<div[^>]*class="[^"]*jobsearch-InlineCompanyRating[^"]*"[^>]*>[\s\S]*?<a[^>]*>([^<]+)<\/a>/i) ||
+                        html.match(/<span[^>]*class="[^"]*jobsearch-JobInfoHeader-subtitle[^"]*"[^>]*>([^<]+)<\/span>/i);
+    if (companyMatch) {
+        jobDetails.company = cleanText(companyMatch[1]);
+    }
+
+    // Indeed location
+    const locationMatch = html.match(/<div[^>]*class="[^"]*jobsearch-JobInfoHeader-subtitle[^"]*"[^>]*>[\s\S]*?<div[^>]*>([^<]+)<\/div>/i) ||
+                         html.match(/<span[^>]*class="[^"]*location[^"]*"[^>]*>([^<]+)<\/span>/i);
+    if (locationMatch) {
+        jobDetails.location = cleanText(locationMatch[1]);
+    }
+
+    // Indeed description
+    const descMatch = html.match(/<div[^>]*class="[^"]*jobsearch-jobDescriptionText[^"]*"[^>]*>([\s\S]*?)<\/div>/i);
+    if (descMatch) {
+        jobDetails.description = cleanText(descMatch[1]).substring(0, 500);
+    }
+
+    // Indeed salary
+    const salaryMatch = html.match(/<span[^>]*class="[^"]*salary[^"]*"[^>]*>([^<]+)<\/span>/i) ||
+                       html.match(/\$[\d,]+ - \$[\d,]+/i);
+    if (salaryMatch) {
+        jobDetails.salary = cleanText(salaryMatch[1]);
+    }
+
+    // Detect job type and remote
+    const jobTypeText = html.toLowerCase();
+    if (jobTypeText.includes('part-time')) {
+        jobDetails.job_type = 'Part-time';
+    } else if (jobTypeText.includes('contract')) {
+        jobDetails.job_type = 'Contract';
+    } else if (jobTypeText.includes('temporary')) {
+        jobDetails.job_type = 'Temporary';
+    }
+
+    if (jobTypeText.includes('remote')) {
+        jobDetails.remote = true;
+    }
+
+    return jobDetails;
+}
+
+// Extract ZipRecruiter job details
+function extractZipRecruiterJobDetails(html, jobDetails) {
+    // ZipRecruiter job title
+    const titleMatch = html.match(/<h1[^>]*class="[^"]*job_title[^"]*"[^>]*>([^<]+)<\/h1>/i) ||
+                     html.match(/<title>([^|]+)\s*\|/i);
+    if (titleMatch) {
+        jobDetails.title = cleanText(titleMatch[1]);
+    }
+
+    // ZipRecruiter company
+    const companyMatch = html.match(/<a[^>]*class="[^"]*company[^"]*"[^>]*>([^<]+)<\/a>/i) ||
+                        html.match(/<span[^>]*class="[^"]*company[^"]*"[^>]*>([^<]+)<\/span>/i);
+    if (companyMatch) {
+        jobDetails.company = cleanText(companyMatch[1]);
+    }
+
+    // ZipRecruiter location
+    const locationMatch = html.match(/<span[^>]*class="[^"]*location[^"]*"[^>]*>([^<]+)<\/span>/i);
+    if (locationMatch) {
+        jobDetails.location = cleanText(locationMatch[1]);
+    }
+
+    // ZipRecruiter description
+    const descMatch = html.match(/<div[^>]*class="[^"]*job_description[^"]*"[^>]*>([\s\S]*?)<\/div>/i);
+    if (descMatch) {
+        jobDetails.description = cleanText(descMatch[1]).substring(0, 500);
+    }
+
+    // ZipRecruiter salary
+    const salaryMatch = html.match(/<div[^>]*class="[^"]*salary[^"]*"[^>]*>([^<]+)<\/div>/i);
+    if (salaryMatch) {
+        jobDetails.salary = cleanText(salaryMatch[1]);
+    }
+
+    return jobDetails;
+}
+
+// Helper function to clean extracted text
+function cleanText(text) {
+    if (!text) return '';
+    
+    return text
+        .replace(/<[^>]*>/g, '') // Remove HTML tags
+        .replace(/&nbsp;/g, ' ') // Replace &nbsp; with space
+        .replace(/&amp;/g, '&') // Replace &amp; with &
+        .replace(/&lt;/g, '<') // Replace &lt; with <
+        .replace(/&gt;/g, '>') // Replace &gt; with >
+        .replace(/&quot;/g, '"') // Replace &quot; with "
+        .replace(/&#39;/g, "'") // Replace &#39; with '
+        .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+        .trim(); // Remove leading/trailing whitespace
+}
 
 module.exports = router;

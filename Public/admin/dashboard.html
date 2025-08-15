@@ -1108,6 +1108,19 @@
                             <p class="text-sm text-gray-600">Create job postings manually or enable automatic job import</p>
                         </div>
                         <div class="p-6">
+                            <!-- URL Scraping Section -->
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                                <h3 class="text-lg font-semibold text-blue-900 mb-2">🚀 Quick Import from URL</h3>
+                                <p class="text-sm text-blue-700 mb-4">Paste a job URL from LinkedIn, Indeed, or ZipRecruiter to auto-fill the form</p>
+                                <div class="flex space-x-3">
+                                    <input type="url" id="jobUrlInput" class="flex-1 px-4 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="https://www.linkedin.com/jobs/view/..." />
+                                    <button type="button" onclick="scrapeJobFromUrl()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
+                                        <span id="scrapeButtonText">Import Job</span>
+                                    </button>
+                                </div>
+                                <div id="scrapeStatus" class="mt-3 text-sm" style="display: none;"></div>
+                            </div>
+
                             <form id="manualJobForm" class="space-y-6">
                                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                     <div>
@@ -2051,6 +2064,189 @@
                     }
                 });
             }
+        }
+
+        // Scrape Job from URL Function
+        async function scrapeJobFromUrl() {
+            const urlInput = document.getElementById('jobUrlInput');
+            const statusDiv = document.getElementById('scrapeStatus');
+            const buttonText = document.getElementById('scrapeButtonText');
+            
+            const url = urlInput.value.trim();
+            
+            if (!url) {
+                showScrapeStatus('Please enter a job URL', 'error');
+                return;
+            }
+            
+            // Validate URL format
+            if (!isValidJobUrl(url)) {
+                showScrapeStatus('Please enter a valid LinkedIn, Indeed, or ZipRecruiter job URL', 'error');
+                return;
+            }
+            
+            // Show loading state
+            buttonText.textContent = 'Importing...';
+            showScrapeStatus('Extracting job details from URL...', 'loading');
+            
+            try {
+                const response = await fetch('/api/admin/scrape-job-url', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ url: url })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success && result.jobDetails) {
+                    // Auto-fill the form with scraped data
+                    fillJobForm(result.jobDetails);
+                    showScrapeStatus(`✅ Job details imported successfully from ${result.source}!`, 'success');
+                    
+                    // Clear the URL input
+                    urlInput.value = '';
+                    
+                    // Scroll to form for review
+                    document.getElementById('manualJobForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    
+                } else {
+                    showScrapeStatus(result.error || 'Failed to extract job details. Please try again or fill manually.', 'error');
+                }
+                
+            } catch (error) {
+                console.error('Error scraping job URL:', error);
+                showScrapeStatus('Network error. Please check your connection and try again.', 'error');
+            } finally {
+                // Restore button
+                buttonText.textContent = 'Import Job';
+            }
+        }
+
+        // Helper function to validate job URLs
+        function isValidJobUrl(url) {
+            const jobSites = [
+                'linkedin.com/jobs',
+                'indeed.com/viewjob',
+                'indeed.com/jobs',
+                'ziprecruiter.com/jobs'
+            ];
+            
+            return jobSites.some(site => url.toLowerCase().includes(site));
+        }
+
+        // Helper function to show scrape status
+        function showScrapeStatus(message, type) {
+            const statusDiv = document.getElementById('scrapeStatus');
+            statusDiv.style.display = 'block';
+            
+            // Remove existing classes
+            statusDiv.className = statusDiv.className.replace(/text-\w+-600/g, '');
+            
+            // Add appropriate styling based on type
+            switch(type) {
+                case 'success':
+                    statusDiv.className += ' text-green-600';
+                    break;
+                case 'error':
+                    statusDiv.className += ' text-red-600';
+                    break;
+                case 'loading':
+                    statusDiv.className += ' text-blue-600';
+                    break;
+                default:
+                    statusDiv.className += ' text-gray-600';
+            }
+            
+            statusDiv.textContent = message;
+            
+            // Auto-hide after 5 seconds for success messages
+            if (type === 'success') {
+                setTimeout(() => {
+                    statusDiv.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        // Helper function to fill job form with scraped data
+        function fillJobForm(jobDetails) {
+            // Fill basic job information
+            if (jobDetails.title) document.getElementById('jobTitle').value = jobDetails.title;
+            if (jobDetails.company) document.getElementById('companyName').value = jobDetails.company;
+            if (jobDetails.location) document.getElementById('jobLocation').value = jobDetails.location;
+            if (jobDetails.description) document.getElementById('jobDescription').value = jobDetails.description;
+            if (jobDetails.salary) document.getElementById('jobSalary').value = jobDetails.salary;
+            
+            // Fill select fields
+            if (jobDetails.job_type) {
+                const jobTypeSelect = document.getElementById('jobType');
+                if (jobTypeSelect) {
+                    // Try to match the job type
+                    for (let option of jobTypeSelect.options) {
+                        if (option.value.toLowerCase() === jobDetails.job_type.toLowerCase()) {
+                            option.selected = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            if (jobDetails.experience_level) {
+                const experienceSelect = document.getElementById('experienceLevel');
+                if (experienceSelect) {
+                    for (let option of experienceSelect.options) {
+                        if (option.value.toLowerCase().includes(jobDetails.experience_level.toLowerCase())) {
+                            option.selected = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            if (jobDetails.category) {
+                const categorySelect = document.getElementById('jobCategory');
+                if (categorySelect) {
+                    for (let option of categorySelect.options) {
+                        if (option.value.toLowerCase().includes(jobDetails.category.toLowerCase())) {
+                            option.selected = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            // Fill checkboxes
+            if (jobDetails.remote) {
+                const remoteCheckbox = document.getElementById('isRemote');
+                if (remoteCheckbox) remoteCheckbox.checked = true;
+            }
+            
+            // Fill application URL
+            if (jobDetails.application_url) {
+                const appUrlField = document.getElementById('applicationUrl');
+                if (appUrlField) appUrlField.value = jobDetails.application_url;
+            }
+            
+            // Fill skills if available
+            if (jobDetails.skills) {
+                const skillsField = document.getElementById('requiredSkills');
+                if (skillsField) {
+                    skillsField.value = Array.isArray(jobDetails.skills) ? 
+                        jobDetails.skills.join(', ') : jobDetails.skills;
+                }
+            }
+            
+            // Highlight the form to show it's been filled
+            const form = document.getElementById('manualJobForm');
+            form.style.border = '2px solid #10b981';
+            form.style.borderRadius = '8px';
+            form.style.transition = 'border 0.3s ease';
+            
+            // Remove highlight after 3 seconds
+            setTimeout(() => {
+                form.style.border = '';
+            }, 3000);
         }
 
         // Export Users Function
