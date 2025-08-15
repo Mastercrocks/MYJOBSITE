@@ -230,15 +230,21 @@
             errorMessage.style.display = 'none';
             
             // Check which authentication method is being used
-            const usingPin = document.getElementById('pinAuthGroup').style.display !== 'none';
+            const usernameGroup = document.getElementById('usernameAuthGroup');
+            const usingPin = usernameGroup.style.display === 'none' || usernameGroup.style.display === '';
             let isValidAuth = false;
+            
+            console.log('Authentication method - Using PIN:', usingPin);
+            console.log('Username group display:', usernameGroup.style.display);
             
             if (usingPin) {
                 // PIN Authentication (Primary)
                 isValidAuth = pin === ADMIN_PIN;
+                console.log('PIN entered:', pin, 'Expected:', ADMIN_PIN, 'Valid:', isValidAuth);
             } else {
                 // Username/Password Authentication (Backup)
                 isValidAuth = username === ADMIN_USERNAME && password === ADMIN_PASSWORD;
+                console.log('Username/Password entered:', username, password, 'Valid:', isValidAuth);
             }
             
             if (isValidAuth) {
