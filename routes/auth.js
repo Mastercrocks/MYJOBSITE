@@ -7,7 +7,91 @@ const { pool } = require('../Config/database');
 const { authenticateToken } = require('../middleware/auth');
 const crypto = require('crypto');
 const { sendAccountEmail } = require('../services/emailService');
+const passport = require('../config/passport');
 const router = express.Router();
+
+// Google OAuth routes
+router.get('/google', (req, res, next) => {
+  // Store referrer to determine user type after OAuth
+  req.session.authReferrer = req.get('Referer') || req.query.redirect;
+  
+  passport.authenticate('google', { 
+    scope: ['profile', 'email'] 
+  })(req, res, next);
+});
+
+router.get('/google/callback',
+  passport.authenticate('google', { failureRedirect: '/login' }),
+  async (req, res) => {
+    try {
+      let user = req.user;
+      
+      // Check if user came from employer page and update user type if needed
+      const referrer = req.session.authReferrer;
+      const isFromEmployerPage = referrer && (referrer.includes('/employers') || referrer.includes('/post-job'));
+      
+      if (isFromEmployerPage && user.user_type === 'job_seeker') {
+        // Update user type to employer if they came from employer page
+        await pool.execute(
+          'UPDATE users SET user_type = ? WHERE id = ?',
+          ['employer', user.id]
+        );
+        user.user_type = 'employer';
+      }
+      
+      // Generate JWT token for the authenticated user
+      const token = jwt.sign(
+        { userId: user.id },
+        process.env.JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+
+      // Update login tracking
+      await pool.execute(
+        'UPDATE users SET last_login = CURRENT_TIMESTAMP, login_count = COALESCE(login_count, 0) + 1 WHERE id = ?',
+        [user.id]
+      );
+
+      // Redirect based on user type
+      const redirectUrl = user.user_type === 'employer' ? '/employer/dashboard.html' : '/dashboard.html';
+      
+      // Set token in cookie and redirect
+      res.cookie('authToken', token, { 
+        httpOnly: true, 
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      });
+      
+      res.redirect(redirectUrl + '?loginSuccess=true');
+    } catch (error) {
+      console.error('Google OAuth callback error:', error);
+      res.redirect('/login?error=oauth-failed');
+    }
+  }
+);
+
+// Check if user is already logged in
+router.get('/check-auth', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const [users] = await pool.execute(
+      'SELECT id, username, email, user_type, first_name, last_name, profile_picture FROM users WHERE id = ?',
+      [userId]
+    );
+
+    if (users.length === 0) {
+      return res.status(401).json({ authenticated: false });
+    }
+
+    res.json({ 
+      authenticated: true, 
+      user: users[0] 
+    });
+  } catch (error) {
+    console.error('Auth check error:', error);
+    res.status(500).json({ authenticated: false });
+  }
+});
 
 // ADMIN FORGOT PASSWORD
 router.post('/admin/forgot-password', async (req, res) => {
@@ -228,6 +312,13 @@ router.post('/login', authLimiter, async (req, res) => {
       { expiresIn: '7d' }
     );
 
+    // Set HTTP-only cookie for persistent login
+    res.cookie('authToken', token, { 
+      httpOnly: true, 
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+
     res.json({
       message: 'Login successful',
       token,
@@ -245,6 +336,23 @@ router.post('/login', authLimiter, async (req, res) => {
     console.error('Login error:', error);
     res.status(500).json({ error: 'Login failed. Please try again.' });
   }
+});
+
+// LOGOUT USER
+router.post('/logout', (req, res) => {
+  // Clear the auth token cookie
+  res.clearCookie('authToken');
+  
+  // If using passport sessions, logout
+  if (req.logout) {
+    req.logout((err) => {
+      if (err) {
+        console.error('Logout error:', err);
+      }
+    });
+  }
+  
+  res.json({ message: 'Logged out successfully' });
 });
 
 // GET USER PROFILE

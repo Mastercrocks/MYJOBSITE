@@ -6,6 +6,9 @@ const compression = require('compression');
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
+const session = require('express-session');
+const passport = require('./config/passport');
+const cookieParser = require('cookie-parser');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -13,9 +16,34 @@ const PORT = process.env.PORT || 3000;
 // Enable compression
 app.use(compression());
 
+// Cookie parser
+app.use(cookieParser());
+
+// Session configuration
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-secret-key-change-this',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { 
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+  }
+}));
+
+// Passport middleware
+app.use(passport.initialize());
+app.use(passport.session());
+
 // Parse JSON and URL-encoded bodies
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Import auth middleware and routes
+const { redirectIfAuthenticated } = require('./middleware/auth');
+const authRoutes = require('./routes/auth');
+
+// Mount auth routes
+app.use('/auth', authRoutes);
 
 // API routes FIRST (before static files)
 app.get('/api/fresh', (req, res) => {
@@ -97,12 +125,16 @@ app.get('/blog', (req, res) => {
     }
 });
 
-app.get('/login', (req, res) => {
+app.get('/login', redirectIfAuthenticated, (req, res) => {
     res.sendFile(path.join(__dirname, 'Public', 'login.html'));
 });
 
-app.get('/register', (req, res) => {
+app.get('/register', redirectIfAuthenticated, (req, res) => {
     res.sendFile(path.join(__dirname, 'Public', 'register.html'));
+});
+
+app.get('/post-job', (req, res) => {
+    res.sendFile(path.join(__dirname, 'Public', 'employers.html'));
 });
 
 app.get('/privacy', (req, res) => {
