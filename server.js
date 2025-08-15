@@ -44,9 +44,13 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Import auth middleware and routes
 const { redirectIfAuthenticated } = require('./middleware/auth');
 const authRoutes = require('./routes/auth');
+const adminDataRoutes = require('./routes/admin-data');
 
 // Mount auth routes
 app.use('/auth', authRoutes);
+
+// Mount admin data API routes
+app.use('/api/admin', adminDataRoutes);
 
 // API routes FIRST (before static files)
 app.get('/api/fresh', (req, res) => {
