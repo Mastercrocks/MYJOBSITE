@@ -173,9 +173,21 @@
         </div>
 
         <form id="adminLoginForm">
-            <div class="form-group">
+            <!-- PIN Authentication (Primary) -->
+            <div class="form-group" id="pinAuthGroup">
                 <label for="pin">6-Digit PIN</label>
                 <input type="password" id="pin" name="pin" maxlength="6" placeholder="••••••" required autocomplete="off">
+            </div>
+
+            <!-- Username/Password Authentication (Backup) -->
+            <div class="form-group" id="usernameAuthGroup" style="display: none;">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" placeholder="Enter admin username" autocomplete="off">
+            </div>
+
+            <div class="form-group" id="passwordAuthGroup" style="display: none;">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" placeholder="Enter admin password" autocomplete="off">
             </div>
 
             <button type="submit" class="login-button">
@@ -183,7 +195,13 @@
             </button>
 
             <div class="error-message" id="errorMessage">
-                Invalid PIN. Please try again.
+                Invalid credentials. Please try again.
+            </div>
+            
+            <div class="text-center mt-4">
+                <button type="button" onclick="toggleAuthMethod()" class="text-sm text-blue-600 hover:text-blue-800">
+                    Switch to <span id="authToggleText">Username/Password</span>
+                </button>
             </div>
         </form>
 
@@ -201,14 +219,29 @@
             e.preventDefault();
             
             const pin = document.getElementById('pin').value;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
             const errorMessage = document.getElementById('errorMessage');
             const ADMIN_PIN = '251996';
+            const ADMIN_USERNAME = 'admin';
+            const ADMIN_PASSWORD = 'talentsync2025';
             
             // Clear previous error
             errorMessage.style.display = 'none';
             
-            // Check PIN (PIN: 251996)
-            if (pin === ADMIN_PIN) {
+            // Check which authentication method is being used
+            const usingPin = document.getElementById('pinAuthGroup').style.display !== 'none';
+            let isValidAuth = false;
+            
+            if (usingPin) {
+                // PIN Authentication (Primary)
+                isValidAuth = pin === ADMIN_PIN;
+            } else {
+                // Username/Password Authentication (Backup)
+                isValidAuth = username === ADMIN_USERNAME && password === ADMIN_PASSWORD;
+            }
+            
+            if (isValidAuth) {
                 // Store authentication in localStorage
                 const loginTime = new Date().getTime();
                 localStorage.setItem('adminSession', 'authenticated');
@@ -225,7 +258,7 @@
                 
             } else {
                 // Show error message
-                errorMessage.textContent = 'Invalid PIN. Please try again.';
+                errorMessage.textContent = usingPin ? 'Invalid PIN. Please try again.' : 'Invalid username or password. Please try again.';
                 errorMessage.style.display = 'block';
                 
                 // Add shake animation
@@ -235,16 +268,60 @@
                     loginCard.style.animation = 'shake 0.5s';
                 }, 10);
                 
-                // Clear PIN field
-                document.getElementById('pin').value = '';
-                document.getElementById('pin').focus();
+                // Clear fields
+                if (usingPin) {
+                    document.getElementById('pin').value = '';
+                    document.getElementById('pin').focus();
+                } else {
+                    document.getElementById('username').value = '';
+                    document.getElementById('password').value = '';
+                    document.getElementById('username').focus();
+                }
                 
                 // Reset button text
                 document.querySelector('.login-button').textContent = 'Access Admin Dashboard';
                 document.querySelector('.login-button').style.background = '#3b82f6';
             }
-            }
         });
+
+        // Toggle Authentication Method
+        function toggleAuthMethod() {
+            const pinGroup = document.getElementById('pinAuthGroup');
+            const usernameGroup = document.getElementById('usernameAuthGroup');
+            const passwordGroup = document.getElementById('passwordAuthGroup');
+            const toggleText = document.getElementById('authToggleText');
+            const headerText = document.querySelector('.login-header p');
+            
+            if (pinGroup.style.display === 'none') {
+                // Switch to PIN
+                pinGroup.style.display = 'block';
+                usernameGroup.style.display = 'none';
+                passwordGroup.style.display = 'none';
+                toggleText.textContent = 'Username/Password';
+                headerText.textContent = 'Enter your 6-digit PIN to access the admin dashboard';
+                document.getElementById('pin').required = true;
+                document.getElementById('username').required = false;
+                document.getElementById('password').required = false;
+            } else {
+                // Switch to Username/Password
+                pinGroup.style.display = 'none';
+                usernameGroup.style.display = 'block';
+                passwordGroup.style.display = 'block';
+                toggleText.textContent = 'PIN Authentication';
+                headerText.textContent = 'Enter your credentials to access the admin dashboard';
+                document.getElementById('pin').required = false;
+                document.getElementById('username').required = true;
+                document.getElementById('password').required = true;
+            }
+            
+            // Clear error message
+            document.getElementById('errorMessage').style.display = 'none';
+            
+            // Clear all fields
+            document.getElementById('pin').value = '';
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+        }
 
         // Check if already authenticated
         function checkExistingAuth() {
@@ -270,8 +347,8 @@
         // Check authentication status on page load
         checkExistingAuth();
 
-        // Auto-focus username field
-        document.getElementById('username').focus();
+        // Auto-focus PIN field on load
+        document.getElementById('pin').focus();
     </script>
 </body>
 </html>
