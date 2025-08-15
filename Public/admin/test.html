@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-gray-900 mb-8">Admin Dashboard Test</h1>
+        
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">Server Connection Test</h2>
+            <button id="testBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                Test API Connection
+            </button>
+            <div id="result" class="mt-4 p-4 rounded" style="display: none;"></div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-semibold mb-4">Dashboard Status</h2>
+            <ul class="space-y-2">
+                <li class="flex items-center">
+                    <span class="w-3 h-3 bg-green-500 rounded-full mr-3"></span>
+                    HTML Page Loading ✓
+                </li>
+                <li class="flex items-center">
+                    <span class="w-3 h-3 bg-green-500 rounded-full mr-3"></span>
+                    Tailwind CSS Loading ✓
+                </li>
+                <li class="flex items-center" id="jsStatus">
+                    <span class="w-3 h-3 bg-yellow-500 rounded-full mr-3"></span>
+                    JavaScript Loading...
+                </li>
+                <li class="flex items-center" id="apiStatus">
+                    <span class="w-3 h-3 bg-yellow-500 rounded-full mr-3"></span>
+                    API Connection Testing...
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Test JavaScript execution
+        document.getElementById('jsStatus').innerHTML = `
+            <span class="w-3 h-3 bg-green-500 rounded-full mr-3"></span>
+            JavaScript Loading ✓
+        `;
+
+        // Test API connection
+        document.getElementById('testBtn').addEventListener('click', async function() {
+            const resultDiv = document.getElementById('result');
+            const apiStatus = document.getElementById('apiStatus');
+            
+            try {
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'mt-4 p-4 rounded bg-blue-100 text-blue-800';
+                resultDiv.textContent = 'Testing API connection...';
+                
+                const response = await fetch('/api/admin/stats');
+                const data = await response.json();
+                
+                resultDiv.className = 'mt-4 p-4 rounded bg-green-100 text-green-800';
+                resultDiv.innerHTML = `
+                    <h3 class="font-semibold">API Connection Successful! ✓</h3>
+                    <p>Total Jobs: ${data.totals.jobs.toLocaleString()}</p>
+                    <p>Total Users: ${data.totals.users.toLocaleString()}</p>
+                    <p>Total Employers: ${data.totals.employers.toLocaleString()}</p>
+                `;
+                
+                apiStatus.innerHTML = `
+                    <span class="w-3 h-3 bg-green-500 rounded-full mr-3"></span>
+                    API Connection ✓
+                `;
+                
+            } catch (error) {
+                resultDiv.className = 'mt-4 p-4 rounded bg-red-100 text-red-800';
+                resultDiv.innerHTML = `
+                    <h3 class="font-semibold">API Connection Failed ✗</h3>
+                    <p>Error: ${error.message}</p>
+                `;
+                
+                apiStatus.innerHTML = `
+                    <span class="w-3 h-3 bg-red-500 rounded-full mr-3"></span>
+                    API Connection ✗
+                `;
+            }
+        });
+
+        // Auto-test API on page load
+        setTimeout(() => {
+            document.getElementById('testBtn').click();
+        }, 1000);
+    </script>
+</body>
+</html>

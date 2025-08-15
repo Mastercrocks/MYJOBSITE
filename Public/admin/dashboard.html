@@ -1435,37 +1435,57 @@
         // Load dashboard statistics from real data
         async function loadDashboardStats() {
             try {
+                console.log('📊 Loading dashboard statistics...');
                 const response = await fetch('/api/admin/stats');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 const data = await response.json();
+                console.log('📈 Stats data received:', data);
                 
                 // Update main statistics cards
-                document.getElementById('totalUsers').textContent = data.totals.users.toLocaleString();
+                const totalUsersElement = document.getElementById('totalUsers');
+                if (totalUsersElement) {
+                    totalUsersElement.textContent = data.totals.users.toLocaleString();
+                } else {
+                    console.warn('totalUsers element not found');
+                }
                 
                 // Find and update jobs count
                 const jobsElement = document.querySelector('[data-stat="jobs"]') || 
-                    Array.from(document.querySelectorAll('.text-3xl')).find(el => 
-                        el.parentElement.querySelector('.text-sm')?.textContent.includes('Jobs') ||
-                        el.parentElement.querySelector('.text-sm')?.textContent.includes('Active')
-                    );
+                    Array.from(document.querySelectorAll('.text-3xl')).find(el => {
+                        const parent = el.parentElement;
+                        const textEl = parent?.querySelector('.text-sm');
+                        return textEl && (textEl.textContent.includes('Jobs') || textEl.textContent.includes('Active'));
+                    });
                 if (jobsElement) {
                     jobsElement.textContent = data.totals.jobs.toLocaleString();
+                } else {
+                    console.warn('Jobs stat element not found');
                 }
                 
                 // Find and update applications count
                 const appsElement = document.querySelector('[data-stat="applications"]') || 
-                    Array.from(document.querySelectorAll('.text-3xl')).find(el => 
-                        el.parentElement.querySelector('.text-sm')?.textContent.includes('Application')
-                    );
+                    Array.from(document.querySelectorAll('.text-3xl')).find(el => {
+                        const parent = el.parentElement;
+                        const textEl = parent?.querySelector('.text-sm');
+                        return textEl && textEl.textContent.includes('Application');
+                    });
                 if (appsElement) {
                     appsElement.textContent = data.totals.applications.toLocaleString();
+                } else {
+                    console.warn('Applications stat element not found');
                 }
                 
                 // Find and update employers count (or page views if no employers stat)
                 const employersElement = document.querySelector('[data-stat="employers"]') || 
-                    Array.from(document.querySelectorAll('.text-3xl')).find(el => 
-                        el.parentElement.querySelector('.text-sm')?.textContent.includes('Page') ||
-                        el.parentElement.querySelector('.text-sm')?.textContent.includes('Employer')
-                    );
+                    Array.from(document.querySelectorAll('.text-3xl')).find(el => {
+                        const parent = el.parentElement;
+                        const textEl = parent?.querySelector('.text-sm');
+                        return textEl && (textEl.textContent.includes('Page') || textEl.textContent.includes('Employer'));
+                    });
                 if (employersElement) {
                     const parentText = employersElement.parentElement.querySelector('.text-sm')?.textContent;
                     if (parentText && parentText.includes('Page')) {
@@ -1474,6 +1494,8 @@
                     } else {
                         employersElement.textContent = data.totals.employers.toLocaleString();
                     }
+                } else {
+                    console.warn('Employers/Page views stat element not found');
                 }
                 
                 // Update weekly growth indicators
@@ -1505,10 +1527,10 @@
                 
                 // Store data globally for other functions
                 window.dashboardData = data;
-                console.log('Dashboard stats loaded:', data);
+                console.log('✅ Dashboard stats loaded successfully');
                 
             } catch (error) {
-                console.error('Error loading dashboard stats:', error);
+                console.error('❌ Error loading dashboard stats:', error);
                 // Show fallback data
                 const fallbackStats = {
                     totalUsers: 1247,
@@ -1517,7 +1539,10 @@
                     pageViews: 45230
                 };
                 
-                document.getElementById('totalUsers').textContent = fallbackStats.totalUsers.toLocaleString();
+                const totalUsersElement = document.getElementById('totalUsers');
+                if (totalUsersElement) {
+                    totalUsersElement.textContent = fallbackStats.totalUsers.toLocaleString();
+                }
                 
                 const allNumbers = document.querySelectorAll('.text-3xl.font-bold');
                 if (allNumbers.length >= 4) {
@@ -1836,39 +1861,73 @@
             alert(`Edit user functionality would open here for user ID: ${userId}`);
         }
 
-        // Initialize dashboard
+        // Initialize dashboard with error handling
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('TalentSync Admin Dashboard loaded successfully!');
-            updateLastUpdated();
-            loadDashboardStats();
-            loadRecentActivity();
-            
-            // Initialize charts after a short delay to ensure DOM is ready
-            setTimeout(() => {
-                initializeCharts();
-                initializeRevenueChart();
-            }, 100);
-            
-            // Load initial data for active section
-            loadUsersData();
-            loadJobsData();
-            
-            // Load data based on current section
-            const currentSection = document.querySelector('.section:not([style*="display: none"])');
-            if (currentSection) {
-                const sectionId = currentSection.id;
-                if (sectionId === 'jobs-section') loadJobsData();
-                if (sectionId === 'users-section') loadUsersData();
-            }
-            
-            // Initialize manual job form
-            initializeManualJobForm();
-            
-            // Auto-refresh every 30 seconds
-            setInterval(() => {
+            try {
+                console.log('🚀 TalentSync Admin Dashboard initializing...');
+                
+                // Add loading indicator
+                document.body.style.opacity = '0';
+                document.body.style.transition = 'opacity 0.3s ease';
+                
                 updateLastUpdated();
+                loadDashboardStats();
                 loadRecentActivity();
-            }, 30000);
+                
+                // Initialize charts after a short delay to ensure DOM is ready
+                setTimeout(() => {
+                    try {
+                        initializeCharts();
+                        initializeRevenueChart();
+                        console.log('📊 Charts initialized successfully');
+                    } catch (error) {
+                        console.error('Error initializing charts:', error);
+                    }
+                }, 100);
+                
+                // Load initial data for active section
+                loadUsersData();
+                loadJobsData();
+                
+                // Load data based on current section
+                const currentSection = document.querySelector('.section:not([style*="display: none"])');
+                if (currentSection) {
+                    const sectionId = currentSection.id;
+                    if (sectionId === 'jobs-section') loadJobsData();
+                    if (sectionId === 'users-section') loadUsersData();
+                }
+                
+                // Initialize manual job form
+                initializeManualJobForm();
+                
+                // Auto-refresh every 30 seconds
+                setInterval(() => {
+                    updateLastUpdated();
+                    loadRecentActivity();
+                }, 30000);
+                
+                // Show the page after initialization
+                setTimeout(() => {
+                    document.body.style.opacity = '1';
+                    console.log('✅ TalentSync Admin Dashboard loaded successfully!');
+                }, 500);
+                
+            } catch (error) {
+                console.error('❌ Error initializing dashboard:', error);
+                document.body.innerHTML = `
+                    <div class="min-h-screen flex items-center justify-center bg-gray-100">
+                        <div class="text-center">
+                            <h1 class="text-2xl font-bold text-red-600 mb-4">Dashboard Error</h1>
+                            <p class="text-gray-600 mb-4">Failed to load admin dashboard</p>
+                            <p class="text-sm text-gray-500">Error: ${error.message}</p>
+                            <button onclick="location.reload()" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                                Reload Page
+                            </button>
+                        </div>
+                    </div>
+                `;
+                document.body.style.opacity = '1';
+            }
         });
 
         // Revenue Chart Initialization
