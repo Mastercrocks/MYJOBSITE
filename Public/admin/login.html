@@ -1,7 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Google tag (gtag.js) -->
+    <!-- Googl        .form-group {
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #e1e1e1;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+            text-align: center;
+            letter-spacing: 0.3rem;
+            font-family: 'Courier New', monospace;
+            font-size: 1.2rem;
+        }
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-P5ETS8QMP7"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
@@ -146,26 +169,21 @@
     <div class="login-container">
         <div class="login-header">
             <h1>🔐 Admin Access</h1>
-            <p>Enter your credentials to access the admin dashboard</p>
+            <p>Enter your 6-digit PIN to access the admin dashboard</p>
         </div>
 
         <form id="adminLoginForm">
             <div class="form-group">
-                <label for="username">Username</label>
-                <input type="text" id="username" name="username" placeholder="Enter admin username" required>
-            </div>
-
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" placeholder="Enter admin password" required>
+                <label for="pin">6-Digit PIN</label>
+                <input type="password" id="pin" name="pin" maxlength="6" placeholder="••••••" required autocomplete="off">
             </div>
 
             <button type="submit" class="login-button">
-                Access Dashboard
+                Access Admin Dashboard
             </button>
 
             <div class="error-message" id="errorMessage">
-                Invalid username or password. Please try again.
+                Invalid PIN. Please try again.
             </div>
         </form>
 
@@ -182,32 +200,49 @@
         document.getElementById('adminLoginForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
+            const pin = document.getElementById('pin').value;
             const errorMessage = document.getElementById('errorMessage');
+            const ADMIN_PIN = '251996';
             
             // Clear previous error
             errorMessage.style.display = 'none';
             
-            // Check credentials (you can change these default credentials)
-            if (username === 'admin' && password === 'admin123') {
+            // Check PIN (PIN: 251996)
+            if (pin === ADMIN_PIN) {
                 // Store authentication in localStorage
                 const loginTime = new Date().getTime();
                 localStorage.setItem('adminSession', 'authenticated');
                 localStorage.setItem('adminLoginTime', loginTime.toString());
                 
+                // Show success feedback
+                document.querySelector('.login-button').textContent = 'Access Granted...';
+                document.querySelector('.login-button').style.background = '#10b981';
+                
                 // Redirect to admin dashboard
-                window.location.href = '/admin/dashboard.html';
+                setTimeout(() => {
+                    window.location.href = '/admin/dashboard.html';
+                }, 1000);
+                
             } else {
                 // Show error message
+                errorMessage.textContent = 'Invalid PIN. Please try again.';
                 errorMessage.style.display = 'block';
                 
-                // Clear the fields
-                document.getElementById('username').value = '';
-                document.getElementById('password').value = '';
+                // Add shake animation
+                const loginCard = document.querySelector('.login-card');
+                loginCard.style.animation = 'none';
+                setTimeout(() => {
+                    loginCard.style.animation = 'shake 0.5s';
+                }, 10);
                 
-                // Focus back to username field
-                document.getElementById('username').focus();
+                // Clear PIN field
+                document.getElementById('pin').value = '';
+                document.getElementById('pin').focus();
+                
+                // Reset button text
+                document.querySelector('.login-button').textContent = 'Access Admin Dashboard';
+                document.querySelector('.login-button').style.background = '#3b82f6';
+            }
             }
         });
 
