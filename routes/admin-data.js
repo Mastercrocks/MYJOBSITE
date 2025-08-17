@@ -93,9 +93,6 @@ async function sendNewJobEmailCampaign(newJob) {
         .footer a { color: #2563eb; text-decoration: none; font-weight: 500; }
         .unsubscribe { color: #94a3b8 !important; }
     </style>
-        .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #666; font-size: 12px; }
-        .unsubscribe { color: #999; text-decoration: none; }
-    </style>
 </head>
 <body>
     <div class="container">
