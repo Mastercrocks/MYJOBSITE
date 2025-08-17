@@ -32,11 +32,13 @@ async function writeJSONFile(filename, data) {
 // Get dashboard statistics
 router.get('/stats', async (req, res) => {
     try {
-        const [jobs, users, employers, applications] = await Promise.all([
+        const [jobs, users, employers, applications, analytics, revenue] = await Promise.all([
             readJSONFile('jobs.json'),
             readJSONFile('users.json'),
             readJSONFile('employers.json'),
-            readJSONFile('applications.json')
+            readJSONFile('applications.json'),
+            readJSONFile('analytics.json'),
+            readJSONFile('revenue.json')
         ]);
 
         // Calculate statistics
@@ -72,20 +74,77 @@ router.get('/stats', async (req, res) => {
             locationStats[job.location] = (locationStats[job.location] || 0) + 1;
         });
 
+        // Calculate weekly page views from analytics
+        let weeklyPageViews = 0;
+        if (analytics && analytics.pageViews && analytics.pageViews.daily) {
+            const last7Days = Array.from({length: 7}, (_, i) => {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                return date.toISOString().split('T')[0];
+            });
+            
+            weeklyPageViews = last7Days.reduce((sum, date) => {
+                return sum + (analytics.pageViews.daily[date] || 0);
+            }, 0);
+        }
+
+        // Calculate revenue metrics
+        let weeklyRevenue = 0;
+        let monthlyRevenue = 0;
+        if (revenue && revenue.revenue && revenue.revenue.daily) {
+            const last7Days = Array.from({length: 7}, (_, i) => {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                return date.toISOString().split('T')[0];
+            });
+            
+            weeklyRevenue = last7Days.reduce((sum, date) => {
+                return sum + (revenue.revenue.daily[date] || 0);
+            }, 0);
+        }
+
+        // Get current month revenue
+        const currentMonth = new Date().toISOString().slice(0, 7);
+        if (revenue && revenue.revenue && revenue.revenue.monthly) {
+            monthlyRevenue = revenue.revenue.monthly[currentMonth] || 0;
+        }
+
         res.json({
             totals: {
                 jobs: jobs.length,
                 users: users.length,
                 employers: employers.length,
-                applications: applications.length
+                applications: applications.length,
+                pageViews: analytics?.pageViews?.total || 0,
+                revenue: revenue?.revenue?.total || 0
             },
             weekly: {
                 newJobs: newJobsThisWeek,
                 newUsers: newUsersThisWeek,
-                newApplications: newApplicationsThisWeek
+                newApplications: newApplicationsThisWeek,
+                pageViews: weeklyPageViews,
+                revenue: weeklyRevenue
             },
             monthly: {
-                newJobs: newJobsThisMonth
+                newJobs: newJobsThisMonth,
+                revenue: monthlyRevenue
+            },
+            revenue: {
+                total: revenue?.revenue?.total || 0,
+                monthly: monthlyRevenue,
+                weekly: weeklyRevenue,
+                sources: revenue?.revenue?.sources || {},
+                recentTransactions: revenue?.transactions?.slice(0, 5) || [],
+                subscriptions: revenue?.subscriptions || { active: 0, expired: 0, trial: 0 }
+            },
+            analytics: {
+                uniqueVisitors: analytics?.visitors?.unique || 0,
+                returningVisitors: analytics?.visitors?.returning || 0,
+                topPages: analytics?.pageViews?.pages ? 
+                    Object.entries(analytics.pageViews.pages)
+                        .sort(([,a], [,b]) => b - a)
+                        .slice(0, 10)
+                        .map(([page, views]) => ({ page, views })) : []
             },
             categories: categoryStats,
             companies: companyStats,
@@ -431,6 +490,59 @@ router.put('/employers/:id/verify', async (req, res) => {
     } catch (error) {
         console.error('Error verifying employer:', error);
         res.status(500).json({ error: 'Failed to verify company' });
+    }
+});
+
+// Approve employer application
+router.put('/employers/:id/approve', async (req, res) => {
+    try {
+        const employers = await readJSONFile('employers.json');
+        const employerIndex = employers.findIndex(emp => emp.id === parseInt(req.params.id));
+        
+        if (employerIndex === -1) {
+            return res.status(404).json({ error: 'Employer not found' });
+        }
+
+        employers[employerIndex].status = 'active';
+        employers[employerIndex].approvedAt = new Date().toISOString();
+        employers[employerIndex].approvedBy = 'Admin';
+
+        const success = await writeJSONFile('employers.json', employers);
+        if (success) {
+            res.json({ success: true, employer: employers[employerIndex], message: 'Employer approved successfully' });
+        } else {
+            res.status(500).json({ error: 'Failed to approve employer' });
+        }
+    } catch (error) {
+        console.error('Error approving employer:', error);
+        res.status(500).json({ error: 'Failed to approve employer' });
+    }
+});
+
+// Deny employer application
+router.put('/employers/:id/deny', async (req, res) => {
+    try {
+        const employers = await readJSONFile('employers.json');
+        const employerIndex = employers.findIndex(emp => emp.id === parseInt(req.params.id));
+        
+        if (employerIndex === -1) {
+            return res.status(404).json({ error: 'Employer not found' });
+        }
+
+        employers[employerIndex].status = 'denied';
+        employers[employerIndex].deniedAt = new Date().toISOString();
+        employers[employerIndex].deniedBy = 'Admin';
+        employers[employerIndex].deniedReason = req.body.reason || 'Application denied by admin';
+
+        const success = await writeJSONFile('employers.json', employers);
+        if (success) {
+            res.json({ success: true, employer: employers[employerIndex], message: 'Employer denied successfully' });
+        } else {
+            res.status(500).json({ error: 'Failed to deny employer' });
+        }
+    } catch (error) {
+        console.error('Error denying employer:', error);
+        res.status(500).json({ error: 'Failed to deny employer' });
     }
 });
 

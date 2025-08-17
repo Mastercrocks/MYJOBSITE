@@ -1,0 +1,16 @@
+{
+  "name": "Daily Data Maintenance",
+  "description": "Automated scripts to maintain data accuracy",
+  "scripts": {
+    "validate": "node validate-data.js",
+    "align": "node align-daily-data.js", 
+    "update": "node update-daily-data.js",
+    "check": "node check-data.js"
+  },
+  "schedule": {
+    "hourly": "update-daily-data.js",
+    "daily": "validate-data.js",
+    "weekly": "align-daily-data.js"
+  },
+  "automated": true
+}

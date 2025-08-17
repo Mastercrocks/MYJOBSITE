@@ -43,8 +43,12 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Import auth middleware and routes
 const { redirectIfAuthenticated } = require('./middleware/auth');
+const trackPageView = require('./middleware/analytics');
 const authRoutes = require('./routes/auth');
 const adminDataRoutes = require('./routes/admin-data');
+
+// Add analytics tracking middleware (before routes)
+app.use(trackPageView);
 
 // Mount auth routes
 app.use('/auth', authRoutes);
