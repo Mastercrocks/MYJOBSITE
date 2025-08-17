@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Authentication</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .form-group { margin-bottom: 15px; }
+        input, button { padding: 10px; margin: 5px; }
+        .result { margin-top: 20px; padding: 10px; background: #f0f0f0; }
+    </style>
+</head>
+<body>
+    <h1>Test Authentication System</h1>
+    
+    <h2>Login Test</h2>
+    <div class="form-group">
+        <input type="text" id="loginUsername" placeholder="Username or Email" value="pdameus">
+        <input type="password" id="loginPassword" placeholder="Password">
+        <button onclick="testLogin()">Test Login</button>
+    </div>
+    
+    <h2>Registration Test</h2>
+    <div class="form-group">
+        <input type="text" id="regUsername" placeholder="Username" value="newuser">
+        <input type="email" id="regEmail" placeholder="Email" value="newuser@test.com">
+        <input type="password" id="regPassword" placeholder="Password" value="password123">
+        <input type="text" id="regFirstName" placeholder="First Name" value="New">
+        <input type="text" id="regLastName" placeholder="Last Name" value="User">
+        <button onclick="testRegister()">Test Register</button>
+    </div>
+
+    <div id="result" class="result"></div>
+
+    <script>
+        function showResult(message, isError = false) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = message;
+            resultDiv.style.background = isError ? '#ffebee' : '#e8f5e8';
+            resultDiv.style.color = isError ? '#c62828' : '#2e7d32';
+        }
+
+        async function testLogin() {
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                const response = await fetch('/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult(`✅ Login successful! Welcome ${data.user.firstName} ${data.user.lastName} (${data.user.userType})`);
+                } else {
+                    showResult(`❌ Login failed: ${data.error}`, true);
+                }
+            } catch (error) {
+                showResult(`❌ Error: ${error.message}`, true);
+            }
+        }
+
+        async function testRegister() {
+            const username = document.getElementById('regUsername').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+            const firstName = document.getElementById('regFirstName').value;
+            const lastName = document.getElementById('regLastName').value;
+
+            try {
+                const response = await fetch('/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        username, 
+                        email, 
+                        password, 
+                        firstName, 
+                        lastName,
+                        userType: 'job_seeker'
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult(`✅ Registration successful! Welcome ${data.user.firstName} ${data.user.lastName}`);
+                } else {
+                    showResult(`❌ Registration failed: ${data.error}`, true);
+                }
+            } catch (error) {
+                showResult(`❌ Error: ${error.message}`, true);
+            }
+        }
+    </script>
+</body>
+</html>

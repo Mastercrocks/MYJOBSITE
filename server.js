@@ -42,9 +42,9 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Import auth middleware and routes
-const { redirectIfAuthenticated } = require('./middleware/auth');
+const { redirectIfAuthenticated } = require('./middleware/auth-json'); // Use JSON-based auth middleware
 const trackPageView = require('./middleware/analytics');
-const authRoutes = require('./routes/auth');
+const authRoutes = require('./routes/auth-json'); // Use JSON-based auth instead of MySQL
 const adminDataRoutes = require('./routes/admin-data');
 
 // Add analytics tracking middleware (before routes)

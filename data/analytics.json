@@ -1,6 +1,6 @@
 {
   "pageViews": {
-    "total": 98,
+    "total": 104,
     "daily": {
       "2025-08-11": 5,
       "2025-08-12": 12,
@@ -8,7 +8,7 @@
       "2025-08-14": 10,
       "2025-08-15": 18,
       "2025-08-16": 10,
-      "2025-08-17": 32
+      "2025-08-17": 38
     },
     "pages": {
       "/": 38,
@@ -16,14 +16,14 @@
       "/register": 7,
       "/login": 7,
       "/employers": 9,
-      "/auth/check-auth": 4,
+      "/auth/check-auth": 6,
       "/blog": 1,
       "/blog/first-job-interview-tips": 1,
-      "/auth/google": 2
+      "/auth/google": 6
     }
   },
   "visitors": {
-    "unique": 66,
+    "unique": 72,
     "returning": 7,
     "sessions": {
       "session_new_1755400605624_0": {
@@ -355,8 +355,38 @@
         "firstVisit": "2025-08-17T04:24:29.071Z",
         "lastVisit": "2025-08-17T04:24:29.071Z",
         "pageViews": 1
+      },
+      "fck8BvFbuOCokfgkOiGmSzcvBPMqOzOp": {
+        "firstVisit": "2025-08-17T04:45:37.966Z",
+        "lastVisit": "2025-08-17T04:45:37.966Z",
+        "pageViews": 1
+      },
+      "UfikVZPcRZ5I_AS3j9kJQVednwSrWgJx": {
+        "firstVisit": "2025-08-17T04:45:40.253Z",
+        "lastVisit": "2025-08-17T04:45:40.253Z",
+        "pageViews": 1
+      },
+      "Mt8cLjnYNS1Mk4gEx4IlDGKboOBz6sEe": {
+        "firstVisit": "2025-08-17T04:45:40.270Z",
+        "lastVisit": "2025-08-17T04:45:40.270Z",
+        "pageViews": 1
+      },
+      "BPJ1THydkiyDOFJ88ddlbrBzhMunlgez": {
+        "firstVisit": "2025-08-17T04:46:21.027Z",
+        "lastVisit": "2025-08-17T04:46:21.027Z",
+        "pageViews": 1
+      },
+      "CghV-bOY13aPbSADOBqtfakTXB9OHyKb": {
+        "firstVisit": "2025-08-17T04:46:25.134Z",
+        "lastVisit": "2025-08-17T04:46:25.134Z",
+        "pageViews": 1
+      },
+      "ISOzmVy9sHnD4tr_N6TDuFrZs4c1TXCQ": {
+        "firstVisit": "2025-08-17T04:46:25.165Z",
+        "lastVisit": "2025-08-17T04:46:25.165Z",
+        "pageViews": 1
       }
     }
   },
-  "lastUpdated": "2025-08-17T04:24:29.071Z"
+  "lastUpdated": "2025-08-17T04:46:25.165Z"
 }
