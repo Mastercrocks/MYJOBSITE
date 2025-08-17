@@ -90,23 +90,23 @@ async function sendNewJobEmailCampaign(newJob) {
         </div>
         
         <div class="job-card">
-            <h2 class="job-title">\${newJob.title}</h2>
-            <p class="company">🏢 \${newJob.company}</p>
+            <h2 class="job-title">${newJob.title}</h2>
+            <p class="company">🏢 ${newJob.company}</p>
             
             <div class="details">
-                <div class="detail-item">📍 <strong>Location:</strong> \${newJob.location}</div>
-                <div class="detail-item">💼 <strong>Type:</strong> \${newJob.job_type}</div>
-                <div class="detail-item">💰 <strong>Salary:</strong> \${newJob.salary}</div>
+                <div class="detail-item">📍 <strong>Location:</strong> ${newJob.location}</div>
+                <div class="detail-item">💼 <strong>Type:</strong> ${newJob.job_type}</div>
+                <div class="detail-item">💰 <strong>Salary:</strong> ${newJob.salary}</div>
                 <div class="detail-item">📅 <strong>Posted:</strong> Just now</div>
             </div>
             
             <div style="margin: 20px 0;">
                 <h3>Job Description:</h3>
-                <p>\${newJob.description.substring(0, 300)}\${newJob.description.length > 300 ? '...' : ''}</p>
+                <p>${newJob.description.substring(0, 300)}${newJob.description.length > 300 ? '...' : ''}</p>
             </div>
             
             <div style="text-align: center;">
-                <a href="\${newJob.url}" class="apply-btn" style="color: white;">
+                <a href="${newJob.url}" class="apply-btn" style="color: white;">
                     🚀 Apply Now
                 </a>
             </div>
@@ -115,8 +115,8 @@ async function sendNewJobEmailCampaign(newJob) {
         <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin: 20px 0;">
             <h3>💡 Why This Job is Perfect:</h3>
             <ul>
-                <li>✅ \${newJob.entry_level ? 'Entry-level friendly' : 'Great for experienced professionals'}</li>
-                <li>✅ \${newJob.remote ? 'Remote work available' : 'On-site opportunity'}</li>
+                <li>✅ ${newJob.entry_level ? 'Entry-level friendly' : 'Great for experienced professionals'}</li>
+                <li>✅ ${newJob.remote ? 'Remote work available' : 'On-site opportunity'}</li>
                 <li>✅ Posted today - apply early for best chances!</li>
                 <li>✅ Trusted company verified by TalentSync</li>
             </ul>
@@ -148,16 +148,17 @@ async function sendNewJobEmailCampaign(newJob) {
         for (const subscriber of emailList) {
             try {
                 const mailOptions = {
-                    from: '"TalentSync Job Alerts" <talentsync@talentsync.shop>',
+                    from: '"TalentSync Job Alerts" <jamesen9@gmail.com>',
+                    replyTo: 'talentsync@talentsync.shop',
                     to: subscriber.email,
                     subject: emailSubject,
                     html: emailTemplate,
-                    text: `New Job Alert: \${newJob.title} at \${newJob.company}\\n\\nLocation: \${newJob.location}\\nType: \${newJob.job_type}\\nSalary: \${newJob.salary}\\n\\nApply now: \${newJob.url}\\n\\nVisit TalentSync: https://talentsync.shop`
+                    text: `New Job Alert: ${newJob.title} at ${newJob.company}\n\nLocation: ${newJob.location}\nType: ${newJob.job_type}\nSalary: ${newJob.salary}\n\nApply now: ${newJob.url}\n\nVisit TalentSync: https://talentsync.shop`
                 };
 
                 await transporter.sendMail(mailOptions);
                 successCount++;
-                console.log(`📧 Sent to: \${subscriber.email}`);
+                console.log(`📧 Sent to: ${subscriber.email}`);
                 
                 // Small delay to avoid rate limiting
                 await new Promise(resolve => setTimeout(resolve, 100));
