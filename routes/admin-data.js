@@ -269,13 +269,16 @@ router.get('/applications', async (req, res) => {
 router.post('/jobs', async (req, res) => {
     try {
         const jobs = await readJSONFile('jobs.json');
+        const jobId = `manual_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         const newJob = {
-            id: `manual_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            id: jobId,
             title: req.body.title,
             company: req.body.company,
             location: req.body.location,
             description: req.body.description,
-            url: `https://talentsync.shop/job-detail.html?id=manual_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            url: req.body.application_url || req.body.application_email ? 
+                 (req.body.application_url || `mailto:${req.body.application_email}`) :
+                 `https://talentsync.shop/job-detail.html?id=${jobId}`,
             salary: req.body.salary || 'Not specified',
             source: 'Manual',
             job_type: req.body.job_type || 'Full-time',
@@ -290,7 +293,8 @@ router.post('/jobs', async (req, res) => {
             featured: req.body.featured === 'true',
             urgent: req.body.urgent === 'true',
             application_email: req.body.application_email,
-            application_url: req.body.application_url
+            application_url: req.body.application_url,
+            status: 'active'
         };
 
         jobs.unshift(newJob); // Add to beginning of array

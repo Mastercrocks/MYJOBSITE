@@ -59,30 +59,33 @@ app.use('/api/admin', adminDataRoutes);
 // API routes FIRST (before static files)
 app.get('/api/fresh', (req, res) => {
     try {
-        const scrapedJobsPath = path.join(__dirname, 'data', 'scraped_jobs.json');
-        if (fs.existsSync(scrapedJobsPath)) {
-            const scrapedJobs = JSON.parse(fs.readFileSync(scrapedJobsPath, 'utf8'));
+        const jobsPath = path.join(__dirname, 'data', 'jobs.json');
+        if (fs.existsSync(jobsPath)) {
+            const jobs = JSON.parse(fs.readFileSync(jobsPath, 'utf8'));
+            // Filter only active jobs
+            const activeJobs = jobs.filter(job => job.status === 'active');
             res.json({
                 success: true,
-                jobs: scrapedJobs,
+                jobs: activeJobs,
                 sources: {
-                    scraped: scrapedJobs.length,
-                    api: 0
+                    scraped: 0,
+                    api: 0,
+                    manual: activeJobs.length
                 }
             });
         } else {
             res.json({
                 success: false,
                 jobs: [],
-                sources: { scraped: 0, api: 0 }
+                sources: { scraped: 0, api: 0, manual: 0 }
             });
         }
     } catch (error) {
-        console.error('Error reading scraped jobs:', error);
+        console.error('Error reading jobs:', error);
         res.json({
             success: false,
             jobs: [],
-            sources: { scraped: 0, api: 0 }
+            sources: { scraped: 0, api: 0, manual: 0 }
         });
     }
 });

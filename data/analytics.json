@@ -1,6 +1,6 @@
 {
   "pageViews": {
-    "total": 106,
+    "total": 108,
     "daily": {
       "2025-08-11": 5,
       "2025-08-12": 12,
@@ -8,11 +8,11 @@
       "2025-08-14": 10,
       "2025-08-15": 18,
       "2025-08-16": 10,
-      "2025-08-17": 40
+      "2025-08-17": 42
     },
     "pages": {
-      "/": 39,
-      "/jobs": 26,
+      "/": 40,
+      "/jobs": 27,
       "/register": 7,
       "/login": 7,
       "/employers": 9,
@@ -23,7 +23,7 @@
     }
   },
   "visitors": {
-    "unique": 74,
+    "unique": 76,
     "returning": 7,
     "sessions": {
       "session_new_1755400605624_0": {
@@ -395,8 +395,18 @@
         "firstVisit": "2025-08-17T05:02:06.441Z",
         "lastVisit": "2025-08-17T05:02:06.441Z",
         "pageViews": 1
+      },
+      "hm2YXfqhmV9ggNJfaiWLjALVU9Z0WuuQ": {
+        "firstVisit": "2025-08-17T05:09:31.439Z",
+        "lastVisit": "2025-08-17T05:09:31.439Z",
+        "pageViews": 1
+      },
+      "d4PF0MtlRDvnACRwr2zknFO1ZSHTFnEj": {
+        "firstVisit": "2025-08-17T05:09:34.020Z",
+        "lastVisit": "2025-08-17T05:09:34.020Z",
+        "pageViews": 1
       }
     }
   },
-  "lastUpdated": "2025-08-17T05:02:06.441Z"
+  "lastUpdated": "2025-08-17T05:09:34.020Z"
 }
