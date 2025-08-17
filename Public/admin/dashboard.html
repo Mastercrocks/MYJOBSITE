@@ -90,6 +90,10 @@
                     <span class="w-5 h-5 mr-3">➕</span>
                     Add Jobs
                 </a>
+                <a href="#" onclick="showSection('email-marketing')" class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
+                    <span class="w-5 h-5 mr-3">📧</span>
+                    Email Marketing
+                </a>
                 <a href="#" onclick="showSection('pricing')" class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
                     <span class="w-5 h-5 mr-3">💳</span>
                     Pricing & Plans
@@ -529,6 +533,7 @@
                             </div>
                             <div class="flex space-x-2">
                                 <button onclick="showBulkActionsModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">Bulk Actions</button>
+                                <button onclick="sendSelectedJobsEmail()" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 text-sm">📧 Email Selected</button>
                                 <button onclick="toggleFeaturedJobs()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm">Featured Jobs</button>
                             </div>
                         </div>
@@ -1396,6 +1401,167 @@
                     </div>
                 </div>
 
+                <!-- Email Marketing Section -->
+                <div id="email-marketing-section" class="section space-y-6">
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+                        <div class="p-6 border-b border-gray-100">
+                            <h2 class="text-xl font-semibold text-gray-900">📧 Email Marketing</h2>
+                            <p class="text-sm text-gray-600">Manage email lists and send job opportunities to potential candidates</p>
+                        </div>
+                        
+                        <!-- Email Management Tabs -->
+                        <div class="border-b border-gray-200">
+                            <nav class="flex space-x-8 px-6" aria-label="Tabs">
+                                <button onclick="showEmailTab('email-list')" class="email-tab border-b-2 border-blue-500 py-4 px-1 text-sm font-medium text-blue-600" id="email-list-tab">
+                                    Email List
+                                </button>
+                                <button onclick="showEmailTab('send-campaign')" class="email-tab border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300" id="send-campaign-tab">
+                                    Send Campaign
+                                </button>
+                                <button onclick="showEmailTab('import-emails')" class="email-tab border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300" id="import-emails-tab">
+                                    Import Emails
+                                </button>
+                            </nav>
+                        </div>
+
+                        <!-- Email List Tab -->
+                        <div id="email-list-content" class="email-tab-content p-6">
+                            <div class="flex justify-between items-center mb-6">
+                                <h3 class="text-lg font-medium text-gray-900">Email Subscribers</h3>
+                                <button onclick="showAddEmailForm()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                                    + Add Email
+                                </button>
+                            </div>
+
+                            <!-- Add Email Form (Hidden by default) -->
+                            <div id="add-email-form" class="bg-gray-50 rounded-lg p-4 mb-6" style="display: none;">
+                                <h4 class="text-md font-medium text-gray-900 mb-4">Add New Email</h4>
+                                <form id="emailForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
+                                        <input type="email" id="newEmail" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" required>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Name</label>
+                                        <input type="text" id="newName" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                    </div>
+                                    <div class="md:col-span-2">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Tags (comma separated)</label>
+                                        <input type="text" id="newTags" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="e.g., developer, designer, manager">
+                                    </div>
+                                    <div class="md:col-span-2 flex space-x-3">
+                                        <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">Add Email</button>
+                                        <button type="button" onclick="hideAddEmailForm()" class="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400">Cancel</button>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <!-- Email List Table -->
+                            <div class="bg-white rounded-lg border border-gray-200">
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-full divide-y divide-gray-200">
+                                        <thead class="bg-gray-50">
+                                            <tr>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    <input type="checkbox" id="selectAllEmails" class="rounded">
+                                                </th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tags</th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Added</th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="emailListTable" class="bg-white divide-y divide-gray-200">
+                                            <!-- Email list will be populated here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Send Campaign Tab -->
+                        <div id="send-campaign-content" class="email-tab-content p-6" style="display: none;">
+                            <h3 class="text-lg font-medium text-gray-900 mb-6">Send Job Email Campaign</h3>
+                            
+                            <!-- Step 1: Select Jobs -->
+                            <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                                <h4 class="text-md font-medium text-gray-900 mb-4">Step 1: Select Jobs to Include</h4>
+                                <div id="jobSelectionList" class="space-y-3">
+                                    <!-- Jobs will be populated here -->
+                                </div>
+                            </div>
+
+                            <!-- Step 2: Email Settings -->
+                            <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                                <h4 class="text-md font-medium text-gray-900 mb-4">Step 2: Email Settings</h4>
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Email Subject</label>
+                                        <input type="text" id="emailSubject" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="New Job Opportunities - Apply Today!">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Custom Message (Optional)</label>
+                                        <textarea id="customMessage" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Add a personal message to your email..."></textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Step 3: Select Recipients -->
+                            <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                                <h4 class="text-md font-medium text-gray-900 mb-4">Step 3: Select Recipients</h4>
+                                <div class="flex space-x-4 mb-4">
+                                    <button onclick="selectAllRecipients()" class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">Select All</button>
+                                    <button onclick="selectNoneRecipients()" class="bg-gray-300 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-400">Select None</button>
+                                    <span id="selectedCount" class="text-sm text-gray-600 py-1">0 recipients selected</span>
+                                </div>
+                                <div id="recipientsList" class="max-h-60 overflow-y-auto space-y-2">
+                                    <!-- Recipients will be populated here -->
+                                </div>
+                            </div>
+
+                            <!-- Send Button -->
+                            <div class="flex space-x-4">
+                                <button onclick="sendEmailCampaign()" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors">
+                                    📧 Send Campaign
+                                </button>
+                                <button onclick="previewEmail()" class="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition-colors">
+                                    👁️ Preview Email
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Import Emails Tab -->
+                        <div id="import-emails-content" class="email-tab-content p-6" style="display: none;">
+                            <h3 class="text-lg font-medium text-gray-900 mb-6">Import Email List</h3>
+                            
+                            <!-- File Upload -->
+                            <div class="bg-gray-50 rounded-lg p-6 mb-6">
+                                <h4 class="text-md font-medium text-gray-900 mb-4">Upload CSV File</h4>
+                                <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                                    <input type="file" id="csvFileInput" accept=".csv,.txt" class="hidden">
+                                    <button onclick="document.getElementById('csvFileInput').click()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                                        Choose File
+                                    </button>
+                                    <p class="text-sm text-gray-600 mt-2">Upload a CSV file with email addresses</p>
+                                    <p class="text-xs text-gray-500 mt-1">Format: email,name,tags (tags optional)</p>
+                                </div>
+                                <div id="fileInfo" class="mt-4 text-sm text-gray-600" style="display: none;"></div>
+                            </div>
+
+                            <!-- Manual Text Input -->
+                            <div class="bg-gray-50 rounded-lg p-6">
+                                <h4 class="text-md font-medium text-gray-900 mb-4">Paste Email List</h4>
+                                <textarea id="emailTextInput" rows="6" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Paste emails here, one per line:&#10;john@example.com&#10;jane@example.com&#10;or with names:&#10;john@example.com,John Doe&#10;jane@example.com,Jane Smith"></textarea>
+                                <button onclick="processEmailText()" class="mt-4 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                                    Import Emails
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </main>
         </div>
     </div>
@@ -1448,6 +1614,7 @@
                 'security': { title: 'Security & Logs', subtitle: 'Security status and system activity logs' },
                 'billing': { title: 'Billing & Revenue', subtitle: 'Track earnings, manage payments and employer billing' },
                 'jobmanual': { title: 'Add Jobs', subtitle: 'Manually add job postings to your job board' },
+                'email-marketing': { title: 'Email Marketing', subtitle: 'Manage email lists and send job campaigns to candidates' },
                 'pricing': { title: 'Pricing & Plans', subtitle: 'Manage subscription plans and pricing for employers' }
             };
             
@@ -2002,6 +2169,7 @@
                         <td class="px-6 py-4 text-sm text-gray-500">${postedDate}</td>
                         <td class="px-6 py-4 text-sm">
                             <button onclick="editJob('${job.id}')" class="text-blue-600 hover:text-blue-800 mr-2">Edit</button>
+                            <button onclick="sendSingleJobEmail('${job.id}')" class="text-purple-600 hover:text-purple-800 mr-2">📧 Email</button>
                             <button onclick="deleteJob('${job.id}')" class="text-red-600 hover:text-red-800">Delete</button>
                         </td>
                     `;
@@ -2052,7 +2220,8 @@
                         <td class="px-6 py-4 text-sm text-gray-500">${joinDate}</td>
                         <td class="px-6 py-4 text-sm">
                             <button onclick="viewUser('${user.id}')" class="text-blue-600 hover:text-blue-800 mr-2">View</button>
-                            <button onclick="editUser('${user.id}')" class="text-green-600 hover:text-green-800">Edit</button>
+                            <button onclick="editUser('${user.id}')" class="text-green-600 hover:text-green-800 mr-2">Edit</button>
+                            <button onclick="deleteUser('${user.id}')" class="text-red-600 hover:text-red-800">Delete</button>
                         </td>
                     `;
                     
@@ -2136,13 +2305,351 @@
         }
 
         function viewUser(userId) {
-            console.log('View user:', userId);
-            alert(`User details would open here for user ID: ${userId}`);
+            // Find user in usersData
+            const user = usersData.find(u => u.id === userId);
+            if (!user) {
+                alert('User not found');
+                return;
+            }
+
+            // Create modal HTML
+            const modalHtml = `
+                <div id="userViewModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+                    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-1/2 shadow-lg rounded-md bg-white">
+                        <div class="mt-3">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">User Details</h3>
+                            <div class="space-y-3">
+                                <div><strong>ID:</strong> ${user.id}</div>
+                                <div><strong>Username:</strong> ${user.username}</div>
+                                <div><strong>Email:</strong> ${user.email}</div>
+                                <div><strong>User Type:</strong> ${user.userType || 'Regular'}</div>
+                                <div><strong>Status:</strong> <span class="px-2 py-1 rounded text-sm ${user.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">${user.status || 'Active'}</span></div>
+                                <div><strong>Last Login:</strong> ${user.lastLogin || 'Never'}</div>
+                                <div><strong>Registration Date:</strong> ${user.registrationDate || 'Unknown'}</div>
+                                <div><strong>Phone:</strong> ${user.phone || 'Not provided'}</div>
+                                <div><strong>Location:</strong> ${user.location || 'Not provided'}</div>
+                            </div>
+                            <div class="flex justify-end mt-6 space-x-3">
+                                <button onclick="closeUserViewModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">Close</button>
+                                <button onclick="closeUserViewModal(); editUser('${user.id}')" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Edit User</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Add modal to page
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+
+        function closeUserViewModal() {
+            const modal = document.getElementById('userViewModal');
+            if (modal) modal.remove();
         }
 
         function editUser(userId) {
-            console.log('Edit user:', userId);
-            alert(`Edit user functionality would open here for user ID: ${userId}`);
+            // Find user in usersData
+            const user = usersData.find(u => u.id === userId);
+            if (!user) {
+                alert('User not found');
+                return;
+            }
+
+            // Create edit modal HTML
+            const modalHtml = `
+                <div id="userEditModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+                    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-1/2 shadow-lg rounded-md bg-white">
+                        <div class="mt-3">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">Edit User</h3>
+                            <form id="editUserForm" class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Username</label>
+                                    <input type="text" id="editUsername" value="${user.username}" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Email</label>
+                                    <input type="email" id="editEmail" value="${user.email}" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">User Type</label>
+                                    <select id="editUserType" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2">
+                                        <option value="Regular" ${user.userType === 'Regular' ? 'selected' : ''}>Regular</option>
+                                        <option value="Premium" ${user.userType === 'Premium' ? 'selected' : ''}>Premium</option>
+                                        <option value="Admin" ${user.userType === 'Admin' ? 'selected' : ''}>Admin</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Status</label>
+                                    <select id="editStatus" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2">
+                                        <option value="Active" ${user.status === 'Active' ? 'selected' : ''}>Active</option>
+                                        <option value="Inactive" ${user.status === 'Inactive' ? 'selected' : ''}>Inactive</option>
+                                        <option value="Suspended" ${user.status === 'Suspended' ? 'selected' : ''}>Suspended</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Phone</label>
+                                    <input type="text" id="editPhone" value="${user.phone || ''}" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Location</label>
+                                    <input type="text" id="editLocation" value="${user.location || ''}" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2">
+                                </div>
+                            </form>
+                            <div class="flex justify-end mt-6 space-x-3">
+                                <button onclick="closeUserEditModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">Cancel</button>
+                                <button onclick="saveUserEdit('${user.id}')" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">Save Changes</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Add modal to page
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+
+        function closeUserEditModal() {
+            const modal = document.getElementById('userEditModal');
+            if (modal) modal.remove();
+        }
+
+        async function saveUserEdit(userId) {
+            const updatedUser = {
+                id: userId,
+                username: document.getElementById('editUsername').value,
+                email: document.getElementById('editEmail').value,
+                userType: document.getElementById('editUserType').value,
+                status: document.getElementById('editStatus').value,
+                phone: document.getElementById('editPhone').value,
+                location: document.getElementById('editLocation').value
+            };
+
+            try {
+                const response = await fetch('/api/admin/users/update', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(updatedUser)
+                });
+
+                if (response.ok) {
+                    alert('User updated successfully!');
+                    closeUserEditModal();
+                    loadUsersData(); // Reload users data
+                } else {
+                    alert('Error updating user');
+                }
+            } catch (error) {
+                console.error('Error updating user:', error);
+                alert('Error updating user');
+            }
+        }
+
+        async function deleteUser(userId) {
+            // Find user for confirmation
+            const user = usersData.find(u => u.id === userId);
+            if (!user) {
+                alert('User not found');
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to delete user "${user.username}" (${user.email})? This action cannot be undone.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/admin/users/delete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ userId: userId })
+                });
+
+                if (response.ok) {
+                    alert('User deleted successfully!');
+                    loadUsersData(); // Reload users data
+                } else {
+                    alert('Error deleting user');
+                }
+            } catch (error) {
+                console.error('Error deleting user:', error);
+                alert('Error deleting user');
+            }
+        }
+
+        // Email selected jobs functionality
+        function emailSelectedJobs() {
+            const checkboxes = document.querySelectorAll('input[name="jobSelect"]:checked');
+            const selectedJobIds = Array.from(checkboxes).map(cb => cb.value);
+            
+            if (selectedJobIds.length === 0) {
+                alert('Please select at least one job to email');
+                return;
+            }
+
+            openJobEmailModal(selectedJobIds);
+        }
+
+        function emailSingleJob(jobId) {
+            openJobEmailModal([jobId]);
+        }
+
+        function openJobEmailModal(jobIds) {
+            // Get selected jobs data
+            const selectedJobs = jobsData.filter(job => jobIds.includes(job.id));
+            
+            const modalHtml = `
+                <div id="jobEmailModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+                    <div class="relative top-10 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white max-h-screen overflow-y-auto">
+                        <div class="mt-3">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">Email Job Opportunities</h3>
+                            
+                            <div class="mb-4 p-3 bg-blue-50 rounded">
+                                <p class="text-sm text-blue-800">
+                                    <strong>Selected Jobs (${selectedJobs.length}):</strong> 
+                                    ${selectedJobs.map(job => job.title).join(', ')}
+                                </p>
+                            </div>
+
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Select Email Recipients</label>
+                                    <div id="emailRecipientsContainer" class="border border-gray-300 rounded p-3 max-h-40 overflow-y-auto">
+                                        <div class="text-gray-500">Loading email list...</div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Email Subject</label>
+                                    <input type="text" id="emailSubject" value="New Job Opportunities - ${selectedJobs.length} Positions Available" 
+                                           class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2">
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Custom Message (Optional)</label>
+                                    <textarea id="customMessage" rows="3" placeholder="Add a personal message that will appear at the top of the email..." 
+                                              class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"></textarea>
+                                </div>
+
+                                <div class="bg-gray-50 p-3 rounded">
+                                    <p class="text-sm text-gray-600">
+                                        <strong>Email Preview:</strong> The email will include your custom message (if any) followed by the job listings with titles, companies, locations, and apply links.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-end mt-6 space-x-3">
+                                <button onclick="closeJobEmailModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">Cancel</button>
+                                <button onclick="sendJobEmails(${JSON.stringify(jobIds)})" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                                    📧 Send Emails
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Add modal to page
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            // Load email recipients
+            loadEmailRecipientsForJob();
+        }
+
+        function closeJobEmailModal() {
+            const modal = document.getElementById('jobEmailModal');
+            if (modal) modal.remove();
+        }
+
+        async function loadEmailRecipientsForJob() {
+            try {
+                const response = await fetch('/api/admin/email-list');
+                const emailList = await response.json();
+                
+                const container = document.getElementById('emailRecipientsContainer');
+                if (emailList.length === 0) {
+                    container.innerHTML = '<div class="text-gray-500">No email subscribers found. <a href="#" onclick="showSection(\'email-marketing\'); closeJobEmailModal();" class="text-blue-600 hover:underline">Add subscribers here</a></div>';
+                    return;
+                }
+
+                const html = `
+                    <div class="mb-2">
+                        <label class="flex items-center">
+                            <input type="checkbox" id="selectAllEmails" onchange="toggleAllEmails()" class="mr-2">
+                            <span class="font-medium">Select All (${emailList.filter(email => email.status === 'active').length} active subscribers)</span>
+                        </label>
+                    </div>
+                    <div class="space-y-1">
+                        ${emailList.filter(email => email.status === 'active').map(email => `
+                            <label class="flex items-center p-1 hover:bg-gray-50 rounded">
+                                <input type="checkbox" name="emailRecipient" value="${email.id}" class="mr-2">
+                                <div class="flex-1">
+                                    <div class="font-medium">${email.email}</div>
+                                    <div class="text-xs text-gray-500">${email.tags || 'No tags'}</div>
+                                </div>
+                            </label>
+                        `).join('')}
+                    </div>
+                `;
+                
+                container.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading email list:', error);
+                document.getElementById('emailRecipientsContainer').innerHTML = '<div class="text-red-500">Error loading email list</div>';
+            }
+        }
+
+        function toggleAllEmails() {
+            const selectAll = document.getElementById('selectAllEmails');
+            const checkboxes = document.querySelectorAll('input[name="emailRecipient"]');
+            
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAll.checked;
+            });
+        }
+
+        async function sendJobEmails(jobIds) {
+            const selectedEmails = Array.from(document.querySelectorAll('input[name="emailRecipient"]:checked')).map(cb => cb.value);
+            const subject = document.getElementById('emailSubject').value;
+            const customMessage = document.getElementById('customMessage').value;
+            
+            if (selectedEmails.length === 0) {
+                alert('Please select at least one email recipient');
+                return;
+            }
+
+            if (!confirm(`Send job opportunities to ${selectedEmails.length} email recipients?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/admin/send-job-emails', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        jobIds: jobIds,
+                        emailIds: selectedEmails,
+                        subject: subject,
+                        customMessage: customMessage
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    alert(`Emails sent successfully to ${result.sentCount} recipients!`);
+                    closeJobEmailModal();
+                } else {
+                    alert(`Error sending emails: ${result.error}`);
+                }
+            } catch (error) {
+                console.error('Error sending emails:', error);
+                alert('Error sending emails');
+            }
         }
 
         // Initialize dashboard with error handling
@@ -2865,5 +3372,452 @@
             </form>
         </div>
     </div>
+
+    <script>
+        // ===============================
+        // EMAIL MARKETING FUNCTIONS
+        // ===============================
+
+        // Email tab management
+        function showEmailTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.email-tab-content').forEach(content => {
+                content.style.display = 'none';
+            });
+            
+            // Remove active styles from all tabs
+            document.querySelectorAll('.email-tab').forEach(tab => {
+                tab.classList.remove('border-blue-500', 'text-blue-600');
+                tab.classList.add('border-transparent', 'text-gray-500');
+            });
+            
+            // Show selected tab content
+            document.getElementById(tabName + '-content').style.display = 'block';
+            
+            // Add active styles to selected tab
+            const activeTab = document.getElementById(tabName + '-tab');
+            activeTab.classList.remove('border-transparent', 'text-gray-500');
+            activeTab.classList.add('border-blue-500', 'text-blue-600');
+
+            // Load data based on tab
+            if (tabName === 'email-list') {
+                loadEmailList();
+            } else if (tabName === 'send-campaign') {
+                loadJobsForCampaign();
+                loadRecipientsForCampaign();
+            }
+        }
+
+        // Show/hide add email form
+        function showAddEmailForm() {
+            document.getElementById('add-email-form').style.display = 'block';
+        }
+
+        function hideAddEmailForm() {
+            document.getElementById('add-email-form').style.display = 'none';
+            document.getElementById('emailForm').reset();
+        }
+
+        // Load email list
+        async function loadEmailList() {
+            try {
+                const response = await fetch('/api/admin/email-list');
+                const data = await response.json();
+                
+                if (data.success) {
+                    renderEmailList(data.emails);
+                }
+            } catch (error) {
+                console.error('Error loading email list:', error);
+            }
+        }
+
+        // Render email list table
+        function renderEmailList(emails) {
+            const tableBody = document.getElementById('emailListTable');
+            tableBody.innerHTML = '';
+
+            emails.forEach(email => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-6 py-4">
+                        <input type="checkbox" class="email-checkbox rounded" value="${email.id}">
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-900">${email.email}</td>
+                    <td class="px-6 py-4 text-sm text-gray-900">${email.name || '-'}</td>
+                    <td class="px-6 py-4 text-sm text-gray-500">
+                        ${email.tags && email.tags.length > 0 ? email.tags.join(', ') : '-'}
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="px-2 py-1 text-xs rounded-full ${email.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">
+                            ${email.status}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-500">
+                        ${new Date(email.addedDate).toLocaleDateString()}
+                    </td>
+                    <td class="px-6 py-4 text-sm space-x-2">
+                        <button onclick="editEmail('${email.id}')" class="text-blue-600 hover:text-blue-900">Edit</button>
+                        <button onclick="deleteEmail('${email.id}')" class="text-red-600 hover:text-red-900">Delete</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Add email form submission
+        document.getElementById('emailForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('newEmail').value;
+            const name = document.getElementById('newName').value;
+            const tags = document.getElementById('newTags').value.split(',').map(t => t.trim()).filter(t => t);
+            
+            try {
+                const response = await fetch('/api/admin/email-list', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        name: name,
+                        tags: tags
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    hideAddEmailForm();
+                    loadEmailList();
+                    alert('Email added successfully!');
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error adding email:', error);
+                alert('Failed to add email');
+            }
+        });
+
+        // Delete email
+        async function deleteEmail(id) {
+            if (!confirm('Are you sure you want to delete this email?')) return;
+            
+            try {
+                const response = await fetch(`/api/admin/email-list/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    loadEmailList();
+                    alert('Email deleted successfully!');
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error deleting email:', error);
+                alert('Failed to delete email');
+            }
+        }
+
+        // Load jobs for campaign
+        async function loadJobsForCampaign() {
+            try {
+                const response = await fetch('/api/admin/jobs');
+                const data = await response.json();
+                
+                if (data.success) {
+                    renderJobsForCampaign(data.jobs);
+                }
+            } catch (error) {
+                console.error('Error loading jobs:', error);
+            }
+        }
+
+        // Render jobs for campaign selection
+        function renderJobsForCampaign(jobs) {
+            const container = document.getElementById('jobSelectionList');
+            container.innerHTML = '';
+
+            jobs.forEach(job => {
+                const jobDiv = document.createElement('div');
+                jobDiv.className = 'flex items-center space-x-3 p-3 border border-gray-200 rounded-lg';
+                jobDiv.innerHTML = `
+                    <input type="checkbox" class="job-checkbox rounded" value="${job.id}">
+                    <div class="flex-1">
+                        <h5 class="font-medium text-gray-900">${job.title}</h5>
+                        <p class="text-sm text-gray-600">${job.company} • ${job.location}</p>
+                    </div>
+                `;
+                container.appendChild(jobDiv);
+            });
+        }
+
+        // Load recipients for campaign
+        async function loadRecipientsForCampaign() {
+            try {
+                const response = await fetch('/api/admin/email-list');
+                const data = await response.json();
+                
+                if (data.success) {
+                    renderRecipientsForCampaign(data.emails.filter(email => email.status === 'active'));
+                }
+            } catch (error) {
+                console.error('Error loading recipients:', error);
+            }
+        }
+
+        // Render recipients for campaign
+        function renderRecipientsForCampaign(recipients) {
+            const container = document.getElementById('recipientsList');
+            container.innerHTML = '';
+
+            recipients.forEach(recipient => {
+                const recipientDiv = document.createElement('div');
+                recipientDiv.className = 'flex items-center space-x-3 p-2 border border-gray-200 rounded';
+                recipientDiv.innerHTML = `
+                    <input type="checkbox" class="recipient-checkbox rounded" value="${recipient.id}">
+                    <div class="flex-1">
+                        <span class="text-sm text-gray-900">${recipient.email}</span>
+                        ${recipient.name ? `<span class="text-sm text-gray-600"> (${recipient.name})</span>` : ''}
+                    </div>
+                `;
+                container.appendChild(recipientDiv);
+            });
+
+            // Update selected count
+            updateSelectedCount();
+            
+            // Add event listeners for count updates
+            document.querySelectorAll('.recipient-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', updateSelectedCount);
+            });
+        }
+
+        // Update selected recipients count
+        function updateSelectedCount() {
+            const checked = document.querySelectorAll('.recipient-checkbox:checked').length;
+            document.getElementById('selectedCount').textContent = `${checked} recipients selected`;
+        }
+
+        // Select all/none recipients
+        function selectAllRecipients() {
+            document.querySelectorAll('.recipient-checkbox').forEach(checkbox => {
+                checkbox.checked = true;
+            });
+            updateSelectedCount();
+        }
+
+        function selectNoneRecipients() {
+            document.querySelectorAll('.recipient-checkbox').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            updateSelectedCount();
+        }
+
+        // Send email campaign
+        async function sendEmailCampaign() {
+            const selectedJobs = Array.from(document.querySelectorAll('.job-checkbox:checked')).map(cb => cb.value);
+            const selectedRecipients = Array.from(document.querySelectorAll('.recipient-checkbox:checked')).map(cb => cb.value);
+            const subject = document.getElementById('emailSubject').value;
+            const customMessage = document.getElementById('customMessage').value;
+
+            if (selectedJobs.length === 0) {
+                alert('Please select at least one job to include in the campaign.');
+                return;
+            }
+
+            if (selectedRecipients.length === 0) {
+                alert('Please select at least one recipient.');
+                return;
+            }
+
+            if (!confirm(`Send email campaign to ${selectedRecipients.length} recipients with ${selectedJobs.length} jobs?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/admin/send-job-emails', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        jobIds: selectedJobs,
+                        emailIds: selectedRecipients,
+                        subject: subject,
+                        customMessage: customMessage
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert(`Email campaign sent successfully to ${result.recipients} recipients!`);
+                    
+                    // Reset form
+                    document.getElementById('emailSubject').value = '';
+                    document.getElementById('customMessage').value = '';
+                    document.querySelectorAll('.job-checkbox, .recipient-checkbox').forEach(cb => cb.checked = false);
+                    updateSelectedCount();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error sending campaign:', error);
+                alert('Failed to send email campaign');
+            }
+        }
+
+        // Preview email
+        async function previewEmail() {
+            const selectedJobs = Array.from(document.querySelectorAll('.job-checkbox:checked')).map(cb => cb.value);
+            const subject = document.getElementById('emailSubject').value;
+            const customMessage = document.getElementById('customMessage').value;
+
+            if (selectedJobs.length === 0) {
+                alert('Please select at least one job to preview.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/admin/send-job-emails', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        jobIds: selectedJobs,
+                        emailIds: ['preview'], // Special preview mode
+                        subject: subject,
+                        customMessage: customMessage
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.preview) {
+                    // Open preview in new window
+                    const previewWindow = window.open('', '_blank');
+                    previewWindow.document.write(result.preview);
+                    previewWindow.document.close();
+                }
+            } catch (error) {
+                console.error('Error previewing email:', error);
+                alert('Failed to preview email');
+            }
+        }
+
+        // Process email text input
+        function processEmailText() {
+            const text = document.getElementById('emailTextInput').value.trim();
+            if (!text) {
+                alert('Please paste some email addresses');
+                return;
+            }
+
+            const lines = text.split('\n').filter(line => line.trim());
+            const emails = [];
+
+            lines.forEach(line => {
+                const parts = line.trim().split(',');
+                const email = parts[0].trim();
+                const name = parts[1] ? parts[1].trim() : '';
+                
+                if (email && email.includes('@')) {
+                    emails.push({ email, name });
+                }
+            });
+
+            if (emails.length === 0) {
+                alert('No valid email addresses found');
+                return;
+            }
+
+            importEmails(emails);
+        }
+
+        // Import emails
+        async function importEmails(emails) {
+            try {
+                const response = await fetch('/api/admin/email-list/import', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ emails })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert(result.message);
+                    document.getElementById('emailTextInput').value = '';
+                    loadEmailList();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error importing emails:', error);
+                alert('Failed to import emails');
+            }
+        }
+
+        // CSV file handling
+        document.getElementById('csvFileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            document.getElementById('fileInfo').style.display = 'block';
+            document.getElementById('fileInfo').textContent = `Selected: ${file.name}`;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const lines = text.split('\n').filter(line => line.trim());
+                const emails = [];
+
+                lines.forEach((line, index) => {
+                    if (index === 0 && line.toLowerCase().includes('email')) return; // Skip header
+                    
+                    const parts = line.trim().split(',');
+                    const email = parts[0] ? parts[0].trim() : '';
+                    const name = parts[1] ? parts[1].trim() : '';
+                    
+                    if (email && email.includes('@')) {
+                        emails.push({ email, name });
+                    }
+                });
+
+                if (emails.length > 0) {
+                    importEmails(emails);
+                } else {
+                    alert('No valid email addresses found in the file');
+                }
+            };
+            
+            reader.readAsText(file);
+        });
+
+        // Initialize email marketing when section loads
+        function initializeEmailMarketing() {
+            if (typeof loadEmailList === 'function') {
+                showEmailTab('email-list');
+            }
+        }
+
+        // Add to section loading
+        const originalShowSection = showSection;
+        showSection = function(sectionName) {
+            originalShowSection(sectionName);
+            if (sectionName === 'email-marketing') {
+                initializeEmailMarketing();
+            }
+        };
+    </script>
 </body>
 </html>

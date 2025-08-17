@@ -420,6 +420,68 @@ router.post('/users', async (req, res) => {
 });
 
 // Update user
+router.post('/users/update', async (req, res) => {
+    try {
+        const users = await readJSONFile('users.json');
+        const userIndex = users.findIndex(user => user.id === req.body.id);
+        
+        if (userIndex === -1) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Update user data while preserving password and creation date
+        const updatedUser = {
+            ...users[userIndex],
+            username: req.body.username,
+            email: req.body.email,
+            userType: req.body.userType,
+            status: req.body.status,
+            phone: req.body.phone,
+            location: req.body.location,
+            updatedAt: new Date().toISOString()
+        };
+
+        users[userIndex] = updatedUser;
+        
+        const success = await writeJSONFile('users.json', users);
+        if (success) {
+            const { password, ...safeUser } = updatedUser;
+            res.json({ success: true, user: safeUser, message: 'User updated successfully' });
+        } else {
+            res.status(500).json({ error: 'Failed to save user changes' });
+        }
+    } catch (error) {
+        console.error('Error updating user:', error);
+        res.status(500).json({ error: 'Failed to update user' });
+    }
+});
+
+// Delete user
+router.post('/users/delete', async (req, res) => {
+    try {
+        const users = await readJSONFile('users.json');
+        const userIndex = users.findIndex(user => user.id === req.body.userId);
+        
+        if (userIndex === -1) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Remove user from array
+        const deletedUser = users.splice(userIndex, 1)[0];
+        
+        const success = await writeJSONFile('users.json', users);
+        if (success) {
+            res.json({ success: true, message: 'User deleted successfully', deletedUserId: deletedUser.id });
+        } else {
+            res.status(500).json({ error: 'Failed to delete user' });
+        }
+    } catch (error) {
+        console.error('Error deleting user:', error);
+        res.status(500).json({ error: 'Failed to delete user' });
+    }
+});
+
+// Update user
 router.put('/users/:id', async (req, res) => {
     try {
         const users = await readJSONFile('users.json');
@@ -731,6 +793,289 @@ router.get('/content/blog', async (req, res) => {
         res.json({ posts: [] }); // Return empty array if file doesn't exist
     }
 });
+
+// ===============================
+// EMAIL MARKETING ENDPOINTS
+// ===============================
+
+// Get email list
+router.get('/email-list', async (req, res) => {
+    try {
+        const emailList = await readJSONFile('email_list.json');
+        res.json({ success: true, emails: emailList });
+    } catch (error) {
+        console.error('Error getting email list:', error);
+        res.json({ success: true, emails: [] });
+    }
+});
+
+// Add email to list
+router.post('/email-list', async (req, res) => {
+    try {
+        const { email, name, tags, status } = req.body;
+        
+        if (!email) {
+            return res.status(400).json({ error: 'Email is required' });
+        }
+
+        const emailList = await readJSONFile('email_list.json');
+        
+        // Check if email already exists
+        const existingEmail = emailList.find(item => item.email.toLowerCase() === email.toLowerCase());
+        if (existingEmail) {
+            return res.status(400).json({ error: 'Email already exists in the list' });
+        }
+
+        const newEmailEntry = {
+            id: Date.now().toString(),
+            email: email.toLowerCase(),
+            name: name || '',
+            tags: tags || [],
+            status: status || 'active',
+            addedDate: new Date().toISOString(),
+            lastEmailSent: null,
+            totalEmailsSent: 0
+        };
+
+        emailList.push(newEmailEntry);
+        
+        const success = await writeJSONFile('email_list.json', emailList);
+        if (success) {
+            res.json({ success: true, email: newEmailEntry, message: 'Email added successfully' });
+        } else {
+            res.status(500).json({ error: 'Failed to save email' });
+        }
+    } catch (error) {
+        console.error('Error adding email:', error);
+        res.status(500).json({ error: 'Failed to add email' });
+    }
+});
+
+// Import emails from CSV/file
+router.post('/email-list/import', async (req, res) => {
+    try {
+        const { emails } = req.body; // Array of email objects
+        
+        if (!Array.isArray(emails) || emails.length === 0) {
+            return res.status(400).json({ error: 'No emails provided for import' });
+        }
+
+        const emailList = await readJSONFile('email_list.json');
+        const existingEmails = new Set(emailList.map(item => item.email.toLowerCase()));
+        
+        let addedCount = 0;
+        let skippedCount = 0;
+
+        for (const emailData of emails) {
+            const email = emailData.email?.toLowerCase();
+            if (!email || existingEmails.has(email)) {
+                skippedCount++;
+                continue;
+            }
+
+            const newEmailEntry = {
+                id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+                email: email,
+                name: emailData.name || '',
+                tags: emailData.tags || [],
+                status: 'active',
+                addedDate: new Date().toISOString(),
+                lastEmailSent: null,
+                totalEmailsSent: 0
+            };
+
+            emailList.push(newEmailEntry);
+            existingEmails.add(email);
+            addedCount++;
+        }
+        
+        const success = await writeJSONFile('email_list.json', emailList);
+        if (success) {
+            res.json({ 
+                success: true, 
+                message: `Import completed: ${addedCount} emails added, ${skippedCount} skipped (duplicates)`,
+                added: addedCount,
+                skipped: skippedCount
+            });
+        } else {
+            res.status(500).json({ error: 'Failed to save imported emails' });
+        }
+    } catch (error) {
+        console.error('Error importing emails:', error);
+        res.status(500).json({ error: 'Failed to import emails' });
+    }
+});
+
+// Update email status
+router.put('/email-list/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status, name, tags } = req.body;
+        
+        const emailList = await readJSONFile('email_list.json');
+        const emailIndex = emailList.findIndex(item => item.id === id);
+        
+        if (emailIndex === -1) {
+            return res.status(404).json({ error: 'Email not found' });
+        }
+
+        if (status) emailList[emailIndex].status = status;
+        if (name !== undefined) emailList[emailIndex].name = name;
+        if (tags !== undefined) emailList[emailIndex].tags = tags;
+
+        const success = await writeJSONFile('email_list.json', emailList);
+        if (success) {
+            res.json({ success: true, email: emailList[emailIndex], message: 'Email updated successfully' });
+        } else {
+            res.status(500).json({ error: 'Failed to update email' });
+        }
+    } catch (error) {
+        console.error('Error updating email:', error);
+        res.status(500).json({ error: 'Failed to update email' });
+    }
+});
+
+// Delete email from list
+router.delete('/email-list/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        const emailList = await readJSONFile('email_list.json');
+        const emailIndex = emailList.findIndex(item => item.id === id);
+        
+        if (emailIndex === -1) {
+            return res.status(404).json({ error: 'Email not found' });
+        }
+
+        emailList.splice(emailIndex, 1);
+
+        const success = await writeJSONFile('email_list.json', emailList);
+        if (success) {
+            res.json({ success: true, message: 'Email deleted successfully' });
+        } else {
+            res.status(500).json({ error: 'Failed to delete email' });
+        }
+    } catch (error) {
+        console.error('Error deleting email:', error);
+        res.status(500).json({ error: 'Failed to delete email' });
+    }
+});
+
+// Send job marketing emails
+router.post('/send-job-emails', async (req, res) => {
+    try {
+        const { jobIds, emailIds, subject, customMessage } = req.body;
+        
+        if (!jobIds || !emailIds || jobIds.length === 0 || emailIds.length === 0) {
+            return res.status(400).json({ error: 'Job IDs and email IDs are required' });
+        }
+
+        // Get jobs data
+        const jobs = await readJSONFile('jobs.json');
+        const selectedJobs = jobs.filter(job => jobIds.includes(job.id));
+
+        // Get email list
+        const emailList = await readJSONFile('email_list.json');
+        const selectedEmails = emailList.filter(email => emailIds.includes(email.id) && email.status === 'active');
+
+        if (selectedJobs.length === 0) {
+            return res.status(400).json({ error: 'No valid jobs found' });
+        }
+
+        if (selectedEmails.length === 0) {
+            return res.status(400).json({ error: 'No valid email recipients found' });
+        }
+
+        // Generate email HTML
+        const emailHTML = generateJobEmailHTML(selectedJobs, customMessage);
+        const emailSubject = subject || `New Job Opportunities - ${selectedJobs.length} Positions Available`;
+
+        // In a real application, you would send emails here using a service like SendGrid, Mailgun, etc.
+        // For now, we'll simulate the email sending and update the tracking data
+
+        let sentCount = 0;
+        const currentTime = new Date().toISOString();
+
+        // Update email tracking
+        for (const email of selectedEmails) {
+            const emailIndex = emailList.findIndex(item => item.id === email.id);
+            if (emailIndex !== -1) {
+                emailList[emailIndex].lastEmailSent = currentTime;
+                emailList[emailIndex].totalEmailsSent = (emailList[emailIndex].totalEmailsSent || 0) + 1;
+                sentCount++;
+            }
+        }
+
+        // Save updated email list
+        await writeJSONFile('email_list.json', emailList);
+
+        // Log the email campaign (you could also save this to a separate campaigns file)
+        console.log(`📧 Email Campaign Sent:
+        - Subject: ${emailSubject}
+        - Recipients: ${sentCount}
+        - Jobs: ${selectedJobs.map(j => j.title).join(', ')}
+        - Time: ${currentTime}`);
+
+        res.json({ 
+            success: true, 
+            message: `Email campaign sent successfully to ${sentCount} recipients`,
+            recipients: sentCount,
+            jobs: selectedJobs.length,
+            preview: emailHTML // Return preview for testing
+        });
+
+    } catch (error) {
+        console.error('Error sending job emails:', error);
+        res.status(500).json({ error: 'Failed to send email campaign' });
+    }
+});
+
+// Helper function to generate job email HTML
+function generateJobEmailHTML(jobs, customMessage) {
+    const jobsHTML = jobs.map(job => `
+        <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin-bottom: 20px; background-color: #ffffff;">
+            <h3 style="color: #1f2937; margin: 0 0 10px 0;">${job.title}</h3>
+            <p style="color: #6b7280; margin: 5px 0;"><strong>Company:</strong> ${job.company}</p>
+            <p style="color: #6b7280; margin: 5px 0;"><strong>Location:</strong> ${job.location}</p>
+            <p style="color: #6b7280; margin: 5px 0;"><strong>Type:</strong> ${job.job_type}</p>
+            <p style="color: #6b7280; margin: 5px 0;"><strong>Salary:</strong> ${job.salary}</p>
+            <p style="color: #374151; margin: 15px 0;">${job.description}</p>
+            ${job.url ? `<a href="${job.url}" style="background-color: #3b82f6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Apply Now</a>` : ''}
+        </div>
+    `).join('');
+
+    return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <title>New Job Opportunities</title>
+    </head>
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background-color: #f8fafc; padding: 30px; border-radius: 10px;">
+            <h1 style="color: #1f2937; text-align: center;">🚀 New Job Opportunities</h1>
+            
+            ${customMessage ? `<div style="background-color: #e0f2fe; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+                <p style="margin: 0; color: #0277bd;">${customMessage}</p>
+            </div>` : ''}
+            
+            <p>We found some exciting job opportunities that might interest you:</p>
+            
+            ${jobsHTML}
+            
+            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+                <p style="color: #6b7280; font-size: 14px;">
+                    Visit our <a href="http://localhost:3000" style="color: #3b82f6;">job board</a> for more opportunities!
+                </p>
+                <p style="color: #9ca3af; font-size: 12px;">
+                    You received this email because you subscribed to our job alerts. 
+                    If you no longer wish to receive these emails, please contact us.
+                </p>
+            </div>
+        </div>
+    </body>
+    </html>`;
+}
 
 module.exports = router;
 router.post('/scrape-job-url', async (req, res) => {

@@ -42,7 +42,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Import auth middleware and routes
-const { redirectIfAuthenticated } = require('./middleware/auth-json'); // Use JSON-based auth middleware
+const { redirectIfAuthenticated, authenticateToken } = require('./middleware/auth-json'); // Use JSON-based auth middleware
 const trackPageView = require('./middleware/analytics');
 const authRoutes = require('./routes/auth-json'); // Use JSON-based auth instead of MySQL
 const adminDataRoutes = require('./routes/admin-data');
@@ -191,6 +191,49 @@ app.get('/employer/dashboard', (req, res) => {
 // Jobseeker dashboard  
 app.get('/jobseeker/dashboard', (req, res) => {
     res.sendFile(path.join(__dirname, 'Public', 'jobseeker', 'dashboard.html'));
+});
+
+// Authentication status check routes
+// Check if user is authenticated - returns user info if logged in
+app.get('/api/auth/status', authenticateToken, (req, res) => {
+    res.json({ 
+        authenticated: true, 
+        user: {
+            id: req.user.id,
+            username: req.user.username,
+            email: req.user.email,
+            userType: req.user.user_type
+        }
+    });
+});
+
+// Optional endpoint for checking auth status without requiring authentication
+app.get('/api/auth/check', (req, res) => {
+    // Try to get token from Authorization header first, then from cookies
+    const authHeader = req.headers['authorization'];
+    let token = authHeader && authHeader.split(' ')[1];
+    
+    if (!token && req.cookies) {
+        token = req.cookies.authToken;
+    }
+
+    if (!token) {
+        return res.json({ authenticated: false });
+    }
+
+    try {
+        const jwt = require('jsonwebtoken');
+        const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production';
+        const decoded = jwt.verify(token, JWT_SECRET);
+        
+        // Basic check - we could also verify user exists in JSON file here
+        res.json({ 
+            authenticated: true,
+            userId: decoded.userId
+        });
+    } catch (error) {
+        res.json({ authenticated: false });
+    }
 });
 
 // Serve static files AFTER routes
@@ -816,7 +859,7 @@ app.put('/api/profile/:userId', (req, res) => {
 });
 
 // Upload resume
-app.post('/api/resume/upload/:userId', upload.single('resume'), (req, res) => {
+app.post('/api/resume/upload/:userId', authenticateToken, upload.single('resume'), (req, res) => {
     try {
         const userId = req.params.userId;
         
