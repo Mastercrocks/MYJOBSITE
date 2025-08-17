@@ -1,41 +1,28 @@
-# TalentSync.shop - Job Board Robots.txt
-# Updated: 2025-08-14
-
 User-agent: *
 Allow: /
 
-# Main Pages
-Allow: /index.html
+# Prioritize important pages
+Crawl-delay: 1
+
+# Sitemaps
+Sitemap: https://talentsync.shop/sitemap.xml
+
+# Allow social media crawlers
+User-agent: facebookexternalhit/*
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+# Block admin areas (if any)
+Disallow: /admin
+Disallow: /api/admin
+Disallow: /private/
+
+# Allow job pages
+Allow: /job/
 Allow: /jobs.html
 Allow: /employers.html
-Allow: /blog.html
-Allow: /contact.html
-Allow: /job-detail.html
-
-# Job Category Pages
-Allow: /jobs/
-Allow: /blog/
-
-# Block unnecessary pages
-Disallow: /admin/
-Disallow: /middleware/
-Disallow: /Config/
-Disallow: /data/
-Disallow: /routes/
-Disallow: /scripts/
-Disallow: /services/
-Disallow: /uploads/
-Disallow: /*.json
-Disallow: /*.js$
-Disallow: /forgot-password.html
-Disallow: /reset-password.html
-Disallow: /login.html
-Disallow: /register.html
-Disallow: /dashboard.html
-
-# Important Files
-Sitemap: https://talentsync.shop/sitemap.xml
-Sitemap: https://talentsync.shop/sitemap-index.xml
-
-# Crawl Delay (be nice to servers)
-Crawl-delay: 1

@@ -301,19 +301,19 @@
                                 <div class="space-y-4">
                                     <div class="flex justify-between items-center">
                                         <span class="text-sm text-gray-600">Active Employers</span>
-                                        <span class="font-semibold text-gray-900">24</span>
+                                        <span id="quickActiveEmployers" class="font-semibold text-gray-900">0</span>
                                     </div>
                                     <div class="flex justify-between items-center">
                                         <span class="text-sm text-gray-600">Pending Applications</span>
-                                        <span class="font-semibold text-gray-900">0</span>
+                                        <span id="quickPendingApplications" class="font-semibold text-gray-900">0</span>
                                     </div>
                                     <div class="flex justify-between items-center">
                                         <span class="text-sm text-gray-600">Resumes Uploaded</span>
-                                        <span class="font-semibold text-gray-900">0</span>
+                                        <span id="quickResumesUploaded" class="font-semibold text-gray-900">0</span>
                                     </div>
                                     <div class="flex justify-between items-center">
                                         <span class="text-sm text-gray-600">Featured Jobs</span>
-                                        <span class="font-semibold text-gray-900">4</span>
+                                        <span id="quickFeaturedJobs" class="font-semibold text-gray-900">0</span>
                                     </div>
                                 </div>
                             </div>
@@ -1412,7 +1412,10 @@
                         <!-- Email Management Tabs -->
                         <div class="border-b border-gray-200">
                             <nav class="flex space-x-8 px-6" aria-label="Tabs">
-                                <button onclick="showEmailTab('email-list')" class="email-tab border-b-2 border-blue-500 py-4 px-1 text-sm font-medium text-blue-600" id="email-list-tab">
+                                <button onclick="showEmailTab('auto-campaigns')" class="email-tab border-b-2 border-blue-500 py-4 px-1 text-sm font-medium text-blue-600" id="auto-campaigns-tab">
+                                    🚀 Auto Campaigns
+                                </button>
+                                <button onclick="showEmailTab('email-list')" class="email-tab border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300" id="email-list-tab">
                                     Email List
                                 </button>
                                 <button onclick="showEmailTab('send-campaign')" class="email-tab border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300" id="send-campaign-tab">
@@ -1422,6 +1425,136 @@
                                     Import Emails
                                 </button>
                             </nav>
+                        </div>
+
+                        <!-- Auto Campaigns Tab -->
+                        <div id="auto-campaigns-content" class="email-tab-content p-6">
+                            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 mb-6">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-gray-900 mb-2">🚀 Automated Job Alerts</h3>
+                                        <p class="text-sm text-gray-600">Automatically send new job postings to your email list when you add jobs</p>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <span class="text-sm text-gray-600 mr-3">Auto-send enabled:</span>
+                                        <div class="relative">
+                                            <input type="checkbox" id="autoEmailToggle" class="sr-only" checked>
+                                            <div class="block bg-green-500 w-14 h-8 rounded-full cursor-pointer" onclick="toggleAutoEmails()"></div>
+                                            <div class="dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition" style="transform: translateX(24px);"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Auto Campaign Stats -->
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                                <div class="bg-white rounded-lg border border-gray-200 p-4">
+                                    <div class="flex items-center">
+                                        <div class="p-2 bg-blue-100 rounded-lg">
+                                            <span class="text-2xl">📧</span>
+                                        </div>
+                                        <div class="ml-4">
+                                            <p class="text-sm font-medium text-gray-600">Auto Campaigns Sent</p>
+                                            <p class="text-2xl font-bold text-gray-900" id="autoCampaignsSent">0</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-white rounded-lg border border-gray-200 p-4">
+                                    <div class="flex items-center">
+                                        <div class="p-2 bg-green-100 rounded-lg">
+                                            <span class="text-2xl">📊</span>
+                                        </div>
+                                        <div class="ml-4">
+                                            <p class="text-sm font-medium text-gray-600">Jobs Auto-Sent</p>
+                                            <p class="text-2xl font-bold text-gray-900" id="jobsAutoSent">0</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-white rounded-lg border border-gray-200 p-4">
+                                    <div class="flex items-center">
+                                        <div class="p-2 bg-yellow-100 rounded-lg">
+                                            <span class="text-2xl">👥</span>
+                                        </div>
+                                        <div class="ml-4">
+                                            <p class="text-sm font-medium text-gray-600">Email Subscribers</p>
+                                            <p class="text-2xl font-bold text-gray-900" id="totalSubscribers">0</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Recent Auto Campaigns -->
+                            <div class="bg-white rounded-lg border border-gray-200">
+                                <div class="px-6 py-4 border-b border-gray-200">
+                                    <h4 class="text-lg font-medium text-gray-900">Recent Auto Campaigns</h4>
+                                    <p class="text-sm text-gray-600">Latest job alerts sent automatically</p>
+                                </div>
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-full divide-y divide-gray-200">
+                                        <thead class="bg-gray-50">
+                                            <tr>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Job</th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sent To</th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="autoCampaignsTable" class="bg-white divide-y divide-gray-200">
+                                            <tr>
+                                                <td colspan="5" class="px-6 py-8 text-center text-gray-500">No auto campaigns sent yet</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- How It Works -->
+                            <div class="bg-gray-50 rounded-lg p-6 mt-6">
+                                <h4 class="text-lg font-medium text-gray-900 mb-4">🔧 How Auto Email Marketing Works</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <h5 class="font-medium text-gray-900 mb-2">✅ When You Post a Job:</h5>
+                                        <ul class="text-sm text-gray-600 space-y-1">
+                                            <li>• Job is automatically added to your site</li>
+                                            <li>• Email campaign is created instantly</li>
+                                            <li>• Professional email template is generated</li>
+                                            <li>• Email sent to all subscribers immediately</li>
+                                        </ul>
+                                    </div>
+                                    <div>
+                                        <h5 class="font-medium text-gray-900 mb-2">📧 What Subscribers Get:</h5>
+                                        <ul class="text-sm text-gray-600 space-y-1">
+                                            <li>• Professional job alert email</li>
+                                            <li>• Complete job details and description</li>
+                                            <li>• Direct apply button</li>
+                                            <li>• Company and location information</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-4 p-4 bg-blue-50 rounded-lg">
+                                    <p class="text-sm text-blue-800">
+                                        <strong>💡 Pro Tip:</strong> Keep your email list updated and engage with subscribers regularly for best results. 
+                                        Auto campaigns work best with 50+ active subscribers.
+                                    </p>
+                                </div>
+                                
+                                <!-- Test Auto Campaign -->
+                                <div class="mt-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <h5 class="font-medium text-gray-900">🧪 Test Auto Campaign</h5>
+                                            <p class="text-sm text-gray-600">Send a test job alert to verify the system is working</p>
+                                        </div>
+                                        <button onclick="testAutoCampaign()" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition-colors">
+                                            Send Test Email
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Email List Tab -->
@@ -1801,6 +1934,22 @@
                 
                 // Store data globally for other functions
                 window.dashboardData = data;
+                
+                // Update quick stats in sidebar
+                if (data.quickStats) {
+                    const quickActiveEmployers = document.getElementById('quickActiveEmployers');
+                    if (quickActiveEmployers) quickActiveEmployers.textContent = data.quickStats.activeEmployers;
+                    
+                    const quickPendingApplications = document.getElementById('quickPendingApplications');
+                    if (quickPendingApplications) quickPendingApplications.textContent = data.quickStats.pendingApplications;
+                    
+                    const quickResumesUploaded = document.getElementById('quickResumesUploaded');
+                    if (quickResumesUploaded) quickResumesUploaded.textContent = data.quickStats.resumesUploaded;
+                    
+                    const quickFeaturedJobs = document.getElementById('quickFeaturedJobs');
+                    if (quickFeaturedJobs) quickFeaturedJobs.textContent = data.quickStats.featuredJobs;
+                }
+                
                 console.log('✅ Dashboard stats loaded successfully');
                 
             } catch (error) {
@@ -1828,25 +1977,136 @@
         }
 
         // Load recent activity
-        function loadRecentActivity() {
-            const activities = [
-                { type: 'job', message: 'Job posted: "Software Developer"', time: '1 day ago', color: 'green' },
-                { type: 'user', message: 'User registered from New York', time: '2 days ago', color: 'blue' },
-                { type: 'employer', message: 'Employer "Demo Company" verified', time: '3 days ago', color: 'indigo' },
-                { type: 'system', message: 'Dashboard analytics updated', time: '4 days ago', color: 'gray' }
-            ];
+        async function loadRecentActivity() {
+            try {
+                const response = await fetch('/api/admin/stats');
+                const data = await response.json();
+                
+                const activities = [];
+                
+                // Get recent jobs
+                if (data.jobs && data.jobs.length > 0) {
+                    const recentJobs = data.jobs.slice(0, 2);
+                    recentJobs.forEach(job => {
+                        const timeAgo = getTimeAgo(new Date(job.posted_date));
+                        activities.push({
+                            type: 'job',
+                            message: `Job posted: "${job.title}" at ${job.company}`,
+                            time: timeAgo,
+                            color: 'green'
+                        });
+                    });
+                }
+                
+                // Get recent applications
+                if (data.applications && data.applications.length > 0) {
+                    const recentApplications = data.applications.slice(0, 2);
+                    recentApplications.forEach(app => {
+                        const timeAgo = getTimeAgo(new Date(app.appliedAt));
+                        activities.push({
+                            type: 'application',
+                            message: `Application from ${app.firstName} ${app.lastName} for ${app.position}`,
+                            time: timeAgo,
+                            color: 'purple'
+                        });
+                    });
+                }
+                
+                // Get recent employers
+                if (data.employers && data.employers.length > 0) {
+                    const recentEmployers = data.employers.slice(0, 1);
+                    recentEmployers.forEach(emp => {
+                        const timeAgo = getTimeAgo(new Date(emp.createdAt));
+                        activities.push({
+                            type: 'employer',
+                            message: `Employer "${emp.companyName || emp.firstName + ' ' + emp.lastName}" ${emp.verified ? 'verified' : 'registered'}`,
+                            time: timeAgo,
+                            color: 'indigo'
+                        });
+                    });
+                }
+                
+                // Sort by most recent
+                activities.sort((a, b) => {
+                    const aTime = convertTimeAgoToDate(a.time);
+                    const bTime = convertTimeAgoToDate(b.time);
+                    return bTime - aTime;
+                });
+                
+                // If no real activities, show system status
+                if (activities.length === 0) {
+                    activities.push({
+                        type: 'system',
+                        message: 'System online and ready for job postings',
+                        time: 'now',
+                        color: 'blue'
+                    });
+                    activities.push({
+                        type: 'system',
+                        message: 'Email marketing system configured',
+                        time: 'ready',
+                        color: 'green'
+                    });
+                }
 
-            const activityHtml = activities.map(activity => `
-                <div class="flex items-start space-x-4">
-                    <div class="w-2 h-2 bg-${activity.color}-500 rounded-full mt-2"></div>
-                    <div class="flex-1">
-                        <p class="text-sm text-gray-900">${activity.message}</p>
-                        <p class="text-xs text-gray-500">${activity.time}</p>
+                const activityHtml = activities.slice(0, 5).map(activity => `
+                    <div class="flex items-start space-x-4">
+                        <div class="w-2 h-2 bg-${activity.color}-500 rounded-full mt-2"></div>
+                        <div class="flex-1">
+                            <p class="text-sm text-gray-900">${activity.message}</p>
+                            <p class="text-xs text-gray-500">${activity.time}</p>
+                        </div>
                     </div>
-                </div>
-            `).join('');
+                `).join('');
 
-            document.getElementById('recentActivity').innerHTML = activityHtml;
+                document.getElementById('recentActivity').innerHTML = activityHtml;
+                
+            } catch (error) {
+                console.error('Error loading recent activity:', error);
+                document.getElementById('recentActivity').innerHTML = `
+                    <div class="flex items-start space-x-4">
+                        <div class="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                        <div class="flex-1">
+                            <p class="text-sm text-gray-900">System ready for job postings</p>
+                            <p class="text-xs text-gray-500">now</p>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        
+        // Helper function to convert time ago string to date for sorting
+        function convertTimeAgoToDate(timeAgo) {
+            const now = new Date();
+            if (timeAgo.includes('minute')) {
+                const minutes = parseInt(timeAgo.match(/\d+/)?.[0] || 0);
+                return new Date(now.getTime() - minutes * 60 * 1000);
+            } else if (timeAgo.includes('hour')) {
+                const hours = parseInt(timeAgo.match(/\d+/)?.[0] || 0);
+                return new Date(now.getTime() - hours * 60 * 60 * 1000);
+            } else if (timeAgo.includes('day')) {
+                const days = parseInt(timeAgo.match(/\d+/)?.[0] || 0);
+                return new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+            }
+            return now;
+        }
+        
+        // Helper function to get time ago string
+        function getTimeAgo(date) {
+            const now = new Date();
+            const diffInMinutes = Math.floor((now - date) / (1000 * 60));
+            
+            if (diffInMinutes < 1) return 'just now';
+            if (diffInMinutes < 60) return `${diffInMinutes} minute${diffInMinutes > 1 ? 's' : ''} ago`;
+            
+            const diffInHours = Math.floor(diffInMinutes / 60);
+            if (diffInHours < 24) return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
+            
+            const diffInDays = Math.floor(diffInHours / 24);
+            if (diffInDays < 7) return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
+            
+            const diffInWeeks = Math.floor(diffInDays / 7);
+            return `${diffInWeeks} week${diffInWeeks > 1 ? 's' : ''} ago`;
         }
 
         // Update billing section with real revenue data
@@ -3378,6 +3638,99 @@
         // EMAIL MARKETING FUNCTIONS
         // ===============================
 
+        // Auto campaign settings
+        let autoEmailEnabled = true;
+
+        // Toggle auto email campaigns
+        function toggleAutoEmails() {
+            autoEmailEnabled = !autoEmailEnabled;
+            const toggle = document.getElementById('autoEmailToggle');
+            const dot = toggle.nextElementSibling.querySelector('.dot');
+            const background = toggle.nextElementSibling;
+            
+            if (autoEmailEnabled) {
+                background.classList.remove('bg-gray-400');
+                background.classList.add('bg-green-500');
+                dot.style.transform = 'translateX(24px)';
+                showNotification('Auto email campaigns enabled! 🚀', 'success');
+            } else {
+                background.classList.remove('bg-green-500');
+                background.classList.add('bg-gray-400');
+                dot.style.transform = 'translateX(0px)';
+                showNotification('Auto email campaigns disabled', 'warning');
+            }
+            
+            // Save setting to backend
+            saveAutoEmailSetting();
+        }
+
+        // Save auto email setting
+        async function saveAutoEmailSetting() {
+            try {
+                const response = await fetch('/api/admin/email-settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ autoEmailEnabled })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to save setting');
+                }
+            } catch (error) {
+                console.error('Error saving auto email setting:', error);
+            }
+        }
+
+        // Load auto campaign stats
+        async function loadAutoCampaignStats() {
+            try {
+                const response = await fetch('/api/admin/auto-campaign-stats');
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('autoCampaignsSent').textContent = data.stats.totalCampaigns || 0;
+                    document.getElementById('jobsAutoSent').textContent = data.stats.totalJobs || 0;
+                    document.getElementById('totalSubscribers').textContent = data.stats.subscribers || 0;
+                    
+                    loadRecentAutoCampaigns(data.stats.recentCampaigns || []);
+                }
+            } catch (error) {
+                console.error('Error loading auto campaign stats:', error);
+            }
+        }
+
+        // Load recent auto campaigns
+        function loadRecentAutoCampaigns(campaigns) {
+            const tbody = document.getElementById('autoCampaignsTable');
+            
+            if (campaigns.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-gray-500">No auto campaigns sent yet</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = campaigns.map(campaign => `
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-medium text-gray-900">\${campaign.jobTitle}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900">\${campaign.company}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900">\${campaign.sentTo} subscribers</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-500">\${new Date(campaign.sentAt).toLocaleDateString()}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                            ✅ Sent
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
         // Email tab management
         function showEmailTab(tabName) {
             // Hide all tab contents
@@ -3398,6 +3751,11 @@
             const activeTab = document.getElementById(tabName + '-tab');
             activeTab.classList.remove('border-transparent', 'text-gray-500');
             activeTab.classList.add('border-blue-500', 'text-blue-600');
+            
+            // Load data for specific tabs
+            if (tabName === 'auto-campaigns') {
+                loadAutoCampaignStats();
+            }
 
             // Load data based on tab
             if (tabName === 'email-list') {
@@ -3405,6 +3763,30 @@
             } else if (tabName === 'send-campaign') {
                 loadJobsForCampaign();
                 loadRecipientsForCampaign();
+            }
+        }
+
+        // Test auto campaign
+        async function testAutoCampaign() {
+            try {
+                showNotification('Sending test campaign...', 'info');
+                
+                const response = await fetch('/api/admin/test-auto-campaign', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showNotification(`Test campaign sent successfully! 📧 Sent to ${data.result?.sent || 0} subscribers`, 'success');
+                    loadAutoCampaignStats(); // Refresh stats
+                } else {
+                    showNotification('Failed to send test campaign', 'error');
+                }
+            } catch (error) {
+                console.error('Error sending test campaign:', error);
+                showNotification('Error sending test campaign', 'error');
             }
         }
 
@@ -3521,6 +3903,110 @@
             } catch (error) {
                 console.error('Error deleting email:', error);
                 alert('Failed to delete email');
+            }
+        }
+
+        // Edit email
+        function editEmail(id) {
+            // Find the email in the current list
+            const emailRows = document.querySelectorAll('#emailTableBody tr');
+            let currentEmail = null;
+            
+            emailRows.forEach(row => {
+                const checkbox = row.querySelector('.email-checkbox');
+                if (checkbox && checkbox.value === id) {
+                    const cells = row.querySelectorAll('td');
+                    currentEmail = {
+                        id: id,
+                        email: cells[1].textContent,
+                        name: cells[2].textContent === '-' ? '' : cells[2].textContent,
+                        tags: cells[3].textContent === '-' ? '' : cells[3].textContent,
+                        status: cells[4].querySelector('span').textContent
+                    };
+                }
+            });
+            
+            if (!currentEmail) {
+                alert('Email not found');
+                return;
+            }
+
+            // Create edit modal
+            const modalHtml = `
+                <div id="editEmailModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+                    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                        <div class="mt-3">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">Edit Email</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Email</label>
+                                    <input type="email" id="editEmailAddress" value="${currentEmail.email}" 
+                                           class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Name</label>
+                                    <input type="text" id="editEmailName" value="${currentEmail.name}" 
+                                           class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Tags (comma-separated)</label>
+                                    <input type="text" id="editEmailTags" value="${currentEmail.tags}" 
+                                           class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Status</label>
+                                    <select id="editEmailStatus" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2">
+                                        <option value="active" ${currentEmail.status === 'active' ? 'selected' : ''}>Active</option>
+                                        <option value="inactive" ${currentEmail.status === 'inactive' ? 'selected' : ''}>Inactive</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="flex justify-end mt-6 space-x-3">
+                                <button onclick="closeEditEmailModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">Cancel</button>
+                                <button onclick="saveEmailEdit('${id}')" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Save Changes</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+
+        function closeEditEmailModal() {
+            const modal = document.getElementById('editEmailModal');
+            if (modal) modal.remove();
+        }
+
+        async function saveEmailEdit(id) {
+            const updatedEmail = {
+                email: document.getElementById('editEmailAddress').value,
+                name: document.getElementById('editEmailName').value,
+                tags: document.getElementById('editEmailTags').value.split(',').map(t => t.trim()).filter(t => t),
+                status: document.getElementById('editEmailStatus').value
+            };
+
+            try {
+                const response = await fetch(`/api/admin/email-list/update`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ id, ...updatedEmail })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Email updated successfully!');
+                    closeEditEmailModal();
+                    loadEmailList(); // Reload the email list
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error updating email:', error);
+                alert('Failed to update email');
             }
         }
 

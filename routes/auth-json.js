@@ -37,8 +37,10 @@ async function writeUsers(users) {
 
 async function findUserByUsernameOrEmail(identifier) {
   const users = await readUsers();
+  const lowerIdentifier = identifier.toLowerCase();
   return users.find(user => 
-    user.username === identifier || user.email === identifier
+    user.username.toLowerCase() === lowerIdentifier || 
+    user.email.toLowerCase() === lowerIdentifier
   );
 }
 
@@ -66,12 +68,19 @@ router.post('/register', async (req, res) => {
     }
 
     // Check if user already exists
-    const existingUser = await findUserByUsernameOrEmail(username) || 
-                        await findUserByUsernameOrEmail(email);
+    const users = await readUsers();
+    const existingUsername = users.find(user => user.username.toLowerCase() === username.toLowerCase());
+    const existingEmail = users.find(user => user.email.toLowerCase() === email.toLowerCase());
     
-    if (existingUser) {
+    if (existingUsername) {
       return res.status(400).json({ 
-        error: 'Username or email already exists' 
+        error: 'Username already exists. Please choose a different username.' 
+      });
+    }
+    
+    if (existingEmail) {
+      return res.status(400).json({ 
+        error: 'Email address already exists. Please use a different email or try logging in.' 
       });
     }
 
@@ -82,7 +91,7 @@ router.post('/register', async (req, res) => {
     const newUser = {
       id: Date.now().toString(), // Simple ID generation
       username,
-      email,
+      email: email.toLowerCase(), // Store email in lowercase
       password_hash: passwordHash,
       user_type: userType,
       first_name: firstName || '',
@@ -96,7 +105,6 @@ router.post('/register', async (req, res) => {
     };
 
     // Add user to JSON file
-    const users = await readUsers();
     users.push(newUser);
     await writeUsers(users);
 

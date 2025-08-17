@@ -14,7 +14,7 @@ async function sendAccountEmail({ to, subject, text, html }) {
   console.log('📧 Password length:', process.env.EMAIL_PASS?.length || 'undefined');
   
   const mailOptions = {
-    from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+    from: `TalentSync <${process.env.EMAIL_FROM || 'talentsync@talentsync.shop'}>`,
     to,
     subject,
     text,
@@ -23,4 +23,19 @@ async function sendAccountEmail({ to, subject, text, html }) {
   return transporter.sendMail(mailOptions);
 }
 
-module.exports = { sendAccountEmail };
+// New function specifically for job marketing emails
+async function sendJobMarketingEmail({ to, subject, text, html }) {
+  console.log('📧 Sending job marketing email to:', to);
+  
+  const mailOptions = {
+    from: `TalentSync Job Alerts <talentsync@talentsync.shop>`,
+    to,
+    subject,
+    text,
+    html,
+    replyTo: 'talentsync@talentsync.shop'
+  };
+  return transporter.sendMail(mailOptions);
+}
+
+module.exports = { sendAccountEmail, sendJobMarketingEmail };

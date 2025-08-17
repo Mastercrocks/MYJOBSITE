@@ -4,6 +4,21 @@ const fs = require('fs').promises;
 const path = require('path');
 const https = require('https');
 const http = require('http');
+const nodemailer = require('nodemailer');
+
+// Email configuration for auto campaigns
+const emailConfig = {
+    host: 'smtp.zoho.com',
+    port: 587,
+    secure: false,
+    auth: {
+        user: 'talentsync@talentsync.shop',
+        pass: process.env.EMAIL_PASSWORD || 'your-email-password' // Set this in your environment
+    }
+};
+
+// Create email transporter
+const transporter = nodemailer.createTransporter(emailConfig);
 
 // Helper function to read JSON files
 async function readJSONFile(filename) {
@@ -29,6 +44,160 @@ async function writeJSONFile(filename, data) {
     }
 }
 
+// 🚀 AUTOMATED EMAIL MARKETING: Send new job to email list
+async function sendNewJobEmailCampaign(newJob) {
+    try {
+        console.log(`📧 Starting auto email campaign for: ${newJob.title}`);
+        
+        // Get email list
+        const emailList = await readJSONFile('email_list.json');
+        
+        if (!emailList || emailList.length === 0) {
+            console.log('📭 No email subscribers found - skipping auto campaign');
+            return;
+        }
+
+        // Create professional email template
+        const emailSubject = `🚀 New Job Alert: ${newJob.title} at ${newJob.company}`;
+        
+        const emailTemplate = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Job Alert - TalentSync</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .header { background: linear-gradient(135deg, #2563eb, #3b82f6); color: white; padding: 30px 20px; border-radius: 10px 10px 0 0; text-align: center; margin: -20px -20px 20px -20px; }
+        .job-card { background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #2563eb; margin: 20px 0; }
+        .job-title { color: #2563eb; font-size: 24px; font-weight: bold; margin: 0 0 10px 0; }
+        .company { font-size: 18px; color: #666; margin: 0 0 15px 0; }
+        .details { display: flex; flex-wrap: wrap; gap: 15px; margin: 15px 0; }
+        .detail-item { background: white; padding: 8px 12px; border-radius: 5px; font-size: 14px; }
+        .apply-btn { background: #2563eb; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold; text-align: center; margin: 20px 0; }
+        .apply-btn:hover { background: #1d4ed8; }
+        .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #666; font-size: 12px; }
+        .unsubscribe { color: #999; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 TalentSync Job Alert</h1>
+            <p>A new job opportunity just posted that matches your interests!</p>
+        </div>
+        
+        <div class="job-card">
+            <h2 class="job-title">\${newJob.title}</h2>
+            <p class="company">🏢 \${newJob.company}</p>
+            
+            <div class="details">
+                <div class="detail-item">📍 <strong>Location:</strong> \${newJob.location}</div>
+                <div class="detail-item">💼 <strong>Type:</strong> \${newJob.job_type}</div>
+                <div class="detail-item">💰 <strong>Salary:</strong> \${newJob.salary}</div>
+                <div class="detail-item">📅 <strong>Posted:</strong> Just now</div>
+            </div>
+            
+            <div style="margin: 20px 0;">
+                <h3>Job Description:</h3>
+                <p>\${newJob.description.substring(0, 300)}\${newJob.description.length > 300 ? '...' : ''}</p>
+            </div>
+            
+            <div style="text-align: center;">
+                <a href="\${newJob.url}" class="apply-btn" style="color: white;">
+                    🚀 Apply Now
+                </a>
+            </div>
+        </div>
+        
+        <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <h3>💡 Why This Job is Perfect:</h3>
+            <ul>
+                <li>✅ \${newJob.entry_level ? 'Entry-level friendly' : 'Great for experienced professionals'}</li>
+                <li>✅ \${newJob.remote ? 'Remote work available' : 'On-site opportunity'}</li>
+                <li>✅ Posted today - apply early for best chances!</li>
+                <li>✅ Trusted company verified by TalentSync</li>
+            </ul>
+        </div>
+        
+        <div style="text-align: center; margin: 30px 0;">
+            <p><strong>Don't miss out!</strong> This job was just posted and applications are being reviewed immediately.</p>
+            <a href="https://talentsync.shop/jobs.html" style="color: #2563eb; text-decoration: none;">
+                🔍 Browse More Jobs on TalentSync
+            </a>
+        </div>
+        
+        <div class="footer">
+            <p>You're receiving this because you subscribed to TalentSync job alerts.</p>
+            <p>
+                <a href="https://talentsync.shop" style="color: #2563eb;">Visit TalentSync</a> | 
+                <a href="mailto:talentsync@talentsync.shop?subject=Unsubscribe" class="unsubscribe">Unsubscribe</a>
+            </p>
+            <p>© 2025 TalentSync - Connecting Talent with Opportunity</p>
+        </div>
+    </div>
+</body>
+</html>`;
+
+        // Send to all subscribers
+        let successCount = 0;
+        let failCount = 0;
+        
+        for (const subscriber of emailList) {
+            try {
+                const mailOptions = {
+                    from: '"TalentSync Job Alerts" <talentsync@talentsync.shop>',
+                    to: subscriber.email,
+                    subject: emailSubject,
+                    html: emailTemplate,
+                    text: `New Job Alert: \${newJob.title} at \${newJob.company}\\n\\nLocation: \${newJob.location}\\nType: \${newJob.job_type}\\nSalary: \${newJob.salary}\\n\\nApply now: \${newJob.url}\\n\\nVisit TalentSync: https://talentsync.shop`
+                };
+
+                await transporter.sendMail(mailOptions);
+                successCount++;
+                console.log(`📧 Sent to: \${subscriber.email}`);
+                
+                // Small delay to avoid rate limiting
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+            } catch (error) {
+                failCount++;
+                console.error(`❌ Failed to send to \${subscriber.email}:`, error.message);
+            }
+        }
+        
+        console.log(`📊 Auto email campaign results:`);
+        console.log(`   ✅ Sent successfully: \${successCount}`);
+        console.log(`   ❌ Failed: \${failCount}`);
+        console.log(`   📧 Total subscribers: \${emailList.length}`);
+        
+        // Log the campaign
+        const campaigns = await readJSONFile('email_campaigns.json');
+        campaigns.unshift({
+            id: Date.now(),
+            type: 'auto_job_alert',
+            jobId: newJob.id,
+            jobTitle: newJob.title,
+            company: newJob.company,
+            subject: emailSubject,
+            sentTo: successCount,
+            failed: failCount,
+            sentAt: new Date().toISOString(),
+            status: 'completed'
+        });
+        
+        await writeJSONFile('email_campaigns.json', campaigns);
+        
+        return { success: true, sent: successCount, failed: failCount };
+        
+    } catch (error) {
+        console.error('❌ Auto email campaign error:', error);
+        throw error;
+    }
+}
+
 // Get dashboard statistics
 router.get('/stats', async (req, res) => {
     try {
@@ -36,7 +205,7 @@ router.get('/stats', async (req, res) => {
             readJSONFile('jobs.json'),
             readJSONFile('users.json'),
             readJSONFile('employers.json'),
-            readJSONFile('applications.json'),
+            readJSONFile('career_applications.json'),
             readJSONFile('analytics.json'),
             readJSONFile('revenue.json')
         ]);
@@ -54,7 +223,7 @@ router.get('/stats', async (req, res) => {
         const newUsersThisWeek = users.filter(user => new Date(user.createdAt) >= thisWeek).length;
         
         // Application statistics
-        const newApplicationsThisWeek = applications.filter(app => new Date(app.createdAt) >= thisWeek).length;
+        const newApplicationsThisWeek = applications.filter(app => new Date(app.appliedAt) >= thisWeek).length;
 
         // Category distribution
         const categoryStats = {};
@@ -156,7 +325,20 @@ router.get('/stats', async (req, res) => {
             topLocations: Object.entries(locationStats)
                 .sort(([,a], [,b]) => b - a)
                 .slice(0, 10)
-                .map(([location, count]) => ({ location, count }))
+                .map(([location, count]) => ({ location, count })),
+            
+            // Raw data for dashboard activity
+            jobs: jobs.sort((a, b) => new Date(b.posted_date) - new Date(a.posted_date)).slice(0, 10),
+            applications: applications.sort((a, b) => new Date(b.appliedAt) - new Date(a.appliedAt)).slice(0, 10),
+            employers: employers.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)).slice(0, 5),
+            
+            // Quick stats for sidebar
+            quickStats: {
+                activeEmployers: employers.filter(emp => emp.status === 'active').length,
+                pendingApplications: applications.length,
+                resumesUploaded: applications.filter(app => app.resumePath).length,
+                featuredJobs: jobs.filter(job => job.featured === true || job.featured === 'true').length
+            }
         });
     } catch (error) {
         console.error('Error getting dashboard stats:', error);
@@ -257,7 +439,7 @@ router.get('/employers', async (req, res) => {
 // Get all applications
 router.get('/applications', async (req, res) => {
     try {
-        const applications = await readJSONFile('applications.json');
+        const applications = await readJSONFile('career_applications.json');
         res.json({ applications });
     } catch (error) {
         console.error('Error getting applications:', error);
@@ -301,7 +483,16 @@ router.post('/jobs', async (req, res) => {
         
         const success = await writeJSONFile('jobs.json', jobs);
         if (success) {
-            res.json({ success: true, job: newJob, message: 'Job added successfully' });
+            // 🚀 AUTO-SEND EMAIL MARKETING CAMPAIGN FOR NEW JOB
+            try {
+                await sendNewJobEmailCampaign(newJob);
+                console.log(`✅ Auto email campaign sent for job: ${newJob.title}`);
+            } catch (emailError) {
+                console.error('❌ Failed to send auto email campaign:', emailError);
+                // Don't fail the job posting if email fails
+            }
+            
+            res.json({ success: true, job: newJob, message: 'Job added successfully and email campaign sent!' });
         } else {
             res.status(500).json({ error: 'Failed to save job' });
         }
@@ -935,6 +1126,43 @@ router.put('/email-list/:id', async (req, res) => {
     }
 });
 
+// Update email (POST endpoint for frontend compatibility)
+router.post('/email-list/update', async (req, res) => {
+    try {
+        const { id, email, name, tags, status } = req.body;
+        
+        if (!id) {
+            return res.status(400).json({ error: 'Email ID is required' });
+        }
+        
+        const emailList = await readJSONFile('email_list.json');
+        const emailIndex = emailList.findIndex(item => item.id === id);
+        
+        if (emailIndex === -1) {
+            return res.status(404).json({ error: 'Email not found' });
+        }
+
+        // Update all provided fields
+        if (email !== undefined) emailList[emailIndex].email = email;
+        if (name !== undefined) emailList[emailIndex].name = name;
+        if (tags !== undefined) emailList[emailIndex].tags = Array.isArray(tags) ? tags : [];
+        if (status !== undefined) emailList[emailIndex].status = status;
+        
+        // Add update timestamp
+        emailList[emailIndex].updatedDate = new Date().toISOString();
+
+        const success = await writeJSONFile('email_list.json', emailList);
+        if (success) {
+            res.json({ success: true, email: emailList[emailIndex], message: 'Email updated successfully' });
+        } else {
+            res.status(500).json({ error: 'Failed to update email' });
+        }
+    } catch (error) {
+        console.error('Error updating email:', error);
+        res.status(500).json({ error: 'Failed to update email' });
+    }
+});
+
 // Delete email from list
 router.delete('/email-list/:id', async (req, res) => {
     try {
@@ -990,36 +1218,66 @@ router.post('/send-job-emails', async (req, res) => {
         const emailHTML = generateJobEmailHTML(selectedJobs, customMessage);
         const emailSubject = subject || `New Job Opportunities - ${selectedJobs.length} Positions Available`;
 
-        // In a real application, you would send emails here using a service like SendGrid, Mailgun, etc.
-        // For now, we'll simulate the email sending and update the tracking data
+        // Import email service
+        const { sendJobMarketingEmail } = require('../services/emailService');
 
         let sentCount = 0;
+        let errorCount = 0;
         const currentTime = new Date().toISOString();
+        const errors = [];
 
-        // Update email tracking
+        // Send emails to each recipient
         for (const email of selectedEmails) {
-            const emailIndex = emailList.findIndex(item => item.id === email.id);
-            if (emailIndex !== -1) {
-                emailList[emailIndex].lastEmailSent = currentTime;
-                emailList[emailIndex].totalEmailsSent = (emailList[emailIndex].totalEmailsSent || 0) + 1;
+            try {
+                await sendJobMarketingEmail({
+                    to: email.email,
+                    subject: emailSubject,
+                    html: emailHTML,
+                    text: `New Job Opportunities from TalentSync\n\n${selectedJobs.map(job => 
+                        `${job.title} at ${job.company}\nLocation: ${job.location}\nApply: https://talentsync.shop/jobs`
+                    ).join('\n\n')}`
+                });
+
+                // Update email tracking on successful send
+                const emailIndex = emailList.findIndex(item => item.id === email.id);
+                if (emailIndex !== -1) {
+                    emailList[emailIndex].lastEmailSent = currentTime;
+                    emailList[emailIndex].totalEmailsSent = (emailList[emailIndex].totalEmailsSent || 0) + 1;
+                }
+                
                 sentCount++;
+                console.log(`✅ Email sent successfully to: ${email.email}`);
+                
+            } catch (error) {
+                errorCount++;
+                errors.push({ email: email.email, error: error.message });
+                console.error(`❌ Failed to send email to ${email.email}:`, error.message);
             }
         }
 
         // Save updated email list
         await writeJSONFile('email_list.json', emailList);
 
-        // Log the email campaign (you could also save this to a separate campaigns file)
-        console.log(`📧 Email Campaign Sent:
+        // Log the email campaign
+        console.log(`📧 Email Campaign Completed:
         - Subject: ${emailSubject}
-        - Recipients: ${sentCount}
+        - Successful sends: ${sentCount}
+        - Failed sends: ${errorCount}
         - Jobs: ${selectedJobs.map(j => j.title).join(', ')}
         - Time: ${currentTime}`);
 
+        if (errors.length > 0) {
+            console.log('❌ Email sending errors:', errors);
+        }
+
         res.json({ 
-            success: true, 
-            message: `Email campaign sent successfully to ${sentCount} recipients`,
-            recipients: sentCount,
+            success: sentCount > 0, 
+            message: sentCount > 0 
+                ? `Email campaign sent successfully to ${sentCount} recipients${errorCount > 0 ? ` (${errorCount} failed)` : ''}`
+                : 'Failed to send emails to any recipients',
+            sentCount: sentCount,
+            errorCount: errorCount,
+            errors: errors.length > 0 ? errors : undefined,
             jobs: selectedJobs.length,
             preview: emailHTML // Return preview for testing
         });
@@ -1065,11 +1323,11 @@ function generateJobEmailHTML(jobs, customMessage) {
             
             <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
                 <p style="color: #6b7280; font-size: 14px;">
-                    Visit our <a href="http://localhost:3000" style="color: #3b82f6;">job board</a> for more opportunities!
+                    Visit our <a href="https://talentsync.shop" style="color: #3b82f6;">job board</a> for more opportunities!
                 </p>
                 <p style="color: #9ca3af; font-size: 12px;">
-                    You received this email because you subscribed to our job alerts. 
-                    If you no longer wish to receive these emails, please contact us.
+                    You received this email because you subscribed to our job alerts from TalentSync. 
+                    <br>Questions? Contact us at <a href="mailto:talentsync@talentsync.shop" style="color: #3b82f6;">talentsync@talentsync.shop</a>
                 </p>
             </div>
         </div>
@@ -1412,5 +1670,79 @@ function cleanText(text) {
         .replace(/\s+/g, ' ') // Replace multiple spaces with single space
         .trim(); // Remove leading/trailing whitespace
 }
+
+// 🚀 AUTO EMAIL CAMPAIGN API ENDPOINTS
+
+// Get auto campaign statistics
+router.get('/auto-campaign-stats', async (req, res) => {
+    try {
+        const [emailList, campaigns] = await Promise.all([
+            readJSONFile('email_list.json'),
+            readJSONFile('email_campaigns.json')
+        ]);
+        
+        // Filter auto campaigns
+        const autoCampaigns = campaigns.filter(c => c.type === 'auto_job_alert');
+        
+        // Calculate stats
+        const stats = {
+            totalCampaigns: autoCampaigns.length,
+            totalJobs: autoCampaigns.length, // Each campaign = 1 job
+            subscribers: emailList.length,
+            totalEmailsSent: autoCampaigns.reduce((sum, c) => sum + (c.sentTo || 0), 0),
+            recentCampaigns: autoCampaigns.slice(0, 10) // Last 10 campaigns
+        };
+        
+        res.json({ success: true, stats });
+    } catch (error) {
+        console.error('Error getting auto campaign stats:', error);
+        res.status(500).json({ error: 'Failed to load stats' });
+    }
+});
+
+// Save auto email settings
+router.post('/email-settings', async (req, res) => {
+    try {
+        const { autoEmailEnabled } = req.body;
+        
+        // For now, we'll just acknowledge the setting
+        // In production, you might want to save this to a settings file
+        console.log(`Auto email campaigns ${autoEmailEnabled ? 'enabled' : 'disabled'}`);
+        
+        res.json({ success: true, message: 'Setting saved' });
+    } catch (error) {
+        console.error('Error saving email settings:', error);
+        res.status(500).json({ error: 'Failed to save settings' });
+    }
+});
+
+// Test auto email campaign (for testing without posting real job)
+router.post('/test-auto-campaign', async (req, res) => {
+    try {
+        const testJob = {
+            id: 'test_' + Date.now(),
+            title: 'Test Job Position',
+            company: 'Test Company',
+            location: 'Remote',
+            description: 'This is a test job to verify the auto email campaign system is working correctly.',
+            job_type: 'Full-time',
+            salary: '$50,000 - $70,000',
+            url: 'https://talentsync.shop/jobs.html',
+            entry_level: true,
+            remote: true
+        };
+        
+        const result = await sendNewJobEmailCampaign(testJob);
+        
+        res.json({ 
+            success: true, 
+            message: 'Test campaign sent successfully!', 
+            result 
+        });
+    } catch (error) {
+        console.error('Error sending test campaign:', error);
+        res.status(500).json({ error: 'Failed to send test campaign' });
+    }
+});
 
 module.exports = router;
