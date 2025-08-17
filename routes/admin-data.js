@@ -170,9 +170,9 @@ async function sendNewJobEmailCampaign(newJob) {
         }
         
         console.log(`📊 Auto email campaign results:`);
-        console.log(`   ✅ Sent successfully: \${successCount}`);
-        console.log(`   ❌ Failed: \${failCount}`);
-        console.log(`   📧 Total subscribers: \${emailList.length}`);
+        console.log(`   ✅ Sent successfully: ${successCount}`);
+        console.log(`   ❌ Failed: ${failCount}`);
+        console.log(`   📧 Total subscribers: ${emailList.length}`);
         
         // Log the campaign
         const campaigns = await readJSONFile('email_campaigns.json');
