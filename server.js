@@ -1033,17 +1033,8 @@ app.get('/api/dashboard-stats/:userId', (req, res) => {
     }
 });
 
-// Initialize job scraping if enabled
-if (process.env.ENABLE_AUTO_SCRAPING === 'true') {
-    try {
-        const JobScrapingScheduler = require('./services/jobScheduler');
-        const jobScheduler = new JobScrapingScheduler();
-        jobScheduler.startScheduler();
-        console.log('🤖 Automated job scraping enabled');
-    } catch (error) {
-        console.warn('⚠️ Job scraping scheduler not available:', error.message);
-    }
-}
+// Auto-scraping disabled - Jobs will be added manually from admin dashboard
+console.log('📝 Manual job management enabled - Auto-scraping disabled');
 
 // Root route
 app.get('/', (req, res) => {

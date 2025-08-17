@@ -728,7 +728,7 @@ router.get('/content/blog', async (req, res) => {
     }
 });
 
-// Scrape job from URL endpoint
+module.exports = router;
 router.post('/scrape-job-url', async (req, res) => {
     try {
         console.log('Received scrape request:', req.body);
