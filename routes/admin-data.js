@@ -18,7 +18,7 @@ const emailConfig = {
 };
 
 // Create email transporter
-const transporter = nodemailer.createTransporter(emailConfig);
+const transporter = nodemailer.createTransport(emailConfig);
 
 // Helper function to read JSON files
 async function readJSONFile(filename) {
