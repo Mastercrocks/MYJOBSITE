@@ -1729,6 +1729,9 @@
                 case 'overview':
                     loadDashboardStats();
                     break;
+                case 'applications':
+                    loadApplicationsData();
+                    break;
                 // Add more cases as needed
             }
             
@@ -3395,39 +3398,75 @@
                 
                 tableBody.innerHTML = '';
                 
+                if (!data.applications || data.applications.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="7" class="px-6 py-8 text-center text-gray-500">No applications found</td></tr>';
+                    return;
+                }
+                
                 data.applications.forEach(app => {
                     const row = document.createElement('tr');
                     row.className = 'hover:bg-gray-50';
                     
-                    const appliedDate = new Date(app.createdAt).toLocaleDateString();
-                    const statusClass = getApplicationStatusClass(app.status);
+                    const appliedDate = new Date(app.appliedAt).toLocaleDateString();
+                    const applicantName = `${app.firstName || ''} ${app.lastName || ''}`.trim() || 'Unknown';
+                    const position = app.position || 'Not specified';
+                    const experience = app.experience || 'Not specified';
+                    const hasResume = app.resumePath ? true : false;
                     
                     row.innerHTML = `
                         <td class="px-6 py-4">
-                            <div class="text-sm font-medium text-gray-900">${escapeHtml(app.applicantName || app.name || 'Unknown')}</div>
+                            <div class="text-sm font-medium text-gray-900">${escapeHtml(applicantName)}</div>
                             <div class="text-xs text-gray-500">${escapeHtml(app.email || '')}</div>
+                            <div class="text-xs text-gray-400">${escapeHtml(app.phone || '')}</div>
                         </td>
-                        <td class="px-6 py-4 text-sm text-gray-900">${escapeHtml(app.jobTitle || 'N/A')}</td>
-                        <td class="px-6 py-4 text-sm text-gray-900">${escapeHtml(app.company || 'N/A')}</td>
-                        <td class="px-6 py-4"><span class="badge ${statusClass}">${app.status || 'Pending'}</span></td>
+                        <td class="px-6 py-4">
+                            <div class="text-sm text-gray-900">${escapeHtml(position)}</div>
+                            <div class="text-xs text-gray-500">Experience: ${escapeHtml(experience)}</div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="text-sm text-gray-900">${escapeHtml(app.location || 'Not specified')}</div>
+                            <div class="text-xs text-gray-500">${escapeHtml(app.timezone || '')}</div>
+                        </td>
                         <td class="px-6 py-4 text-sm text-gray-500">${appliedDate}</td>
-                        <td class="px-6 py-4 text-sm">
-                            <button onclick="updateApplicationStatus('${app.id}', 'approved')" class="text-green-600 hover:text-green-800 mr-2">Approve</button>
-                            <button onclick="updateApplicationStatus('${app.id}', 'rejected')" class="text-red-600 hover:text-red-800 mr-2">Deny</button>
-                            ${app.resumeFile ? `<button onclick="downloadResume('${app.resumeFile}')" class="text-blue-600 hover:text-blue-800">Resume</button>` : ''}
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                                ${app.status || 'Pending Review'}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            ${hasResume ? 
+                                `<div class="flex flex-col space-y-1">
+                                    <button onclick="downloadResume('${app.resumePath}', '${app.resumeOriginalName || 'resume.pdf'}')" 
+                                            class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                        📄 Download Resume
+                                    </button>
+                                    <span class="text-xs text-gray-500">${escapeHtml(app.resumeOriginalName || 'resume.pdf')}</span>
+                                </div>` : 
+                                '<span class="text-xs text-gray-400">No resume uploaded</span>'
+                            }
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex flex-col space-y-1">
+                                <button onclick="viewApplicationDetails('${app.id}')" 
+                                        class="text-blue-600 hover:text-blue-800 text-sm">View Details</button>
+                                <button onclick="updateApplicationStatus('${app.id}', 'approved')" 
+                                        class="text-green-600 hover:text-green-800 text-sm">Approve</button>
+                                <button onclick="updateApplicationStatus('${app.id}', 'rejected')" 
+                                        class="text-red-600 hover:text-red-800 text-sm">Reject</button>
+                            </div>
                         </td>
                     `;
                     
                     tableBody.appendChild(row);
                 });
                 
-                console.log(`Loaded ${data.applications.length} applications`);
+                console.log(`✅ Loaded ${data.applications.length} applications`);
                 
             } catch (error) {
-                console.error('Error loading applications data:', error);
+                console.error('❌ Error loading applications data:', error);
                 const tableBody = document.getElementById('applicationsTable');
                 if (tableBody) {
-                    tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-red-600">Error loading applications data</td></tr>';
+                    tableBody.innerHTML = '<tr><td colspan="7" class="px-6 py-8 text-center text-red-600">Error loading applications. Please try refreshing the page.</td></tr>';
                 }
             }
         }
@@ -4251,6 +4290,127 @@
                 console.error('Error importing emails:', error);
                 alert('Failed to import emails');
             }
+        }
+
+        // Helper functions for applications
+        function downloadResume(resumeFile) {
+            if (!resumeFile) {
+                alert('No resume file available');
+                return;
+            }
+            
+            const downloadUrl = `/uploads/${resumeFile}`;
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = resumeFile;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function viewApplicationDetails(application) {
+            const details = `
+                Name: ${application.firstName} ${application.lastName}
+                Email: ${application.email}
+                Phone: ${application.phone || 'Not provided'}
+                Cover Letter: ${application.coverLetter || 'No cover letter provided'}
+                Applied: ${new Date(application.dateApplied).toLocaleDateString()}
+                Resume: ${application.resumeFile || 'No resume uploaded'}
+            `;
+            alert(details);
+        }
+
+        // Helper functions for applications
+        function downloadResume(resumePath, originalName) {
+            if (!resumePath) {
+                alert('No resume file available');
+                return;
+            }
+            
+            // Extract just the filename from the path
+            const filename = resumePath.split('\\').pop().split('/').pop();
+            const downloadUrl = `/uploads/resumes/${filename}`;
+            
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = originalName || filename;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function viewApplicationDetails(applicationId) {
+            // Find the application data
+            fetch('/api/admin/applications')
+                .then(response => response.json())
+                .then(data => {
+                    const app = data.applications.find(a => a.id == applicationId);
+                    if (!app) {
+                        alert('Application not found');
+                        return;
+                    }
+                    
+                    const details = `
+Application Details:
+
+Name: ${app.firstName} ${app.lastName}
+Email: ${app.email}
+Phone: ${app.phone || 'Not provided'}
+Location: ${app.location || 'Not provided'}
+Position: ${app.position || 'Not specified'}
+Experience: ${app.experience || 'Not specified'}
+Skills: ${app.skills || 'Not provided'}
+LinkedIn: ${app.linkedIn || 'Not provided'}
+Portfolio: ${app.portfolio || 'Not provided'}
+Salary Expectation: ${app.salary || 'Not specified'}
+Availability: ${app.availability || 'Not specified'}
+Applied Date: ${new Date(app.appliedAt).toLocaleDateString()}
+Resume: ${app.resumeOriginalName || 'No resume uploaded'}
+
+Cover Letter:
+${app.coverLetter || 'No cover letter provided'}
+                    `;
+                    alert(details);
+                })
+                .catch(error => {
+                    console.error('Error fetching application details:', error);
+                    alert('Error loading application details');
+                });
+        }
+
+        function updateApplicationStatus(applicationId, status) {
+            if (!confirm(`Are you sure you want to ${status} this application?`)) {
+                return;
+            }
+            
+            fetch('/api/admin/applications/status', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ id: applicationId, status })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`Application ${status} successfully`);
+                    loadApplicationsData(); // Reload the table
+                } else {
+                    alert('Error updating application status');
+                }
+            })
+            .catch(error => {
+                console.error('Error updating application status:', error);
+                alert('Error updating application status');
+            });
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
 
         // CSV file handling

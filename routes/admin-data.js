@@ -462,6 +462,28 @@ router.get('/applications', async (req, res) => {
     }
 });
 
+// Update application status
+router.put('/applications/status', async (req, res) => {
+    try {
+        const { id, status } = req.body;
+        const applications = await readJSONFile('career_applications.json');
+        
+        const applicationIndex = applications.findIndex(app => app.id == id);
+        if (applicationIndex === -1) {
+            return res.status(404).json({ error: 'Application not found' });
+        }
+        
+        applications[applicationIndex].status = status;
+        applications[applicationIndex].statusUpdated = new Date().toISOString();
+        
+        await writeJSONFile('career_applications.json', applications);
+        res.json({ success: true, message: `Application ${status} successfully` });
+    } catch (error) {
+        console.error('Error updating application status:', error);
+        res.status(500).json({ error: 'Failed to update application status' });
+    }
+});
+
 // Add new job manually
 router.post('/jobs', async (req, res) => {
     try {
