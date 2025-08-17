@@ -8,12 +8,12 @@ const nodemailer = require('nodemailer');
 
 // Email configuration for auto campaigns
 const emailConfig = {
-    host: 'smtp.zoho.com',
+    host: 'smtp.gmail.com',
     port: 587,
     secure: false,
     auth: {
-        user: 'talentsync@talentsync.shop',
-        pass: process.env.EMAIL_PASSWORD || 'your-email-password' // Set this in your environment
+        user: process.env.EMAIL_USER || 'jamesen9@gmail.com',
+        pass: process.env.EMAIL_PASS || 'your-email-password'
     }
 };
 
