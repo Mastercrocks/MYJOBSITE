@@ -68,16 +68,31 @@ async function sendNewJobEmailCampaign(newJob) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>New Job Alert - TalentSync</title>
     <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4; }
-        .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        .header { background: linear-gradient(135deg, #2563eb, #3b82f6); color: white; padding: 30px 20px; border-radius: 10px 10px 0 0; text-align: center; margin: -20px -20px 20px -20px; }
-        .job-card { background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #2563eb; margin: 20px 0; }
-        .job-title { color: #2563eb; font-size: 24px; font-weight: bold; margin: 0 0 10px 0; }
-        .company { font-size: 18px; color: #666; margin: 0 0 15px 0; }
-        .details { display: flex; flex-wrap: wrap; gap: 15px; margin: 15px 0; }
-        .detail-item { background: white; padding: 8px 12px; border-radius: 5px; font-size: 14px; }
-        .apply-btn { background: #2563eb; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold; text-align: center; margin: 20px 0; }
-        .apply-btn:hover { background: #1d4ed8; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f8fafc; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 0; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden; }
+        .header { background: linear-gradient(135deg, #1e40af, #3b82f6); color: white; padding: 20px 30px; text-align: center; }
+        .header h1 { margin: 0 0 8px 0; font-size: 22px; font-weight: 600; }
+        .header p { margin: 0; font-size: 14px; opacity: 0.9; }
+        .content { padding: 30px; }
+        .job-card { background: #f8fafc; padding: 24px; border-radius: 12px; border-left: 4px solid #2563eb; margin: 0 0 24px 0; }
+        .job-title { color: #1e40af; font-size: 24px; font-weight: 700; margin: 0 0 12px 0; }
+        .company { font-size: 18px; color: #64748b; margin: 0 0 20px 0; font-weight: 500; }
+        .details { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 20px 0; }
+        .detail-item { background: white; padding: 12px 16px; border-radius: 8px; font-size: 14px; border: 1px solid #e2e8f0; }
+        .apply-btn { background: linear-gradient(135deg, #2563eb, #3b82f6); color: white; padding: 14px 28px; text-decoration: none; border-radius: 10px; display: inline-block; font-weight: 600; text-align: center; margin: 24px 0; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); transition: all 0.3s ease; }
+        .apply-btn:hover { background: linear-gradient(135deg, #1d4ed8, #2563eb); transform: translateY(-2px); box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4); }
+        .perks-section { background: linear-gradient(135deg, #dbeafe, #e0f2fe); padding: 20px; border-radius: 12px; margin: 24px 0; border: 1px solid #bfdbfe; }
+        .perks-section h3 { color: #1e40af; margin: 0 0 16px 0; font-size: 18px; font-weight: 600; }
+        .perks-section ul { margin: 0; padding-left: 20px; }
+        .perks-section li { margin: 8px 0; color: #374151; }
+        .cta-section { text-align: center; margin: 30px 0; padding: 24px; background: #f1f5f9; border-radius: 12px; }
+        .cta-section p { margin: 0 0 16px 0; color: #475569; font-weight: 500; }
+        .cta-section a { color: #2563eb; text-decoration: none; font-weight: 600; }
+        .footer { text-align: center; margin-top: 30px; padding: 24px 30px; border-top: 1px solid #e2e8f0; color: #64748b; font-size: 13px; background: #f8fafc; }
+        .footer p { margin: 8px 0; }
+        .footer a { color: #2563eb; text-decoration: none; font-weight: 500; }
+        .unsubscribe { color: #94a3b8 !important; }
+    </style>
         .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #666; font-size: 12px; }
         .unsubscribe { color: #999; text-decoration: none; }
     </style>
@@ -86,53 +101,55 @@ async function sendNewJobEmailCampaign(newJob) {
     <div class="container">
         <div class="header">
             <h1>🎯 TalentSync Job Alert</h1>
-            <p>A new job opportunity just posted that matches your interests!</p>
+            <p>A new opportunity just posted that matches your interests</p>
         </div>
         
-        <div class="job-card">
-            <h2 class="job-title">${newJob.title}</h2>
-            <p class="company">🏢 ${newJob.company}</p>
-            
-            <div class="details">
-                <div class="detail-item">📍 <strong>Location:</strong> ${newJob.location}</div>
-                <div class="detail-item">💼 <strong>Type:</strong> ${newJob.job_type}</div>
-                <div class="detail-item">💰 <strong>Salary:</strong> ${newJob.salary}</div>
-                <div class="detail-item">📅 <strong>Posted:</strong> Just now</div>
+        <div class="content">
+            <div class="job-card">
+                <h2 class="job-title">${newJob.title}</h2>
+                <p class="company">🏢 ${newJob.company}</p>
+                
+                <div class="details">
+                    <div class="detail-item">📍 <strong>Location:</strong> ${newJob.location}</div>
+                    <div class="detail-item">💼 <strong>Type:</strong> ${newJob.job_type}</div>
+                    <div class="detail-item">💰 <strong>Salary:</strong> ${newJob.salary}</div>
+                    <div class="detail-item">📅 <strong>Posted:</strong> Just now</div>
+                </div>
+                
+                <div style="margin: 24px 0;">
+                    <h3 style="color: #1e40af; margin: 0 0 12px 0; font-size: 18px;">Job Description:</h3>
+                    <p style="color: #374151; line-height: 1.6;">${newJob.description.substring(0, 300)}${newJob.description.length > 300 ? '...' : ''}</p>
+                </div>
+                
+                <div style="text-align: center;">
+                    <a href="${newJob.url}" class="apply-btn" style="color: white;">
+                        🚀 Apply Now
+                    </a>
+                </div>
             </div>
             
-            <div style="margin: 20px 0;">
-                <h3>Job Description:</h3>
-                <p>${newJob.description.substring(0, 300)}${newJob.description.length > 300 ? '...' : ''}</p>
+            <div class="perks-section">
+                <h3>💡 Why This Job is Perfect:</h3>
+                <ul>
+                    <li>✅ ${newJob.entry_level ? 'Entry-level friendly' : 'Great for experienced professionals'}</li>
+                    <li>✅ ${newJob.remote ? 'Remote work available' : 'On-site opportunity'}</li>
+                    <li>✅ Posted today - apply early for best chances!</li>
+                    <li>✅ Trusted company verified by TalentSync</li>
+                </ul>
             </div>
             
-            <div style="text-align: center;">
-                <a href="${newJob.url}" class="apply-btn" style="color: white;">
-                    🚀 Apply Now
+            <div class="cta-section">
+                <p><strong>Don't miss out!</strong> This job was just posted and applications are being reviewed immediately.</p>
+                <a href="https://talentsync.shop/jobs.html">
+                    🔍 Browse More Jobs on TalentSync
                 </a>
             </div>
-        </div>
-        
-        <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin: 20px 0;">
-            <h3>💡 Why This Job is Perfect:</h3>
-            <ul>
-                <li>✅ ${newJob.entry_level ? 'Entry-level friendly' : 'Great for experienced professionals'}</li>
-                <li>✅ ${newJob.remote ? 'Remote work available' : 'On-site opportunity'}</li>
-                <li>✅ Posted today - apply early for best chances!</li>
-                <li>✅ Trusted company verified by TalentSync</li>
-            </ul>
-        </div>
-        
-        <div style="text-align: center; margin: 30px 0;">
-            <p><strong>Don't miss out!</strong> This job was just posted and applications are being reviewed immediately.</p>
-            <a href="https://talentsync.shop/jobs.html" style="color: #2563eb; text-decoration: none;">
-                🔍 Browse More Jobs on TalentSync
-            </a>
         </div>
         
         <div class="footer">
             <p>You're receiving this because you subscribed to TalentSync job alerts.</p>
             <p>
-                <a href="https://talentsync.shop" style="color: #2563eb;">Visit TalentSync</a> | 
+                <a href="https://talentsync.shop">Visit TalentSync</a> | 
                 <a href="mailto:talentsync@talentsync.shop?subject=Unsubscribe" class="unsubscribe">Unsubscribe</a>
             </p>
             <p>© 2025 TalentSync - Connecting Talent with Opportunity</p>
