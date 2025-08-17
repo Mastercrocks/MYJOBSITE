@@ -1,6 +1,6 @@
 {
   "pageViews": {
-    "total": 137,
+    "total": 140,
     "daily": {
       "2025-08-11": 5,
       "2025-08-12": 12,
@@ -8,24 +8,24 @@
       "2025-08-14": 10,
       "2025-08-15": 18,
       "2025-08-16": 10,
-      "2025-08-17": 71
+      "2025-08-17": 74
     },
     "pages": {
-      "/": 45,
+      "/": 46,
       "/jobs": 28,
       "/register": 7,
       "/login": 7,
       "/employers": 10,
-      "/auth/check-auth": 17,
+      "/auth/check-auth": 18,
       "/blog": 1,
       "/blog/first-job-interview-tips": 1,
       "/auth/google": 14,
-      "/post-job": 2,
+      "/post-job": 3,
       "/dashboard": 1
     }
   },
   "visitors": {
-    "unique": 105,
+    "unique": 108,
     "returning": 7,
     "sessions": {
       "session_new_1755400605624_0": {
@@ -552,8 +552,23 @@
         "firstVisit": "2025-08-17T06:08:16.556Z",
         "lastVisit": "2025-08-17T06:08:16.556Z",
         "pageViews": 1
+      },
+      "zziAgSqtTZmv4JI9W_2c2qlRmt35S9YU": {
+        "firstVisit": "2025-08-17T07:41:21.475Z",
+        "lastVisit": "2025-08-17T07:41:21.475Z",
+        "pageViews": 1
+      },
+      "QgEBDXVwvA2n3KBVwoaLtEacY4cJDOpV": {
+        "firstVisit": "2025-08-17T07:41:38.471Z",
+        "lastVisit": "2025-08-17T07:41:38.471Z",
+        "pageViews": 1
+      },
+      "ot3edeGm2mTSrr2Dw3Hlu-ctyWbJfuEc": {
+        "firstVisit": "2025-08-17T07:41:38.499Z",
+        "lastVisit": "2025-08-17T07:41:38.499Z",
+        "pageViews": 1
       }
     }
   },
-  "lastUpdated": "2025-08-17T06:08:16.556Z"
+  "lastUpdated": "2025-08-17T07:41:38.499Z"
 }

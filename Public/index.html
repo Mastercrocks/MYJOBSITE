@@ -626,7 +626,7 @@
         <div class="container">
             <p><strong>Post your resume</strong> - it only takes a few seconds</p>
             <div class="action-links">
-                <a href="/register.html" class="action-link">Post Your Resume</a>
+                <a href="/upload-resume.html" class="action-link">Post Your Resume</a>
                 <a href="/post-job" class="action-link secondary">Employers - Post a Job</a>
             </div>
         </div>
@@ -736,7 +736,7 @@
                 }
                 
                 // Update "Post Resume" button for logged in users
-                const postResumeBtn = document.querySelector('.action-link[href="/register.html"]');
+                const postResumeBtn = document.querySelector('.action-link[href="/upload-resume.html"]');
                 if (postResumeBtn && userType === 'job_seeker') {
                     postResumeBtn.textContent = 'Update Resume';
                     postResumeBtn.href = '/jobseeker/dashboard.html';
