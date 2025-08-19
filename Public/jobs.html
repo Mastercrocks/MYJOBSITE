@@ -847,18 +847,6 @@
             const category = document.getElementById('category').value.toLowerCase();
 
             displayedJobs = allJobs.filter(job => {
-                // Only requirement: job must have a legitimate URL to apply
-                const hasValidUrl = job.url && 
-                    job.url.trim().length > 0 && 
-                    !job.url.includes('undefined') && 
-                    !job.url.includes('null') &&
-                    (job.url.startsWith('http') || job.url.startsWith('https'));
-                
-                // Skip jobs without valid application URLs
-                if (!hasValidUrl) {
-                    return false;
-                }
-                
                 const matchesKeyword = !keyword || 
                     job.title.toLowerCase().includes(keyword) ||
                     job.company.toLowerCase().includes(keyword) ||
@@ -875,7 +863,7 @@
                     job.title.toLowerCase().includes(category) ||
                     (job.description && job.description.toLowerCase().includes(category));
 
-                return hasValidUrl && matchesKeyword && matchesLocation && matchesType && matchesCategory;
+                return matchesKeyword && matchesLocation && matchesType && matchesCategory;
             });
 
             // Log filtering results with better breakdown
@@ -906,17 +894,8 @@
             
             const otherJobs = allJobs.length - linkedinJobs - zipRecruiterJobs - indeedJobs - glassdoorJobs - manualJobs;
             
-            const jobsWithValidUrls = allJobs.filter(job => {
-                return job.url && 
-                    job.url.trim().length > 0 && 
-                    !job.url.includes('undefined') && 
-                    !job.url.includes('null') &&
-                    (job.url.startsWith('http') || job.url.startsWith('https'));
-            }).length;
-            
-            console.log(`🔍 Job filtering results - ALL SOURCES WITH VALID URLS:`);
+            console.log(`🔍 Job filtering results`);
             console.log(`📊 Total jobs loaded: ${allJobs.length}`);
-            console.log(`🔗 Jobs with valid URLs: ${jobsWithValidUrls}`);
             console.log(`📋 LinkedIn jobs: ${linkedinJobs}`);
             console.log(`📋 ZipRecruiter jobs: ${zipRecruiterJobs}`);
             console.log(`📋 Indeed jobs: ${indeedJobs}`);
@@ -937,7 +916,7 @@
             const jobsToShow = displayedJobs;
 
             if (jobsToShow.length === 0) {
-                container.innerHTML = '<div class="loading">No jobs with valid application URLs found matching your criteria. Try adjusting your search.</div>';
+                container.innerHTML = '<div class="loading">No jobs found matching your criteria. Try adjusting your search.</div>';
                 document.getElementById('loadMore').style.display = 'none';
                 return;
             }
