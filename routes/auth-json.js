@@ -348,10 +348,12 @@ router.post('/login', authLimiter, async (req, res) => {
       { expiresIn: '7d' }
     );
 
-    // Set HTTP-only cookie
+    // Set HTTP-only cookie (align with register/logout options)
     res.cookie('authToken', token, { 
       httpOnly: true, 
       secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
 

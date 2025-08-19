@@ -19,6 +19,12 @@ const PORT = process.env.PORT || 3000;
 // Enable compression
 app.use(compression());
 
+// Trust proxy in production so secure cookies work behind HTTPS proxies (Railway/Heroku)
+if ((process.env.NODE_ENV || '').toLowerCase() === 'production') {
+    // trust first proxy
+    app.set('trust proxy', 1);
+}
+
 // Cookie parser
 app.use(cookieParser());
 
