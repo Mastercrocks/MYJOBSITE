@@ -1,4 +1,4 @@
 [build]
 
 [deploy]
-startCommand = "node server.js"
+startCommand = "node init-data.js && node server.js"
