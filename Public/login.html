@@ -702,8 +702,8 @@
                         localStorage.setItem('userName', inferredName);
                     }
 
-                    // Redirect to dashboard
-                    window.location.href = '/dashboard.html';
+                    // Redirect to dashboard (job seeker by default)
+                    window.location.href = '/jobseeker/dashboard.html';
                 } else {
                     showError('signupEmail', result.error || 'Registration failed');
                 }

@@ -379,6 +379,32 @@ router.post('/login', authLimiter, async (req, res) => {
   }
 });
 
+// CHECK AUTH (for login.html compatibility)
+router.get('/check-auth', async (req, res) => {
+  try {
+    const authHeader = req.headers['authorization'];
+    let token = authHeader && authHeader.split(' ')[1];
+    if (!token && req.cookies) token = req.cookies.authToken;
+
+    if (!token) return res.json({ authenticated: false });
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const user = await findUserById(decoded.userId);
+    if (!user || user.status !== 'active') return res.json({ authenticated: false });
+
+    return res.json({
+      authenticated: true,
+      user: {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        user_type: user.user_type || 'job_seeker'
+      }
+    });
+  } catch (e) {
+    return res.json({ authenticated: false });
+  }
+});
+
 // LOGOUT USER
 router.post('/logout', (req, res) => {
   // Destroy express session if present
