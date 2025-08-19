@@ -18,7 +18,8 @@
     "resumePath": "uploads\\resumes\\resume-1754884013136-233682221.pdf",
     "resumeOriginalName": "ebay-label-16-13407-44755.pdf",
     "appliedAt": "2025-08-11T03:46:53.139Z",
-    "status": "pending",
-    "reviewed": false
+    "status": "approved",
+    "reviewed": false,
+    "statusUpdated": "2025-08-19T22:10:14.176Z"
   }
 ]

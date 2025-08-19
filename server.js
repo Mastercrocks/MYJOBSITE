@@ -64,33 +64,67 @@ app.use('/api', resumeUploadRoutes);
 app.get('/api/fresh', (req, res) => {
     try {
         const jobsPath = path.join(__dirname, 'data', 'jobs.json');
+        const scrapedPath = path.join(__dirname, 'data', 'scraped_jobs.json');
+    const includeScraped = (req.query.includeScraped || '').toString().toLowerCase() === 'true';
+
+        let manualJobs = [];
+        let scrapedJobs = [];
+
+        // Load manual/admin jobs
         if (fs.existsSync(jobsPath)) {
-            const jobs = JSON.parse(fs.readFileSync(jobsPath, 'utf8'));
-            // Filter only active jobs
-            const activeJobs = jobs.filter(job => job.status === 'active');
-            res.json({
-                success: true,
-                jobs: activeJobs,
-                sources: {
-                    scraped: 0,
-                    api: 0,
-                    manual: activeJobs.length
-                }
-            });
-        } else {
-            res.json({
-                success: false,
-                jobs: [],
-                sources: { scraped: 0, api: 0, manual: 0 }
-            });
+            try {
+                const jobs = JSON.parse(fs.readFileSync(jobsPath, 'utf8')) || [];
+                manualJobs = jobs
+                    .filter(j => (j.status || 'active') === 'active')
+                    .map(j => ({
+                        // Preserve existing fields, normalize some keys
+                        ...j,
+                        job_type: j.job_type || j.type || 'Full-time',
+                        posted_date: j.posted_date || j.datePosted || new Date().toISOString(),
+                        source: j.source || 'Manual'
+                    }));
+            } catch (e) {
+                console.error('Failed to parse jobs.json:', e);
+            }
         }
+
+        // Load scraped jobs (LinkedIn/ZipRecruiter/etc.)
+        if (fs.existsSync(scrapedPath)) {
+            try {
+                const scraped = JSON.parse(fs.readFileSync(scrapedPath, 'utf8')) || [];
+                scrapedJobs = scraped.map(j => ({
+                    ...j,
+                    status: j.status || 'active',
+                    job_type: j.job_type || j.type || 'Full-time',
+                    posted_date: j.posted_date || j.datePosted || j.posted_date || new Date().toISOString(),
+                })).filter(j => j.status === 'active');
+            } catch (e) {
+                console.error('Failed to parse scraped_jobs.json:', e);
+            }
+        }
+
+    // Combine jobs based on flag (default: manual only)
+    const combined = includeScraped ? [...scrapedJobs, ...manualJobs] : manualJobs;
+
+        // Build source counts
+        const countBy = (pred) => combined.filter(pred).length;
+        const sources = {
+            linkedin: countBy(j => (j.source || '').toLowerCase().includes('linkedin')),
+            ziprecruiter: countBy(j => (j.source || '').toLowerCase().includes('ziprecruiter')),
+            indeed: countBy(j => (j.source || '').toLowerCase().includes('indeed')),
+            glassdoor: countBy(j => (j.source || '').toLowerCase().includes('glassdoor')),
+            manual: countBy(j => (j.source || '').toLowerCase().includes('manual')),
+            total: combined.length
+        };
+
+    res.json({
+            success: true,
+            jobs: combined,
+            sources
+        });
     } catch (error) {
         console.error('Error reading jobs:', error);
-        res.json({
-            success: false,
-            jobs: [],
-            sources: { scraped: 0, api: 0, manual: 0 }
-        });
+        res.json({ success: false, jobs: [], sources: { total: 0 } });
     }
 });
 
@@ -151,9 +185,7 @@ app.get('/register', redirectIfAuthenticated, (req, res) => {
     res.sendFile(path.join(__dirname, 'Public', 'register.html'));
 });
 
-app.get('/post-job', (req, res) => {
-    res.sendFile(path.join(__dirname, 'Public', 'employers.html'));
-});
+// '/post-job' handled above
 
 app.get('/privacy', (req, res) => {
     res.sendFile(path.join(__dirname, 'Public', 'privacy.html'));
@@ -172,7 +204,8 @@ app.get('/resumes', (req, res) => {
 });
 
 app.get('/dashboard', (req, res) => {
-    res.sendFile(path.join(__dirname, 'Public', 'dashboard.html'));
+    // No unified dashboard file; send users to login which will route them appropriately
+    res.redirect('/login');
 });
 
 app.get('/reset-password', (req, res) => {
@@ -240,6 +273,38 @@ app.get('/api/auth/check', (req, res) => {
     }
 });
 
+// Public: list uploaded resumes (sanitized) for search page
+app.get('/api/resumes', (req, res) => {
+    try {
+        const resumesPath = path.join(__dirname, 'data', 'resumes.json');
+        if (!fs.existsSync(resumesPath)) {
+            return res.json({ success: true, resumes: [] });
+        }
+
+        const resumes = JSON.parse(fs.readFileSync(resumesPath, 'utf8'));
+
+        // Map to a safe, searchable shape; include a file URL for preview/download
+        const result = resumes
+            .filter(r => r && r.status !== 'rejected')
+            .sort((a, b) => new Date(b.uploadDate) - new Date(a.uploadDate))
+            .map(r => ({
+                id: r.id,
+                name: r.fullName,
+                position: r.position || '',
+                experience: r.experience || '',
+                uploadDate: r.uploadDate,
+                fileName: r.fileName,
+                originalName: r.originalName,
+                fileUrl: r.fileName ? `/uploads/resumes/${encodeURIComponent(r.fileName)}` : null
+            }));
+
+        res.json({ success: true, resumes: result });
+    } catch (err) {
+        console.error('Error listing resumes:', err);
+        res.status(500).json({ success: false, resumes: [], message: 'Server error' });
+    }
+});
+
 // Serve static files AFTER routes
 app.use(express.static(path.join(__dirname, 'Public'), {
     caseSensitive: false,
@@ -252,204 +317,13 @@ app.use('/admin', express.static(path.join(__dirname, 'Public/admin'), {
     dotfiles: 'deny'
 }));
 
-// Basic auth routes
-app.post('/auth/login', async (req, res) => {
-    const { email, password } = req.body;
-    
-    console.log('🔐 Login attempt for email:', email);
-    console.log('📝 Password received (length):', password ? password.length : 'no password');
-    
-    try {
-        const usersPath = path.join(__dirname, 'data', 'users.json');
-        let users = [];
-        
-        if (fs.existsSync(usersPath)) {
-            users = JSON.parse(fs.readFileSync(usersPath, 'utf8'));
-        }
-        
-        console.log('👥 Total users in database:', users.length);
-        
-        const user = users.find(u => u.email === email);
-        
-        if (user) {
-            console.log('✅ User found:', user.email, 'UserType:', user.userType);
-            console.log('🔑 Stored password type:', user.password.startsWith('$2b$') ? 'bcrypt hashed' : 'plaintext');
-            console.log('🔑 Stored password length:', user.password.length);
-            
-            // Check if password is hashed (starts with $2b$) or plaintext
-            let isValidPassword = false;
-            if (user.password.startsWith('$2b$')) {
-                // Hashed password - use bcrypt
-                const bcrypt = require('bcrypt');
-                console.log('🔓 Using bcrypt comparison...');
-                isValidPassword = await bcrypt.compare(password, user.password);
-                console.log('🔓 Bcrypt comparison result:', isValidPassword);
-            } else {
-                // Plaintext password - direct comparison
-                console.log('🔓 Using plaintext comparison...');
-                isValidPassword = user.password === password;
-                console.log('🔓 Plaintext comparison result:', isValidPassword);
-            }
-            
-            if (isValidPassword) {
-                console.log('✅ Login successful for:', email);
-                res.json({
-                    success: true,
-                    user: { 
-                        id: user.id, 
-                        email: user.email, 
-                        name: user.name, 
-                        userType: user.userType 
-                    }
-                });
-            } else {
-                console.log('❌ Invalid password for:', email);
-                res.status(401).json({ success: false, message: 'Invalid credentials' });
-            }
-        } else {
-            console.log('❌ User not found:', email);
-            res.status(401).json({ success: false, message: 'Invalid credentials' });
-        }
-    } catch (error) {
-        console.error('Login error:', error);
-        res.status(500).json({ success: false, message: 'Server error' });
-    }
-});
+// Serve uploaded files (resumes, etc.)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+    caseSensitive: false,
+    dotfiles: 'deny'
+}));
 
-app.post('/auth/register', async (req, res) => {
-    const { name, email, password, userType = 'job_seeker', companyName } = req.body;
-    
-    console.log('📝 Registration attempt:', { email, userType, name, companyName });
-    
-    try {
-        const usersPath = path.join(__dirname, 'data', 'users.json');
-        let users = [];
-        
-        if (fs.existsSync(usersPath)) {
-            users = JSON.parse(fs.readFileSync(usersPath, 'utf8'));
-        }
-        
-        console.log('👥 Total users loaded:', users.length);
-        console.log('🔍 Checking for existing email:', email);
-        
-        // Check if user already exists in users.json
-        const existingUser = users.find(u => u.email === email);
-        
-        // Also check employers.json for duplicates
-        let existingEmployer = null;
-        if (userType === 'employer') {
-            const employersPath = path.join(__dirname, 'data', 'employers.json');
-            if (fs.existsSync(employersPath)) {
-                const employers = JSON.parse(fs.readFileSync(employersPath, 'utf8'));
-                existingEmployer = employers.find(e => e.email === email);
-            }
-        }
-        
-        console.log('🔍 Existing user found in users.json:', existingUser ? 'YES' : 'NO');
-        console.log('🔍 Existing employer found in employers.json:', existingEmployer ? 'YES' : 'NO');
-        
-        if (existingUser || existingEmployer) {
-            console.log('❌ Registration blocked - email already exists:', email);
-            return res.status(400).json({ 
-                success: false, 
-                message: 'An account with this email already exists. Try logging in or use the "Forgot Password" option to reset your password.',
-                showLogin: true
-            });
-        }
-        
-        console.log('✅ Email available, proceeding with registration...');
-        
-        // Hash password
-        const bcrypt = require('bcrypt');
-        const hashedPassword = await bcrypt.hash(password, 10);
-        
-        // Create new user
-        const newUser = {
-            id: Date.now().toString(),
-            name,
-            email,
-            password: hashedPassword,
-            userType,
-            companyName: companyName || null,
-            createdAt: new Date().toISOString()
-        };
-        
-        users.push(newUser);
-        
-        // Ensure data directory exists
-        const dataDir = path.join(__dirname, 'data');
-        if (!fs.existsSync(dataDir)) {
-            fs.mkdirSync(dataDir, { recursive: true });
-        }
-        
-        fs.writeFileSync(usersPath, JSON.stringify(users, null, 2));
-        
-        // Also save to employers.json if userType is employer
-        if (userType === 'employer') {
-            console.log('💼 Saving employer to employers.json...');
-            const employersPath = path.join(__dirname, 'data', 'employers.json');
-            let employers = [];
-            
-            if (fs.existsSync(employersPath)) {
-                employers = JSON.parse(fs.readFileSync(employersPath, 'utf8'));
-            }
-            
-            // Create employer entry with additional fields
-            const newEmployer = {
-                id: parseInt(newUser.id),
-                username: email, // Use email as username for compatibility
-                email: email,
-                password: hashedPassword,
-                firstName: name ? name.split(' ')[0] : '',
-                lastName: name ? name.split(' ').slice(1).join(' ') : '',
-                userType: 'employer',
-                companyName: companyName || null,
-                jobTitle: null, // Can be updated later
-                status: 'active',
-                createdAt: new Date().toISOString()
-            };
-            
-            employers.push(newEmployer);
-            fs.writeFileSync(employersPath, JSON.stringify(employers, null, 2));
-            console.log('✅ Employer saved to employers.json');
-        }
-        
-        // Send welcome email for employers
-        if (userType === 'employer') {
-            try {
-                const { sendAccountEmail } = require('./services/emailService');
-                await sendAccountEmail({
-                    to: email,
-                    subject: 'Welcome to TalentSync - Employer Account Created',
-                    text: `Welcome to TalentSync!\n\nYour employer account has been created successfully.\n\nEmail: ${email}\nCompany: ${companyName || 'Not specified'}\n\nYou can now log in at https://talentsync.shop/post-job#auth\n\nBest regards,\nTalentSync Team`,
-                    html: `
-                        <h2>Welcome to TalentSync!</h2>
-                        <p>Your employer account has been created successfully.</p>
-                        <ul>
-                            <li><strong>Email:</strong> ${email}</li>
-                            <li><strong>Company:</strong> ${companyName || 'Not specified'}</li>
-                        </ul>
-                        <p><a href="https://talentsync.shop/post-job#auth">Click here to log in</a></p>
-                        <p>Best regards,<br>TalentSync Team</p>
-                    `
-                });
-                console.log('📧 Welcome email sent to:', email);
-            } catch (emailError) {
-                console.error('❌ Failed to send welcome email:', emailError.message);
-                // Continue registration even if email fails
-            }
-        }
-        
-        res.json({
-            success: true,
-            message: `${userType === 'employer' ? 'Employer' : 'User'} account created successfully${userType === 'employer' ? '. Welcome email sent!' : ''}`,
-            user: { id: newUser.id, email: newUser.email, name: newUser.name, userType: newUser.userType }
-        });
-    } catch (error) {
-        console.error('Registration error:', error);
-        res.status(500).json({ success: false, message: 'Server error' });
-    }
-});
+// Auth routes are handled via routes/auth-json.js mounted at /auth
 
 // Forgot password route
 app.post('/auth/forgot-password', async (req, res) => {
@@ -712,11 +586,12 @@ app.post('/api/careers/apply', upload.single('resume'), async (req, res) => {
                 </p>
             `;
 
-            await emailService.sendEmail(
-                'talentsync@talentsync.shop',
-                `New Career Application - ${position}`,
-                emailContent
-            );
+            await emailService.sendJobMarketingEmail({
+                to: process.env.ADMIN_NOTIFY_EMAIL || 'talentsync@talentsync.shop',
+                subject: `New Career Application - ${position}`,
+                text: `New application from ${firstName} ${lastName} for ${position}.`,
+                html: emailContent
+            });
 
             console.log('✅ Career application email sent successfully');
         } catch (emailError) {
@@ -733,6 +608,37 @@ app.post('/api/careers/apply', upload.single('resume'), async (req, res) => {
     } catch (error) {
         console.error('Career application error:', error);
         res.status(500).json({ success: false, message: 'Server error. Please try again.' });
+    }
+});
+
+// Simple email debug endpoint (GET /api/debug/email?to=you@example.com)
+app.get('/api/debug/email', async (req, res) => {
+    try {
+        const { sendAccountEmail, isEmailConfigured } = require('./services/emailService');
+        if (!isEmailConfigured()) {
+            return res.status(400).json({ success: false, message: 'Email not configured. Set EMAIL_USER and EMAIL_PASS (or SMTP_HOST, SMTP_PORT, SMTP_SECURE).' });
+        }
+        const to = (req.query.to || process.env.ADMIN_NOTIFY_EMAIL || process.env.EMAIL_USER || '').toString();
+        if (!to) return res.status(400).json({ success: false, message: 'Provide ?to=email@example.com' });
+        await sendAccountEmail({
+            to,
+            subject: 'TalentSync test email',
+            text: 'This is a test email from TalentSync.',
+            html: '<p>This is a <strong>test</strong> email from TalentSync.</p>'
+        });
+        res.json({ success: true, message: 'Test email sent', to });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// Email config status (no secrets)
+app.get('/api/debug/email-status', (req, res) => {
+    try {
+        const { getEmailStatus } = require('./services/emailService');
+        return res.json({ success: true, ...getEmailStatus() });
+    } catch (e) {
+        return res.status(500).json({ success: false, message: e.message });
     }
 });
 

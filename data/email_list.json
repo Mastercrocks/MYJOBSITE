@@ -10,5 +10,67 @@
     "addedDate": "2025-08-17T05:20:45.783Z",
     "lastEmailSent": null,
     "totalEmailsSent": 0
+  },
+  {
+    "id": "1755635949628",
+    "email": "petersondameu@gmail.com",
+    "name": "Peter",
+    "tags": [],
+    "status": "active",
+    "addedDate": "2025-08-19T20:39:09.628Z",
+    "lastEmailSent": null,
+    "totalEmailsSent": 0
+  },
+  {
+    "id": "1755642233928kfmrs",
+    "email": "ecomarket828@gmail.com",
+    "name": "Peterson Dameus",
+    "tags": [
+      "job_seeker",
+      "backfilled"
+    ],
+    "status": "active",
+    "addedDate": "2025-08-19T22:23:53.927Z",
+    "lastEmailSent": null,
+    "totalEmailsSent": 0
+  },
+  {
+    "id": "1755642233928vezbf",
+    "email": "newuser@test.com",
+    "name": "New User",
+    "tags": [
+      "job_seeker",
+      "backfilled"
+    ],
+    "status": "active",
+    "addedDate": "2025-08-19T22:23:53.927Z",
+    "lastEmailSent": null,
+    "totalEmailsSent": 0
+  },
+  {
+    "id": "1755642233928pe3gk",
+    "email": "pdameus@test.com",
+    "name": "New User",
+    "tags": [
+      "job_seeker",
+      "backfilled"
+    ],
+    "status": "active",
+    "addedDate": "2025-08-19T22:23:53.927Z",
+    "lastEmailSent": null,
+    "totalEmailsSent": 0
+  },
+  {
+    "id": "1755642233928x5nqb",
+    "email": "bradpeterstore@gmail.com",
+    "name": "Second TEST",
+    "tags": [
+      "job_seeker",
+      "backfilled"
+    ],
+    "status": "active",
+    "addedDate": "2025-08-19T22:23:53.927Z",
+    "lastEmailSent": null,
+    "totalEmailsSent": 0
   }
 ]

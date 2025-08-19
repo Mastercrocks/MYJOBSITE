@@ -676,12 +676,18 @@
             }
         }
 
-        function logout() {
+        async function logout() {
+            try { await fetch('/auth/logout', { method: 'POST', credentials: 'include' }); } catch(_) {}
+            localStorage.removeItem('isLoggedIn');
             localStorage.removeItem('authToken');
             localStorage.removeItem('userType');
             localStorage.removeItem('userName');
             localStorage.removeItem('userId');
-            window.location.reload();
+            localStorage.removeItem('user');
+            document.cookie = 'authToken=; Max-Age=0; path=/';
+            document.cookie = 'connect.sid=; Max-Age=0; path=/';
+            sessionStorage.setItem('justLoggedOut', 'true');
+            window.location.href = '/login.html';
         }
 
         // Tab switching functions

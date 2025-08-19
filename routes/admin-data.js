@@ -5,6 +5,7 @@ const path = require('path');
 const https = require('https');
 const http = require('http');
 const nodemailer = require('nodemailer');
+const Parser = require('rss-parser');
 
 // Email configuration for auto campaigns
 const emailConfig = {
@@ -216,14 +217,27 @@ async function sendNewJobEmailCampaign(newJob) {
 // Get dashboard statistics
 router.get('/stats', async (req, res) => {
     try {
-        const [jobs, users, employers, applications, analytics, revenue] = await Promise.all([
+        const [jobsRaw, users, employers, careerApps, jobApps, analytics, revenue, emailList, resumes] = await Promise.all([
             readJSONFile('jobs.json'),
             readJSONFile('users.json'),
             readJSONFile('employers.json'),
             readJSONFile('career_applications.json'),
+            readJSONFile('applications.json'),
             readJSONFile('analytics.json'),
-            readJSONFile('revenue.json')
+            readJSONFile('revenue.json'),
+            readJSONFile('email_list.json'),
+            readJSONFile('resumes.json')
         ]);
+
+        // Normalize jobs: active-only and normalize dates
+        const normalizeJobDate = (j) => {
+            const d = j.posted_date || j.datePosted || j.scraped_at || null;
+            const dt = d ? new Date(d) : null;
+            return (dt && !isNaN(dt)) ? dt : null;
+        };
+        const jobs = (jobsRaw || []).map(j => ({ ...j, _date: normalizeJobDate(j) }));
+        const activeJobs = jobs.filter(j => (j.status || 'active') === 'active');
+        const activeJobsCount = activeJobs.length;
 
         // Calculate statistics
         const now = new Date();
@@ -231,31 +245,35 @@ router.get('/stats', async (req, res) => {
         const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
         // Job statistics
-        const newJobsThisWeek = jobs.filter(job => new Date(job.posted_date) >= thisWeek).length;
-        const newJobsThisMonth = jobs.filter(job => new Date(job.posted_date) >= thisMonth).length;
+        const newJobsThisWeek = activeJobs.filter(job => job._date && job._date >= thisWeek).length;
+        const newJobsThisMonth = activeJobs.filter(job => job._date && job._date >= thisMonth).length;
         
         // User statistics
         const newUsersThisWeek = users.filter(user => new Date(user.createdAt) >= thisWeek).length;
         
-        // Application statistics
-        const newApplicationsThisWeek = applications.filter(app => new Date(app.appliedAt) >= thisWeek).length;
+        // Application statistics (combine career and job applications)
+        const applications = [...(careerApps || []), ...(jobApps || [])];
+        const newApplicationsThisWeek = applications.filter(app => app.appliedAt && new Date(app.appliedAt) >= thisWeek).length;
 
         // Category distribution
         const categoryStats = {};
-        jobs.forEach(job => {
-            categoryStats[job.category] = (categoryStats[job.category] || 0) + 1;
+        activeJobs.forEach(job => {
+            const key = job.category || 'Uncategorized';
+            categoryStats[key] = (categoryStats[key] || 0) + 1;
         });
 
         // Company statistics
         const companyStats = {};
-        jobs.forEach(job => {
-            companyStats[job.company] = (companyStats[job.company] || 0) + 1;
+        activeJobs.forEach(job => {
+            const key = job.company || 'Unknown';
+            companyStats[key] = (companyStats[key] || 0) + 1;
         });
 
         // Location statistics
         const locationStats = {};
-        jobs.forEach(job => {
-            locationStats[job.location] = (locationStats[job.location] || 0) + 1;
+        activeJobs.forEach(job => {
+            const key = job.location || 'Unknown';
+            locationStats[key] = (locationStats[key] || 0) + 1;
         });
 
         // Calculate weekly page views from analytics
@@ -295,12 +313,14 @@ router.get('/stats', async (req, res) => {
 
         res.json({
             totals: {
-                jobs: jobs.length,
+                jobs: activeJobsCount,
                 users: users.length,
                 employers: employers.length,
                 applications: applications.length,
                 pageViews: analytics?.pageViews?.total || 0,
-                revenue: revenue?.revenue?.total || 0
+                revenue: revenue?.revenue?.total || 0,
+                subscribers: (emailList || []).length,
+                resumes: (resumes || []).length
             },
             weekly: {
                 newJobs: newJobsThisWeek,
@@ -343,16 +363,24 @@ router.get('/stats', async (req, res) => {
                 .map(([location, count]) => ({ location, count })),
             
             // Raw data for dashboard activity
-            jobs: jobs.sort((a, b) => new Date(b.posted_date) - new Date(a.posted_date)).slice(0, 10),
-            applications: applications.sort((a, b) => new Date(b.appliedAt) - new Date(a.appliedAt)).slice(0, 10),
+            jobs: activeJobs
+                .sort((a, b) => {
+                    const da = normalizeJobDate(a);
+                    const db = normalizeJobDate(b);
+                    return (db?.getTime() || 0) - (da?.getTime() || 0);
+                })
+                .slice(0, 10),
+            applications: applications
+                .sort((a, b) => new Date(b.appliedAt || 0) - new Date(a.appliedAt || 0))
+                .slice(0, 10),
             employers: employers.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)).slice(0, 5),
             
             // Quick stats for sidebar
             quickStats: {
                 activeEmployers: employers.filter(emp => emp.status === 'active').length,
-                pendingApplications: applications.length,
-                resumesUploaded: applications.filter(app => app.resumePath).length,
-                featuredJobs: jobs.filter(job => job.featured === true || job.featured === 'true').length
+                pendingApplications: applications.filter(app => (app.status || '').toLowerCase() === 'pending').length,
+                resumesUploaded: (resumes || []).length,
+                featuredJobs: activeJobs.filter(job => job.featured === true || job.featured === 'true').length
             }
         });
     } catch (error) {
@@ -404,6 +432,78 @@ router.get('/jobs', async (req, res) => {
         console.error('Error getting jobs:', error);
         res.status(500).json({ error: 'Failed to load jobs' });
     }
+});
+
+// Admin: Import jobs via RSS feed (basic normalizer + dedupe)
+router.post('/import/rss', async (req, res) => {
+    try {
+        const { feedUrl, defaultLocation = '', sourceLabel = 'RSS' } = req.body || {};
+        if (!feedUrl || typeof feedUrl !== 'string') {
+            return res.status(400).json({ success: false, message: 'feedUrl is required' });
+        }
+
+        const parser = new Parser();
+        const feed = await parser.parseURL(feedUrl);
+
+        const jobs = await readJSONFile('jobs.json');
+        const existingUrls = new Set(jobs.map(j => (j.url || '').trim().toLowerCase()));
+
+        const newJobs = [];
+        for (const item of feed.items || []) {
+            const link = (item.link || '').trim();
+            if (!link || !/^https?:\/\//i.test(link)) continue;
+            if (existingUrls.has(link.toLowerCase())) continue; // dedupe by URL
+
+            const title = (item.title || '').trim();
+            if (!title) continue;
+
+            const description = (item.contentSnippet || item.content || item.summary || '').toString().trim();
+
+            const job = {
+                id: Date.now() + Math.floor(Math.random() * 1000000),
+                title,
+                company: (item.creator || item.author || 'Unknown Company').toString(),
+                location: defaultLocation || 'Remote',
+                description,
+                url: link,
+                salary: '',
+                job_type: 'Full-time',
+                category: '',
+                remote: /remote/i.test(title) || /remote/i.test(description),
+                entry_level: /intern|entry|junior/i.test(title),
+                featured: false,
+                urgent: false,
+                status: 'active',
+                source: sourceLabel || 'RSS',
+                posted_date: new Date(item.isoDate || item.pubDate || Date.now()).toISOString()
+            };
+
+            jobs.unshift(job);
+            newJobs.push(job);
+            existingUrls.add(link.toLowerCase());
+        }
+
+        if (newJobs.length > 0) {
+            await writeJSONFile('jobs.json', jobs);
+        }
+
+        res.json({ success: true, imported: newJobs.length, jobs: newJobs });
+    } catch (error) {
+        console.error('RSS import failed:', error);
+        res.status(500).json({ success: false, message: 'RSS import failed', error: error.message });
+    }
+});
+
+// Admin: Indeed import stub (to be implemented with API or scraping)
+router.post('/import/indeed', async (req, res) => {
+    // Placeholder: wire to Indeed API or feed when available
+    res.json({ success: false, message: 'Indeed import not configured yet. Provide API/feed details to enable.' });
+});
+
+// Admin: LinkedIn import stub (respect TOS; requires authorized API)
+router.post('/import/linkedin', async (req, res) => {
+    // Placeholder: LinkedIn official API access required; scraping is against TOS
+    res.json({ success: false, message: 'LinkedIn import requires official API access. Not enabled by default.' });
 });
 
 // Get all users with pagination
@@ -489,30 +589,45 @@ router.post('/jobs', async (req, res) => {
     try {
         const jobs = await readJSONFile('jobs.json');
         const jobId = `manual_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+        // Normalize booleans and enums from form
+        const toBool = (v) => (typeof v === 'boolean' ? v : String(v).toLowerCase() === 'true');
+        const expRaw = (req.body.experience_level || '').toString().toLowerCase();
+        const expMap = { 'entry': 'Entry Level', 'mid': 'Mid Level', 'senior': 'Senior Level', 'executive': 'Executive' };
+        const experienceLevel = expMap[expRaw] || (req.body.experience_level || 'Mid Level');
+
+        const featured = toBool(req.body.featured);
+        const urgent = toBool(req.body.urgent);
+        const jobType = req.body.job_type || req.body.type || 'full-time';
+        const category = req.body.category || 'General';
+        const applicationEmail = req.body.application_email;
+        const applicationUrl = req.body.application_url;
+
+        // Compute apply URL fallback
+        const computedUrl = applicationUrl || (applicationEmail ? `mailto:${applicationEmail}` : `https://talentsync.shop/job-detail.html?id=${jobId}`);
+
         const newJob = {
             id: jobId,
             title: req.body.title,
             company: req.body.company,
             location: req.body.location,
             description: req.body.description,
-            url: req.body.application_url || req.body.application_email ? 
-                 (req.body.application_url || `mailto:${req.body.application_email}`) :
-                 `https://talentsync.shop/job-detail.html?id=${jobId}`,
+            url: computedUrl,
             salary: req.body.salary || 'Not specified',
             source: 'Manual',
-            job_type: req.body.job_type || 'Full-time',
+            job_type: jobType,
             remote: req.body.remote === 'true',
             posted_date: new Date().toISOString(),
             scraped_at: new Date().toISOString(),
-            category: req.body.category || 'General',
-            entry_level: req.body.experience_level === 'Entry Level',
-            experience_level: req.body.experience_level || 'Mid Level',
+            category: category,
+            entry_level: experienceLevel.toLowerCase().includes('entry'),
+            experience_level: experienceLevel,
             requirements: req.body.skills ? req.body.skills.split(',').map(s => s.trim()) : [],
             benefits: [],
-            featured: req.body.featured === 'true',
-            urgent: req.body.urgent === 'true',
-            application_email: req.body.application_email,
-            application_url: req.body.application_url,
+            featured: featured,
+            urgent: urgent,
+            application_email: applicationEmail,
+            application_url: applicationUrl,
             status: 'active'
         };
 
@@ -536,6 +651,46 @@ router.post('/jobs', async (req, res) => {
     } catch (error) {
         console.error('Error adding job:', error);
         res.status(500).json({ error: 'Failed to add job' });
+    }
+});
+
+// Bulk update jobs (used by dashboard modal)
+router.post('/jobs/bulk', async (req, res) => {
+    try {
+        const { action, jobIds } = req.body || {};
+        if (!Array.isArray(jobIds) || !action) {
+            return res.status(400).json({ success: false, error: 'Invalid request' });
+        }
+
+        const jobs = await readJSONFile('jobs.json');
+        let affected = 0;
+
+        const setFlag = (job, field, value) => { job[field] = value; };
+
+        const updated = jobs.map(job => {
+            if (!jobIds.includes(job.id)) return job;
+            affected++;
+            switch (action) {
+                case 'activate': job.status = 'active'; break;
+                case 'deactivate': job.status = 'inactive'; break;
+                case 'feature': setFlag(job, 'featured', true); break;
+                case 'unfeature': setFlag(job, 'featured', false); break;
+                case 'urgent': setFlag(job, 'urgent', true); break;
+                case 'unurgent': setFlag(job, 'urgent', false); break;
+                case 'delete': return null; // mark for deletion
+                default: break;
+            }
+            job.updated_at = new Date().toISOString();
+            return job;
+        }).filter(Boolean);
+
+        const success = await writeJSONFile('jobs.json', updated);
+        if (!success) return res.status(500).json({ success: false, error: 'Failed to save changes' });
+
+        res.json({ success: true, message: `Bulk action '${action}' applied to ${affected} job(s)` });
+    } catch (error) {
+        console.error('Error performing bulk job action:', error);
+        res.status(500).json({ success: false, error: 'Server error' });
     }
 });
 

@@ -499,7 +499,7 @@
                     <li><a href="/resumes">Search Resumes</a></li>
                     <li><a href="/blog">Blog</a></li>
                     <li id="authMenuItem"><a href="/login.html">Sign In</a></li>
-                    <li><a href="/register.html" class="btn-primary">Post Resume</a></li>
+                    <li><a href="/upload-resume.html" class="btn-primary">Post Resume</a></li>
                     <li><a href="/employers" class="btn-secondary">Employers - Post Job</a></li>
                 </ul>
             </nav>
@@ -604,6 +604,10 @@
                 <a href="/terms">Terms</a>
                 <a href="/contact">Contact Us</a>
             </div>
+            <div class="footer-links" style="justify-content:center; margin-top: 0.5rem;">
+                <a href="https://www.linkedin.com/company/talentsyncc/?viewAsMember=true" target="_blank" rel="noopener" title="LinkedIn">🔗 LinkedIn</a>
+                <a href="https://www.facebook.com/profile.php?viewas=100000686899395&id=61579716508535" target="_blank" rel="noopener" title="Facebook">📘 Facebook</a>
+            </div>
             <div class="footer-bottom">
                 <p>&copy; 2025 TalentSync</p>
             </div>
@@ -611,10 +615,10 @@
     </footer>
 
     <script>
-        let allResumes = [];
-        let displayedResumes = [];
-        let currentPage = 1;
-        const resumesPerPage = 12;
+    let allResumes = [];
+    let displayedResumes = [];
+    let currentPage = 1;
+    const resumesPerPage = 12;
 
         // Mobile menu functionality
         const menuToggle = document.getElementById('menuToggle');
@@ -645,35 +649,24 @@
             });
         });
 
-        // Mock student resume data
-        function generateMockResumes() {
-            const names = ['Emily Johnson', 'Michael Chen', 'Sarah Williams', 'David Rodriguez', 'Jessica Kim', 'Alex Thompson', 'Maria Garcia', 'James Wilson', 'Ashley Brown', 'Ryan Martinez', 'Lauren Davis', 'Kevin Lee'];
-            const schools = ['University of California, Berkeley', 'Stanford University', 'MIT', 'Harvard University', 'NYU', 'UCLA', 'Columbia University', 'University of Michigan', 'Northwestern University', 'University of Texas', 'Carnegie Mellon', 'Georgia Tech'];
-            const majors = ['Computer Science', 'Business Administration', 'Engineering', 'Marketing', 'Finance', 'Psychology', 'Biology', 'Economics', 'Communications', 'Data Science'];
-            const degrees = ['Bachelor\'s Degree', 'Master\'s Degree', 'Associate Degree'];
-            const skillSets = [
-                ['JavaScript', 'React', 'Node.js', 'Python'],
-                ['Marketing', 'Social Media', 'Analytics', 'Content Creation'],
-                ['Finance', 'Excel', 'SQL', 'Financial Modeling'],
-                ['Design', 'Photoshop', 'UI/UX', 'Figma'],
-                ['Project Management', 'Agile', 'Leadership', 'Communication'],
-                ['Data Analysis', 'Python', 'R', 'Statistics'],
-                ['Sales', 'CRM', 'Negotiation', 'Customer Service']
-            ];
+        // Load real resumes from API
+        async function loadResumes() {
+            try {
+                const res = await fetch('/api/resumes');
+                const data = await res.json();
+                if (!data.success) throw new Error('Failed to load resumes');
 
-            allResumes = [];
-            for (let i = 0; i < 48; i++) {
-                allResumes.push({
-                    id: i + 1,
-                    name: names[i % names.length],
-                    degree: degrees[i % degrees.length],
-                    major: majors[i % majors.length],
-                    school: schools[i % schools.length],
-                    skills: skillSets[i % skillSets.length],
-                    graduationYear: 2024 + Math.floor(Math.random() * 3),
-                    gpa: (3.0 + Math.random() * 1.0).toFixed(2),
-                    experience: ['No Experience', 'Internship', 'Part-time Work'][Math.floor(Math.random() * 3)]
-                });
+                // Shape: { id, name, position, experience, uploadDate, originalName, fileUrl }
+                allResumes = data.resumes || [];
+                displayedResumes = allResumes.slice();
+                currentPage = 1;
+                displayResumes();
+                updateResumeCount();
+            } catch (e) {
+                console.error('Resume load error:', e);
+                const container = document.getElementById('resumesContainer');
+                container.innerHTML = '<div class="loading">Unable to load resumes right now.</div>';
+                document.getElementById('resumeCount').textContent = '0 profiles found';
             }
         }
 
@@ -685,21 +678,18 @@
             const experience = document.getElementById('experience').value.toLowerCase();
 
             displayedResumes = allResumes.filter(resume => {
-                const matchesSkills = !skills || 
-                    resume.skills.some(skill => skill.toLowerCase().includes(skills)) ||
-                    resume.major.toLowerCase().includes(skills);
-                
-                const matchesLocation = !location || 
-                    resume.school.toLowerCase().includes(location);
-                
-                const matchesDegree = !degreeLevel || 
-                    resume.degree.toLowerCase().includes(degreeLevel);
-                
-                const matchesMajor = !major || 
-                    resume.major.toLowerCase().includes(major.replace('-', ' '));
-                
-                const matchesExperience = !experience || 
-                    resume.experience.toLowerCase().includes(experience.replace('-', ' '));
+                const matchesSkills = !skills ||
+                    (resume.position && resume.position.toLowerCase().includes(skills)) ||
+                    (resume.originalName && resume.originalName.toLowerCase().includes(skills));
+
+                const matchesLocation = true; // location not captured in upload, skip for now
+
+                const matchesDegree = true; // degree not captured, skip
+
+                const matchesMajor = true; // major not captured, skip
+
+                const matchesExperience = !experience ||
+                    (resume.experience && resume.experience.toLowerCase().includes(experience.replace('-', ' ')));
 
                 return matchesSkills && matchesLocation && matchesDegree && matchesMajor && matchesExperience;
             });
@@ -723,19 +713,15 @@
 
             container.innerHTML = resumesToShow.map(resume => `
                 <div class="resume-item">
-                    <div class="student-name">${resume.name}</div>
-                    <div class="student-degree">${resume.degree} in ${resume.major}</div>
-                    <div class="student-school">${resume.school} • Class of ${resume.graduationYear}</div>
-                    <div class="student-skills">
-                        <strong>Skills:</strong><br>
-                        ${resume.skills.map(skill => `<span class="skill-tag">${skill}</span>`).join('')}
-                    </div>
-                    <div style="font-size: 0.9rem; color: #6b7280; margin-bottom: 1rem;">
-                        <strong>GPA:</strong> ${resume.gpa} • <strong>Experience:</strong> ${resume.experience}
+                    <div class="student-name">${escapeHtml(resume.name || 'Candidate')}</div>
+                    <div class="student-degree">${escapeHtml(resume.position || 'Open to opportunities')}</div>
+                    <div class="student-school" style="display:flex; gap:.5rem; align-items:center;">
+                        <span>Uploaded: ${new Date(resume.uploadDate).toLocaleDateString()}</span>
+                        ${resume.originalName ? `<span class="skill-tag">${escapeHtml(resume.originalName)}</span>` : ''}
                     </div>
                     <div class="resume-actions">
-                        <button class="view-resume-btn" onclick="viewResume(${resume.id})">View Resume</button>
-                        <button class="contact-btn" onclick="contactStudent(${resume.id})">Contact</button>
+                        ${resume.fileUrl ? `<a class="view-resume-btn" href="${resume.fileUrl}" target="_blank" rel="noopener">View Resume</a>` : ''}
+                        <button class="contact-btn" onclick="contactCandidate('${resume.id}')">Contact</button>
                     </div>
                 </div>
             `).join('');
@@ -753,12 +739,19 @@
             document.getElementById('resumeCount').textContent = `${count} profiles found`;
         }
 
-        function viewResume(id) {
-            alert(`Viewing resume for student ID ${id}. In a real application, this would open the full resume.`);
+        function contactCandidate(id) {
+            alert('Thanks! For now, please use the Admin dashboard to reach candidates.');
         }
 
-        function contactStudent(id) {
-            alert(`Contacting student ID ${id}. In a real application, this would open a contact form or messaging system.`);
+        // Escape HTML helper
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
         }
 
         // Event listeners
@@ -793,8 +786,7 @@
 
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
-            generateMockResumes();
-            filterAndDisplayResumes();
+            loadResumes();
             updateNavigation();
         });
     </script>

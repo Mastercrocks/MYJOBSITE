@@ -455,7 +455,13 @@
     <script>
         // Check if user is already logged in on page load
         document.addEventListener('DOMContentLoaded', function() {
-            checkAuthStatus();
+            // If coming from a logout redirect, skip auto redirect check once
+            const justLoggedOut = sessionStorage.getItem('justLoggedOut') === 'true';
+            if (justLoggedOut) {
+                sessionStorage.removeItem('justLoggedOut');
+            } else {
+                checkAuthStatus();
+            }
         });
 
         async function handleGoogleAuth(event) {
@@ -487,7 +493,7 @@
                     const data = await response.json();
                     if (data.authenticated) {
                         // User is already logged in, redirect to dashboard
-                        const redirectUrl = data.user.user_type === 'employer' ? '/employer/dashboard.html' : '/dashboard.html';
+                        const redirectUrl = data.user.user_type === 'employer' ? '/employer/dashboard.html' : '/jobseeker/dashboard.html';
                         window.location.href = redirectUrl;
                         return;
                     }
@@ -591,14 +597,22 @@
                     localStorage.setItem('user', JSON.stringify(result.user));
                     localStorage.setItem('isLoggedIn', 'true');
                     localStorage.setItem('authToken', result.token);
-                    
+                    // Persist userType and name for nav and dashboard checks
+                    if (result.user && result.user.userType) {
+                        localStorage.setItem('userType', result.user.userType);
+                    }
+                    const inferredName = (result.user.firstName || result.user.username || '').toString();
+                    if (inferredName) {
+                        localStorage.setItem('userName', inferredName);
+                    }
+
                     // Redirect based on user type
                     if (result.user.userType === 'employer') {
                         window.location.href = '/employer/dashboard.html';
                     } else if (result.user.userType === 'admin') {
                         window.location.href = '/admin/dashboard.html';
                     } else {
-                        window.location.href = '/dashboard.html';
+                        window.location.href = '/jobseeker/dashboard.html';
                     }
                 } else {
                     showError('signinPassword', result.error || 'Login failed');
@@ -679,7 +693,15 @@
                     localStorage.setItem('user', JSON.stringify(result.user));
                     localStorage.setItem('isLoggedIn', 'true');
                     localStorage.setItem('authToken', result.token);
-                    
+                    // new signups default to job_seeker; persist userType and name
+                    if (result.user && result.user.userType) {
+                        localStorage.setItem('userType', result.user.userType);
+                    }
+                    const inferredName = (result.user.firstName || result.user.username || '').toString();
+                    if (inferredName) {
+                        localStorage.setItem('userName', inferredName);
+                    }
+
                     // Redirect to dashboard
                     window.location.href = '/dashboard.html';
                 } else {

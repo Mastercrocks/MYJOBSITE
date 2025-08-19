@@ -79,7 +79,7 @@ class AuthHelper {
     async logout() {
         try {
             // Call logout endpoint if it exists
-            await fetch('/api/auth/logout', {
+            await fetch('/auth/logout', {
                 method: 'POST',
                 credentials: 'include'
             });
@@ -94,7 +94,9 @@ class AuthHelper {
         // Clear localStorage (for backward compatibility)
         localStorage.removeItem('isLoggedIn');
         localStorage.removeItem('user');
-        localStorage.removeItem('authToken');
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('userType');
+    localStorage.removeItem('userName');
         
         // Redirect to login
         window.location.href = '/login.html';

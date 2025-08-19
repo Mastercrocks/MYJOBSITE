@@ -639,7 +639,7 @@
                     <li><a href="/resumes">Search Resumes</a></li>
                     <li><a href="/blog">Blog</a></li>
                     <li id="authMenuItem"><a href="/login.html">Sign In</a></li>
-                    <li><a href="/register.html" class="btn-primary">Post Resume</a></li>
+                    <!-- Register button removed to avoid confusion -->
                     <li><a href="/employers" class="btn-secondary">Employers - Post Job</a></li>
                 </ul>
             </nav>
@@ -699,7 +699,7 @@
         <div class="container">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
                 <h2>Available Positions</h2>
-                <div id="jobCount" style="color: #6b7280;">Loading jobs...</div>
+                <div id="jobCount" style="color: #6b7280;">🚀 Loading all jobs with valid application URLs...</div>
             </div>
             
             <div id="jobsContainer" class="jobs-grid">
@@ -721,6 +721,10 @@
                 <a href="/privacy">Privacy</a>
                 <a href="/terms">Terms</a>
                 <a href="/contact">Contact Us</a>
+            </div>
+            <div class="footer-links" style="margin-top: 0.5rem;">
+                <a href="https://www.linkedin.com/company/talentsyncc/?viewAsMember=true" target="_blank" rel="noopener" title="LinkedIn">🔗 LinkedIn</a>
+                <a href="https://www.facebook.com/profile.php?viewas=100000686899395&id=61579716508535" target="_blank" rel="noopener" title="Facebook">📘 Facebook</a>
             </div>
             <div class="footer-bottom">
                 <p>&copy; 2025 TalentSync</p>
@@ -778,7 +782,7 @@
         let allJobs = [];
         let displayedJobs = [];
         let currentPage = 1;
-        const jobsPerPage = 12;
+        const jobsPerPage = 50; // Increased to show more jobs per page
 
         // Mobile menu functionality
         const menuToggle = document.getElementById('menuToggle');
@@ -809,30 +813,34 @@
             });
         });
 
-        // Load and display jobs (now using fresh scraped + API jobs)
+        // Load and display jobs (now loading ALL 15,000+ jobs)
         async function loadJobs() {
             try {
-                // First try to get fresh scraped jobs
-                let response = await fetch('/api/fresh?limit=200');
+                console.log('🚀 Loading ALL jobs from database...');
+                // Load ALL jobs from the main database (no limit)
+                let response = await fetch('/api/fresh'); // manual-only by default
                 let data = await response.json();
                 
                 if (data.success && data.jobs.length > 0) {
-                    console.log(`✅ Loaded ${data.jobs.length} fresh jobs from ${data.sources?.scraped || 0} scraped + ${data.sources?.api || 0} API sources`);
+                    console.log(`✅ Loaded ALL ${data.jobs.length} jobs from database`);
                     allJobs = data.jobs;
+                    window.totalJobs = data.total;
                     filterAndDisplayJobs();
                     showJobStats(data.sources);
-                } else {
-                    // Fallback to original Indeed API
-                    console.log('📡 Falling back to Indeed API...');
-                    response = await fetch('/api/jobs/indeed');
-                    data = await response.json();
                     
-                    if (data.success && data.jobs.length > 0) {
-                        allJobs = data.jobs;
-                        filterAndDisplayJobs();
-                    } else {
-                        showNoJobsMessage();
-                    }
+                    // Show success message
+                    const container = document.getElementById('jobsContainer');
+                    const successMsg = document.createElement('div');
+                    successMsg.innerHTML = `
+                        <div style="background: #10b981; color: white; padding: 1rem; border-radius: 8px; margin-bottom: 2rem; text-align: center;">
+                            🎉 Successfully loaded ${data.jobs.length.toLocaleString()} jobs from database!
+                        </div>
+                    `;
+                    container.parentNode.insertBefore(successMsg, container);
+                    
+                } else {
+                    console.log('❌ No jobs found in database');
+                    showNoJobsMessage();
                 }
             } catch (error) {
                 console.error('Error loading jobs:', error);
@@ -847,6 +855,18 @@
             const category = document.getElementById('category').value.toLowerCase();
 
             displayedJobs = allJobs.filter(job => {
+                // Only requirement: job must have a legitimate URL to apply
+                const hasValidUrl = job.url && 
+                    job.url.trim().length > 0 && 
+                    !job.url.includes('undefined') && 
+                    !job.url.includes('null') &&
+                    (job.url.startsWith('http') || job.url.startsWith('https'));
+                
+                // Skip jobs without valid application URLs
+                if (!hasValidUrl) {
+                    return false;
+                }
+                
                 const matchesKeyword = !keyword || 
                     job.title.toLowerCase().includes(keyword) ||
                     job.company.toLowerCase().includes(keyword) ||
@@ -863,8 +883,55 @@
                     job.title.toLowerCase().includes(category) ||
                     (job.description && job.description.toLowerCase().includes(category));
 
-                return matchesKeyword && matchesLocation && matchesType && matchesCategory;
+                return hasValidUrl && matchesKeyword && matchesLocation && matchesType && matchesCategory;
             });
+
+            // Log filtering results with better breakdown
+            const linkedinJobs = allJobs.filter(job => {
+                const source = job.source ? job.source.toLowerCase() : '';
+                return source.includes('linkedin');
+            }).length;
+            
+            const zipRecruiterJobs = allJobs.filter(job => {
+                const source = job.source ? job.source.toLowerCase() : '';
+                return source.includes('ziprecruiter');
+            }).length;
+            
+            const indeedJobs = allJobs.filter(job => {
+                const source = job.source ? job.source.toLowerCase() : '';
+                return source.includes('indeed');
+            }).length;
+            
+            const glassdoorJobs = allJobs.filter(job => {
+                const source = job.source ? job.source.toLowerCase() : '';
+                return source.includes('glassdoor');
+            }).length;
+            
+            const manualJobs = allJobs.filter(job => {
+                const source = job.source ? job.source.toLowerCase() : '';
+                return source.includes('manual');
+            }).length;
+            
+            const otherJobs = allJobs.length - linkedinJobs - zipRecruiterJobs - indeedJobs - glassdoorJobs - manualJobs;
+            
+            const jobsWithValidUrls = allJobs.filter(job => {
+                return job.url && 
+                    job.url.trim().length > 0 && 
+                    !job.url.includes('undefined') && 
+                    !job.url.includes('null') &&
+                    (job.url.startsWith('http') || job.url.startsWith('https'));
+            }).length;
+            
+            console.log(`🔍 Job filtering results - ALL SOURCES WITH VALID URLS:`);
+            console.log(`📊 Total jobs loaded: ${allJobs.length}`);
+            console.log(`🔗 Jobs with valid URLs: ${jobsWithValidUrls}`);
+            console.log(`📋 LinkedIn jobs: ${linkedinJobs}`);
+            console.log(`📋 ZipRecruiter jobs: ${zipRecruiterJobs}`);
+            console.log(`📋 Indeed jobs: ${indeedJobs}`);
+            console.log(`📋 Glassdoor jobs: ${glassdoorJobs}`);
+            console.log(`📋 Manual jobs: ${manualJobs}`);
+            console.log(`📋 Other/Unknown source jobs: ${otherJobs}`);
+            console.log(`✅ Final displayed jobs (with valid URLs): ${displayedJobs.length}`);
 
             currentPage = 1;
             displayJobs();
@@ -873,40 +940,51 @@
 
         function displayJobs() {
             const container = document.getElementById('jobsContainer');
-            const startIndex = 0;
-            const endIndex = currentPage * jobsPerPage;
-            const jobsToShow = displayedJobs.slice(startIndex, endIndex);
+            
+            // Show ALL filtered jobs without pagination limits
+            const jobsToShow = displayedJobs;
 
             if (jobsToShow.length === 0) {
-                container.innerHTML = '<div class="loading">No jobs found matching your criteria. Try adjusting your search.</div>';
+                container.innerHTML = '<div class="loading">No jobs with valid application URLs found matching your criteria. Try adjusting your search.</div>';
                 document.getElementById('loadMore').style.display = 'none';
                 return;
             }
 
+            console.log(`📋 Displaying ALL ${jobsToShow.length} jobs with valid application URLs`);
+
             container.innerHTML = jobsToShow.map((job, index) => `
-                <div class="job-item" onclick="openJobModal(${currentPage * 10 - 10 + index})" style="cursor: pointer;">
+                <div class="job-item" onclick="openJobModal(${index})" style="cursor: pointer;">
                     <div class="job-title" style="color: #2563eb; font-weight: 600; margin-bottom: 0.5rem;">${job.title}</div>
                     <div class="job-company">${job.company}</div>
                     <div class="job-location">${job.location}</div>
                     ${job.description ? `<div class="job-description">${job.description.substring(0, 120)}...</div>` : ''}
                     <div class="job-details">
                         ${job.salary ? `<span class="job-salary">${job.salary}</span>` : ''}
+                        <span style="background: ${job.source && job.source.toLowerCase().includes('linkedin') ? '#0077b5' : '#1875f0'}; color: white; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem; margin-right: 0.5rem;">${job.source || 'Unknown'}</span>
                         <span style="color: #667eea; font-size: 0.9rem; font-weight: 500;">Click to view details →</span>
                     </div>
                 </div>
             `).join('');
 
-            // Show/hide load more button
-            if (endIndex < displayedJobs.length) {
-                document.getElementById('loadMore').style.display = 'block';
-            } else {
-                document.getElementById('loadMore').style.display = 'none';
-            }
+            // Hide load more button since we're showing all jobs
+            document.getElementById('loadMore').style.display = 'none';
         }
 
         function updateJobCount() {
             const count = displayedJobs.length;
-            document.getElementById('jobCount').textContent = `${count} jobs found`;
+            const totalWithValidUrls = allJobs.filter(job => {
+                return job.url && 
+                    job.url.trim().length > 0 && 
+                    !job.url.includes('undefined') && 
+                    !job.url.includes('null') &&
+                    (job.url.startsWith('http') || job.url.startsWith('https'));
+            }).length;
+            
+            if (count === totalWithValidUrls) {
+                document.getElementById('jobCount').textContent = `Showing all ${count.toLocaleString()} jobs with valid application URLs`;
+            } else {
+                document.getElementById('jobCount').textContent = `Showing ${count.toLocaleString()} filtered jobs out of ${totalWithValidUrls.toLocaleString()} total with valid URLs`;
+            }
         }
 
         function showNoJobsMessage() {
@@ -943,10 +1021,7 @@
             filterAndDisplayJobs();
         });
 
-        document.getElementById('loadMore').addEventListener('click', function() {
-            currentPage++;
-            displayJobs();
-        });
+        // Load More button removed - showing all jobs at once
 
         // Check authentication status and update navigation
         function updateNavigation() {

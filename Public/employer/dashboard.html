@@ -22,11 +22,10 @@
   <script>
     function checkEmployerAuth() {
       const token = localStorage.getItem('authToken');
+      const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
       const userType = localStorage.getItem('userType');
-      
-      if (!token || userType !== 'employer') {
-        // Redirect to employer login if not authenticated
-        window.location.href = '/employers#auth';
+      if (!token || !isLoggedIn || userType !== 'employer') {
+        window.location.href = '/login.html';
         return false;
       }
       return true;
@@ -283,10 +282,20 @@
       alert('Analytics dashboard coming soon! Track your job posting performance.');
     }
 
-    function logout() {
+    async function logout() {
+      try {
+        await fetch('/auth/logout', { method: 'POST', credentials: 'include' });
+      } catch (_) {}
+      // Clear all auth-related keys
       localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
       localStorage.removeItem('userType');
-      window.location.href = '/employers';
+      localStorage.removeItem('userName');
+      localStorage.removeItem('isLoggedIn');
+      // Best-effort cookie clear in browser (non-HTTP-only fallback)
+      document.cookie = 'authToken=; Max-Age=0; path=/';
+      document.cookie = 'connect.sid=; Max-Age=0; path=/';
+      window.location.href = '/login.html';
     }
 
     // Load dashboard data when page loads

@@ -38,6 +38,10 @@
                     <span class="w-5 h-5 mr-3">📊</span>
                     Dashboard Overview
                 </a>
+                <a href="#" onclick="showSection('analytics')" class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
+                    <span class="w-5 h-5 mr-3">📈</span>
+                    Advanced Analytics
+                </a>
                 <a href="#" onclick="showSection('users')" class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
                     <span class="w-5 h-5 mr-3">👥</span>
                     User Management
@@ -54,16 +58,34 @@
                     <span class="w-5 h-5 mr-3">📄</span>
                     Applications
                 </a>
-
-
-
-
-
+                <a href="/admin/resume-management.html" class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
+                    <span class="w-5 h-5 mr-3">📄</span>
+                    Resume Management
+                </a>
+                <a href="#" onclick="showSection('traffic')" class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
+                    <span class="w-5 h-5 mr-3">🌐</span>
+                    Traffic & Views
+                </a>
+                <a href="#" onclick="showSection('content')" class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
+                    <span class="w-5 h-5 mr-3">📰</span>
+                    Content Management
+                </a>
+                <a href="#" onclick="showSection('system')" class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
+                    <span class="w-5 h-5 mr-3">⚙️</span>
+                    System Status
+                </a>
+                <a href="#" onclick="showSection('security')" class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
+                    <span class="w-5 h-5 mr-3">�</span>
+                    Security & Logs
+                </a>
             </nav>
             
             <!-- Additional Navigation Items -->
             <div class="mt-4 pt-4 border-t border-gray-700">
-
+                <a href="#" onclick="showSection('billing')" class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
+                    <span class="w-5 h-5 mr-3">💰</span>
+                    Billing & Revenue
+                </a>
                 <a href="#" onclick="showSection('jobmanual')" class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
                     <span class="w-5 h-5 mr-3">➕</span>
                     Add Jobs
@@ -72,7 +94,10 @@
                     <span class="w-5 h-5 mr-3">📧</span>
                     Email Marketing
                 </a>
-
+                <a href="#" onclick="showSection('pricing')" class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
+                    <span class="w-5 h-5 mr-3">💳</span>
+                    Pricing & Plans
+                </a>
             </div>
         </div>
 
@@ -1245,17 +1270,17 @@
                                 <div class="bg-gray-50 p-4 rounded-lg">
                                     <h4 class="font-semibold text-gray-900 mb-2">Indeed API</h4>
                                     <p class="text-sm text-gray-600 mb-3">Import jobs directly from Indeed</p>
-                                    <button class="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm">Configure</button>
+                                    <button id="indeedImportBtn" class="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm">Configure</button>
                                 </div>
                                 <div class="bg-gray-50 p-4 rounded-lg">
                                     <h4 class="font-semibold text-gray-900 mb-2">LinkedIn Jobs</h4>
                                     <p class="text-sm text-gray-600 mb-3">Sync with LinkedIn job postings</p>
-                                    <button class="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm">Configure</button>
+                                    <button id="linkedinImportBtn" class="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm">Configure</button>
                                 </div>
                                 <div class="bg-gray-50 p-4 rounded-lg">
                                     <h4 class="font-semibold text-gray-900 mb-2">RSS Feed</h4>
                                     <p class="text-sm text-gray-600 mb-3">Import from RSS job feeds</p>
-                                    <button class="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm">Configure</button>
+                                    <button id="rssImportBtn" class="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm">Configure</button>
                                 </div>
                             </div>
                         </div>
@@ -1704,21 +1729,26 @@
                 case 'overview':
                     loadDashboardStats();
                     break;
-                case 'applications':
-                    loadApplicationsData();
-                    break;
                 // Add more cases as needed
             }
             
             // Update page title and subtitle
             const titles = {
                 'overview': { title: 'Dashboard Overview', subtitle: 'Complete analytics and management overview' },
+                'analytics': { title: 'Advanced Analytics', subtitle: 'Detailed site performance and user behavior' },
                 'users': { title: 'User Management', subtitle: 'Manage registered users and their activities' },
                 'employers': { title: 'Employer Management', subtitle: 'Manage companies and employer accounts' },
                 'jobs': { title: 'Job Management', subtitle: 'Manage all job postings and their status' },
                 'applications': { title: 'Application Management', subtitle: 'Track and manage all job applications' },
+                'resumes': { title: 'Resume Management', subtitle: 'Manage uploaded resumes and candidate profiles' },
+                'traffic': { title: 'Traffic & Views', subtitle: 'Website traffic analysis and visitor insights' },
+                'content': { title: 'Content Management', subtitle: 'Manage website content, pages, and media' },
+                'system': { title: 'System Status', subtitle: 'Server performance and system health monitoring' },
+                'security': { title: 'Security & Logs', subtitle: 'Security status and system activity logs' },
+                'billing': { title: 'Billing & Revenue', subtitle: 'Track earnings, manage payments and employer billing' },
                 'jobmanual': { title: 'Add Jobs', subtitle: 'Manually add job postings to your job board' },
-                'email-marketing': { title: 'Email Marketing', subtitle: 'Manage email lists and send job campaigns to candidates' }
+                'email-marketing': { title: 'Email Marketing', subtitle: 'Manage email lists and send job campaigns to candidates' },
+                'pricing': { title: 'Pricing & Plans', subtitle: 'Manage subscription plans and pricing for employers' }
             };
             
             const titleInfo = titles[sectionName];
@@ -1765,17 +1795,15 @@
                     console.warn('totalUsers element not found');
                 }
                 
-                // Find and update jobs count
+                // Find and update jobs count (active jobs only)
                 const jobsElement = document.querySelector('[data-stat="jobs"]') || 
                     Array.from(document.querySelectorAll('.text-3xl')).find(el => {
                         const parent = el.parentElement;
                         const textEl = parent?.querySelector('.text-sm');
-                        return textEl && (textEl.textContent.includes('Jobs') || textEl.textContent.includes('Active'));
+                        return textEl && (textEl.textContent.includes('Jobs') || textEl.textContent.includes('Active Jobs'));
                     });
                 if (jobsElement) {
-                    jobsElement.textContent = data.totals.jobs.toLocaleString();
-                } else {
-                    console.warn('Jobs stat element not found');
+                    jobsElement.textContent = Number(data.totals.jobs || 0).toLocaleString();
                 }
                 
                 // Find and update applications count
@@ -1786,9 +1814,7 @@
                         return textEl && textEl.textContent.includes('Application');
                     });
                 if (appsElement) {
-                    appsElement.textContent = data.totals.applications.toLocaleString();
-                } else {
-                    console.warn('Applications stat element not found');
+                    appsElement.textContent = Number(data.totals.applications || 0).toLocaleString();
                 }
                 
                 // Find and update employers count (or page views if no employers stat)
@@ -1801,22 +1827,10 @@
                 if (employersElement) {
                     const parentText = employersElement.parentElement.querySelector('.text-sm')?.textContent;
                     if (parentText && parentText.includes('Page')) {
-                        // Use real analytics data if available, otherwise fallback to calculation
-                        if (data.totals.pageViews && data.totals.pageViews > 0) {
-                            employersElement.textContent = data.totals.pageViews.toLocaleString();
-                        } else {
-                            // Fallback to realistic calculation for new sites
-                            const avgViewsPerJob = 15;
-                            const avgViewsPerUser = 8;
-                            const baseViews = 5000;
-                            const calculatedViews = baseViews + (data.totals.jobs * avgViewsPerJob) + (data.totals.users * avgViewsPerUser);
-                            employersElement.textContent = calculatedViews.toLocaleString();
-                        }
+                        employersElement.textContent = Number(data.totals.pageViews || 0).toLocaleString();
                     } else {
-                        employersElement.textContent = data.totals.employers.toLocaleString();
+                        employersElement.textContent = Number(data.totals.employers || 0).toLocaleString();
                     }
-                } else {
-                    console.warn('Employers/Page views stat element not found');
                 }
                 
                 // Update weekly growth indicators
@@ -2931,6 +2945,53 @@
                     document.body.style.opacity = '1';
                     console.log('✅ TalentSync Admin Dashboard loaded successfully!');
                 }, 500);
+
+                // Wire import buttons
+                const rssBtn = document.getElementById('rssImportBtn');
+                if (rssBtn) {
+                    rssBtn.addEventListener('click', async () => {
+                        const feedUrl = prompt('Enter RSS feed URL to import jobs from:');
+                        if (!feedUrl) return;
+                        try {
+                            const resp = await fetch('/api/admin/import/rss', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ feedUrl })
+                            });
+                            const result = await resp.json();
+                            if (result.success) {
+                                alert(`Imported ${result.imported} jobs from RSS.`);
+                                loadJobsData();
+                                loadDashboardStats();
+                            } else {
+                                alert(result.message || 'RSS import failed');
+                            }
+                        } catch (e) {
+                            console.error('RSS import error', e);
+                            alert('RSS import error');
+                        }
+                    });
+                }
+
+                const indeedBtn = document.getElementById('indeedImportBtn');
+                if (indeedBtn) {
+                    indeedBtn.addEventListener('click', async () => {
+                        const ok = confirm('Indeed import requires API/feed setup. Continue to attempt?');
+                        if (!ok) return;
+                        const resp = await fetch('/api/admin/import/indeed', { method: 'POST' });
+                        const result = await resp.json();
+                        alert(result.message || 'Indeed import attempted');
+                    });
+                }
+
+                const linkedinBtn = document.getElementById('linkedinImportBtn');
+                if (linkedinBtn) {
+                    linkedinBtn.addEventListener('click', async () => {
+                        const resp = await fetch('/api/admin/import/linkedin', { method: 'POST' });
+                        const result = await resp.json();
+                        alert(result.message || 'LinkedIn import attempted');
+                    });
+                }
                 
             } catch (error) {
                 console.error('❌ Error initializing dashboard:', error);
