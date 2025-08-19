@@ -699,7 +699,7 @@
         <div class="container">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
                 <h2>Available Positions</h2>
-                <div id="jobCount" style="color: #6b7280;">🚀 Loading all jobs with valid application URLs...</div>
+                <div id="jobCount" style="color: #6b7280; display: none;"></div>
             </div>
             
             <div id="jobsContainer" class="jobs-grid">
@@ -828,15 +828,7 @@
                     filterAndDisplayJobs();
                     showJobStats(data.sources);
                     
-                    // Show success message
-                    const container = document.getElementById('jobsContainer');
-                    const successMsg = document.createElement('div');
-                    successMsg.innerHTML = `
-                        <div style="background: #10b981; color: white; padding: 1rem; border-radius: 8px; margin-bottom: 2rem; text-align: center;">
-                            🎉 Successfully loaded ${data.jobs.length.toLocaleString()} jobs from database!
-                        </div>
-                    `;
-                    container.parentNode.insertBefore(successMsg, container);
+                    // No public success banner
                     
                 } else {
                     console.log('❌ No jobs found in database');
@@ -950,7 +942,7 @@
                 return;
             }
 
-            console.log(`📋 Displaying ALL ${jobsToShow.length} jobs with valid application URLs`);
+            // console.log display only for debugging; no public banners
 
             container.innerHTML = jobsToShow.map((job, index) => `
                 <div class="job-item" onclick="openJobModal(${index})" style="cursor: pointer;">
@@ -980,11 +972,9 @@
                     (job.url.startsWith('http') || job.url.startsWith('https'));
             }).length;
             
-            if (count === totalWithValidUrls) {
-                document.getElementById('jobCount').textContent = `Showing all ${count.toLocaleString()} jobs with valid application URLs`;
-            } else {
-                document.getElementById('jobCount').textContent = `Showing ${count.toLocaleString()} filtered jobs out of ${totalWithValidUrls.toLocaleString()} total with valid URLs`;
-            }
+            // Keep count hidden from public UI
+            const jc = document.getElementById('jobCount');
+            jc.style.display = 'none';
         }
 
         function showNoJobsMessage() {

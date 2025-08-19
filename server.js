@@ -71,7 +71,7 @@ app.get('/api/fresh', (req, res) => {
         let scrapedJobs = [];
 
         // Load manual/admin jobs
-        if (fs.existsSync(jobsPath)) {
+    if (fs.existsSync(jobsPath)) {
             try {
                 const jobs = JSON.parse(fs.readFileSync(jobsPath, 'utf8')) || [];
                 manualJobs = jobs
@@ -79,6 +79,8 @@ app.get('/api/fresh', (req, res) => {
                     .map(j => ({
                         // Preserve existing fields, normalize some keys
                         ...j,
+            // Normalize application URL so frontend can use job.url consistently
+            url: j.url || j.apply_url || j.applyUrl || j.applyLink || j.application_url || j.apply || j.link || '',
                         job_type: j.job_type || j.type || 'Full-time',
                         posted_date: j.posted_date || j.datePosted || new Date().toISOString(),
                         source: j.source || 'Manual'
@@ -89,12 +91,13 @@ app.get('/api/fresh', (req, res) => {
         }
 
         // Load scraped jobs (LinkedIn/ZipRecruiter/etc.)
-        if (fs.existsSync(scrapedPath)) {
+    if (fs.existsSync(scrapedPath)) {
             try {
                 const scraped = JSON.parse(fs.readFileSync(scrapedPath, 'utf8')) || [];
                 scrapedJobs = scraped.map(j => ({
                     ...j,
                     status: j.status || 'active',
+            url: j.url || j.apply_url || j.link || '',
                     job_type: j.job_type || j.type || 'Full-time',
                     posted_date: j.posted_date || j.datePosted || j.posted_date || new Date().toISOString(),
                 })).filter(j => j.status === 'active');
