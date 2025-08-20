@@ -1,6 +1,6 @@
 {
   "pageViews": {
-    "total": 470,
+    "total": 474,
     "daily": {
       "2025-08-11": 5,
       "2025-08-12": 12,
@@ -10,7 +10,7 @@
       "2025-08-16": 10,
       "2025-08-17": 75,
       "2025-08-19": 322,
-      "2025-08-20": 7
+      "2025-08-20": 11
     },
     "pages": {
       "/": 86,
@@ -26,13 +26,13 @@
       "/dashboard": 6,
       "/admin": 1,
       "/admin/": 2,
-      "/auth/profile": 13,
+      "/auth/profile": 17,
       "/resumes": 9,
       "/employer/dashboard": 1
     }
   },
   "visitors": {
-    "unique": 438,
+    "unique": 442,
     "returning": 7,
     "sessions": {
       "session_new_1755400605624_0": {
@@ -2224,8 +2224,28 @@
         "firstVisit": "2025-08-20T00:16:58.963Z",
         "lastVisit": "2025-08-20T00:16:58.963Z",
         "pageViews": 1
+      },
+      "myl4PWsbEMU0rumh9oEJK6Q4ROCZj8sV": {
+        "firstVisit": "2025-08-20T00:44:55.785Z",
+        "lastVisit": "2025-08-20T00:44:55.785Z",
+        "pageViews": 1
+      },
+      "GjDMIjatL7NjVFpqqgrWVBXDHxTo5cX6": {
+        "firstVisit": "2025-08-20T00:45:04.245Z",
+        "lastVisit": "2025-08-20T00:45:04.245Z",
+        "pageViews": 1
+      },
+      "p4yALQdsizPmqLcZEBikkgyYhNP54J7r": {
+        "firstVisit": "2025-08-20T00:45:11.359Z",
+        "lastVisit": "2025-08-20T00:45:11.360Z",
+        "pageViews": 1
+      },
+      "rex0HcKSTGppkVvTysNuvr5CrZy3KtVP": {
+        "firstVisit": "2025-08-20T00:46:11.934Z",
+        "lastVisit": "2025-08-20T00:46:11.934Z",
+        "pageViews": 1
       }
     }
   },
-  "lastUpdated": "2025-08-20T00:16:58.963Z"
+  "lastUpdated": "2025-08-20T00:46:11.934Z"
 }
