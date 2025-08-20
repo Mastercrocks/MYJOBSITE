@@ -135,8 +135,8 @@
           </div>
         </div>
 
-        <!-- Action Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+  <!-- Action Cards -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
             <div class="p-6">
               <div class="flex items-center justify-between mb-4">
@@ -173,6 +173,20 @@
               </div>
               <p class="text-gray-600 mb-4">Review applications from students and recent graduates.</p>
               <button onclick="openApplications()" class="w-full bg-gray-800 text-white py-2 px-4 rounded-md hover:bg-gray-900 transition font-medium">Review Applications</button>
+            </div>
+          </div>
+
+          <!-- Browse Resumes -->
+          <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+            <div class="p-6">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">Browse Student Resumes</h3>
+                <div class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+                  <span class="text-gray-700 text-xl">📄</span>
+                </div>
+              </div>
+              <p class="text-gray-600 mb-4">View recently uploaded resumes from students and download to review.</p>
+              <button onclick="openResumes()" class="w-full bg-gray-800 text-white py-2 px-4 rounded-md hover:bg-gray-900 transition font-medium">Browse Resumes</button>
             </div>
           </div>
         </div>
@@ -370,6 +384,39 @@
             <div class="text-xs text-gray-400">${a.appliedAt || a.date || ''}</div>
           </div>`).join('');
       }).catch(e => { body.innerHTML = '<p class="text-red-600">Failed to load applications.</p>'; });
+    }
+
+    async function openResumes() {
+      document.getElementById('modalTitle').textContent = 'Student Resumes';
+      const body = document.getElementById('modalBody');
+      body.innerHTML = '<div>Loading...</div>';
+      document.getElementById('modal').classList.remove('hidden');
+      document.getElementById('modal').classList.add('flex');
+      try {
+        const res = await fetch('/api/resumes', { credentials: 'include' });
+        const data = await res.json();
+        const items = (data.resumes || []);
+        if (!items.length) {
+          body.innerHTML = '<p class="text-gray-600">No resumes uploaded yet.</p>';
+          return;
+        }
+        body.innerHTML = items.map(r => `
+          <div class="border rounded p-3 mb-2">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="font-semibold">${(r.name||'Unknown').toString().replace(/</g,'&lt;')}</div>
+                <div class="text-sm text-gray-600">${(r.position||'').toString().replace(/</g,'&lt;')}</div>
+                <div class="text-xs text-gray-500">Uploaded: ${r.uploadDate ? new Date(r.uploadDate).toLocaleString() : ''}</div>
+              </div>
+              <div>
+                ${r.fileUrl ? `<a href="${r.fileUrl}" target="_blank" class="px-3 py-1 bg-gray-800 text-white rounded">Download</a>` : '<span class="text-gray-400 text-sm">No file</span>'}
+              </div>
+            </div>
+          </div>
+        `).join('');
+      } catch (e) {
+        body.innerHTML = '<p class="text-red-600">Failed to load resumes.</p>';
+      }
     }
 
     function closeModal() {
