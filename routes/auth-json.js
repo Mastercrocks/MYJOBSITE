@@ -270,8 +270,9 @@ router.post('/login', authLimiter, async (req, res) => {
       return res.status(401).json({ error: 'Invalid username or password' });
     }
 
-    // Check if account is active, default to active if missing legacy field
-    if (user.status && user.status !== 'active') {
+    // Check if account is active (normalize legacy variants)
+    const status = (user.status || 'active').toString().toLowerCase();
+    if (status !== 'active') {
       return res.status(401).json({ 
         error: 'Account is pending approval or has been suspended' 
       });
