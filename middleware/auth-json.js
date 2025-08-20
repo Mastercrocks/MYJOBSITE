@@ -35,10 +35,15 @@ const authenticateToken = async (req, res, next) => {
     // Verify the token
     const decoded = jwt.verify(token, JWT_SECRET);
     
-    // Check if user still exists and is active
+    // Check if user still exists and is active (default missing status to active for legacy records)
     const user = await findUserById(decoded.userId);
 
-    if (!user || user.status !== 'active') {
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid or inactive user' });
+    }
+
+    const status = (user.status || 'active').toString().toLowerCase();
+    if (status !== 'active') {
       return res.status(401).json({ error: 'Invalid or inactive user' });
     }
 
@@ -68,9 +73,10 @@ const redirectIfAuthenticated = async (req, res, next) => {
   if (token) {
     try {
       const decoded = jwt.verify(token, JWT_SECRET);
-      const user = await findUserById(decoded.userId);
+  const user = await findUserById(decoded.userId);
+  const status = user ? (user.status || 'active').toString().toLowerCase() : 'inactive';
       
-      if (user && user.status === 'active') {
+  if (user && status === 'active') {
         // User is authenticated, redirect them to appropriate dashboard
         if (user.user_type === 'employer') {
           return res.redirect('/employers.html');
@@ -103,8 +109,11 @@ const requireAdmin = async (req, res, next) => {
 
     const decoded = jwt.verify(token, JWT_SECRET);
     const user = await findUserById(decoded.userId);
-
-    if (!user || user.status !== 'active') {
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid user' });
+    }
+    const status = (user.status || 'active').toString().toLowerCase();
+    if (status !== 'active') {
       return res.status(401).json({ error: 'Invalid user' });
     }
 

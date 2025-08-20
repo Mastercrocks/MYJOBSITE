@@ -56,7 +56,8 @@ function ensureBillingFields(user) {
 router.get('/plan', authenticateToken, async (req, res) => {
   try {
     const user = await getUserRecord(req.user.id);
-    if (!user || (user.user_type || user.userType) !== 'employer') {
+  const status = user ? (user.status || 'active').toString().toLowerCase() : 'inactive';
+  if (!user || status !== 'active' || (user.user_type || user.userType) !== 'employer') {
       return res.status(403).json({ error: 'Employer access required' });
     }
     const jobs = await readJsonSafe(dataPath('jobs.json'), []);
@@ -90,8 +91,9 @@ router.post('/plan', authenticateToken, async (req, res) => {
     }
     const users = await readJsonSafe(dataPath('users.json'), []);
     const idx = users.findIndex(u => u && u.id && u.id.toString() === req.user.id.toString());
-    if (idx === -1) return res.status(404).json({ error: 'User not found' });
-    if ((users[idx].user_type || users[idx].userType) !== 'employer') return res.status(403).json({ error: 'Employer access required' });
+  if (idx === -1) return res.status(404).json({ error: 'User not found' });
+  const status = (users[idx].status || 'active').toString().toLowerCase();
+  if (status !== 'active' || (users[idx].user_type || users[idx].userType) !== 'employer') return res.status(403).json({ error: 'Employer access required' });
     users[idx].plan = plan.toLowerCase();
     await writeJsonSafe(dataPath('users.json'), users);
 
@@ -121,7 +123,9 @@ router.post('/billing/checkout', authenticateToken, async (req, res) => {
     // Load user
     const users = await readJsonSafe(dataPath('users.json'), []);
     const idx = users.findIndex(u => u && u.id && u.id.toString() === req.user.id.toString());
-    if (idx === -1) return res.status(404).json({ error: 'User not found' });
+  if (idx === -1) return res.status(404).json({ error: 'User not found' });
+  const status = (users[idx].status || 'active').toString().toLowerCase();
+  if (status !== 'active') return res.status(403).json({ error: 'Employer access required' });
     const user = ensureBillingFields(users[idx]);
 
     // Ensure a Stripe customer exists
@@ -224,7 +228,8 @@ router.post('/billing/webhook', express.raw({ type: 'application/json' }), async
 router.post('/jobs', authenticateToken, async (req, res) => {
   try {
     const user = await getUserRecord(req.user.id);
-    if (!user || (user.user_type || user.userType) !== 'employer') {
+  const status = user ? (user.status || 'active').toString().toLowerCase() : 'inactive';
+  if (!user || status !== 'active' || (user.user_type || user.userType) !== 'employer') {
       return res.status(403).json({ error: 'Employer access required' });
     }
     const jobs = await readJsonSafe(dataPath('jobs.json'), []);
@@ -268,7 +273,8 @@ router.post('/jobs', authenticateToken, async (req, res) => {
 router.get('/jobs', authenticateToken, async (req, res) => {
   try {
     const user = await getUserRecord(req.user.id);
-    if (!user || (user.user_type || user.userType) !== 'employer') {
+  const status = user ? (user.status || 'active').toString().toLowerCase() : 'inactive';
+  if (!user || status !== 'active' || (user.user_type || user.userType) !== 'employer') {
       return res.status(403).json({ error: 'Employer access required' });
     }
     const jobs = await readJsonSafe(dataPath('jobs.json'), []);
@@ -281,7 +287,8 @@ router.get('/jobs', authenticateToken, async (req, res) => {
 router.put('/jobs/:id', authenticateToken, async (req, res) => {
   try {
     const user = await getUserRecord(req.user.id);
-    if (!user || (user.user_type || user.userType) !== 'employer') {
+  const status = user ? (user.status || 'active').toString().toLowerCase() : 'inactive';
+  if (!user || status !== 'active' || (user.user_type || user.userType) !== 'employer') {
       return res.status(403).json({ error: 'Employer access required' });
     }
     const id = req.params.id;
@@ -299,7 +306,8 @@ router.put('/jobs/:id', authenticateToken, async (req, res) => {
 router.delete('/jobs/:id', authenticateToken, async (req, res) => {
   try {
     const user = await getUserRecord(req.user.id);
-    if (!user || (user.user_type || user.userType) !== 'employer') {
+  const status = user ? (user.status || 'active').toString().toLowerCase() : 'inactive';
+  if (!user || status !== 'active' || (user.user_type || user.userType) !== 'employer') {
       return res.status(403).json({ error: 'Employer access required' });
     }
     const id = req.params.id;
@@ -316,7 +324,8 @@ router.delete('/jobs/:id', authenticateToken, async (req, res) => {
 router.get('/applications', authenticateToken, async (req, res) => {
   try {
     const user = await getUserRecord(req.user.id);
-    if (!user || (user.user_type || user.userType) !== 'employer') {
+  const status = user ? (user.status || 'active').toString().toLowerCase() : 'inactive';
+  if (!user || status !== 'active' || (user.user_type || user.userType) !== 'employer') {
       return res.status(403).json({ error: 'Employer access required' });
     }
     const jobs = await readJsonSafe(dataPath('jobs.json'), []);
@@ -335,7 +344,7 @@ router.get('/profile', authenticateToken, async (req, res) => {
     id: user.id,
     email: user.email,
     username: user.username,
-    user_type: user.user_type,
+  user_type: user.user_type || user.userType,
     companyName: user.companyName || '',
     plan: getUserPlan(user)
   });
@@ -346,6 +355,8 @@ router.put('/profile', authenticateToken, async (req, res) => {
     const users = await readJsonSafe(dataPath('users.json'), []);
     const idx = users.findIndex(u => u && u.id && u.id.toString() === req.user.id.toString());
     if (idx === -1) return res.status(404).json({ error: 'User not found' });
+  const status = (users[idx].status || 'active').toString().toLowerCase();
+  if (status !== 'active') return res.status(403).json({ error: 'Employer access required' });
     const patch = req.body || {};
     const allowed = ['companyName','username'];
     for (const k of allowed) if (k in patch) users[idx][k] = patch[k];
