@@ -256,16 +256,18 @@ router.post('/register', async (req, res) => {
 // LOGIN USER
 router.post('/login', authLimiter, async (req, res) => {
   try {
-    const { username, password } = req.body;
+  const body = req.body || {};
+  const identifier = (body.username || body.email || '').toString().trim();
+  const password = (body.password || '').toString();
 
-    if (!username || !password) {
+  if (!identifier || !password) {
       return res.status(400).json({ 
         error: 'Username and password are required' 
       });
     }
 
     // Find user by username or email (case-insensitive)
-    const user = await findUserByUsernameOrEmail(username);
+  const user = await findUserByUsernameOrEmail(identifier);
     if (!user) {
       return res.status(401).json({ error: 'Invalid username or password' });
     }

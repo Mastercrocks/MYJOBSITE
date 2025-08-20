@@ -94,6 +94,16 @@ router.post('/plan', authenticateToken, async (req, res) => {
   if (idx === -1) return res.status(404).json({ error: 'User not found' });
   const status = (users[idx].status || 'active').toString().toLowerCase();
   if (status !== 'active' || (users[idx].user_type || users[idx].userType) !== 'employer') return res.status(403).json({ error: 'Employer access required' });
+
+    // Enforce paid upgrade path: only allow switching to paid plans if Stripe is configured and billing shows active
+    const target = plan.toLowerCase();
+    if (target !== 'free') {
+      const billing = users[idx].billing || {};
+      const isActiveSub = billing.provider === 'stripe' && billing.status === 'active' && !!billing.subscriptionId;
+      if (!isActiveSub) {
+        return res.status(402).json({ error: 'Payment required. Please complete checkout to upgrade.' });
+      }
+    }
     users[idx].plan = plan.toLowerCase();
     await writeJsonSafe(dataPath('users.json'), users);
 

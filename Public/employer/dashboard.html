@@ -217,16 +217,12 @@
       return res.json();
     }
 
-    // Global plan upgrade helper: tries Stripe checkout, falls back to direct plan change
+    // Global plan upgrade helper: requires Stripe checkout (no free fallback)
     async function startPlanUpgrade(targetPlan) {
       try {
         const resp = await api('/api/employer/billing/checkout', { method: 'POST', body: JSON.stringify({ plan: targetPlan }) });
         if (resp && resp.url) { window.location.href = resp.url; return; }
-      } catch (_) { /* fall through to direct plan switch */ }
-      try {
-        await api('/api/employer/plan', { method: 'POST', body: JSON.stringify({ plan: targetPlan }) });
-        alert('Plan updated to ' + targetPlan.toUpperCase());
-        loadDashboardData();
+        alert('Billing is not configured. Please contact support.');
       } catch (e) {
         alert('Failed to start upgrade: ' + (e.message || 'Unknown error'));
       }
