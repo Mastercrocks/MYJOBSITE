@@ -56,8 +56,9 @@
         </div>
 
         <!-- Plan banner -->
-        <div id="planBanner" class="hidden mb-6 p-4 rounded border bg-gray-50 text-gray-800"></div>
-        <div id="upgradeActions" class="hidden mb-8">
+  <div id="planBanner" class="hidden mb-6 p-4 rounded border bg-gray-50 text-gray-800"></div>
+  <!-- Upgrade actions are visible by default; JS will hide them if already on Pro -->
+  <div id="upgradeActions" class="mb-8">
           <div class="bg-white rounded-lg shadow p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div class="text-gray-700">Need more than 5 jobs? Upgrade your plan.</div>
             <div class="flex gap-2">
@@ -202,6 +203,21 @@
       return res.json();
     }
 
+    // Global plan upgrade helper: tries Stripe checkout, falls back to direct plan change
+    async function startPlanUpgrade(targetPlan) {
+      try {
+        const resp = await api('/api/employer/billing/checkout', { method: 'POST', body: JSON.stringify({ plan: targetPlan }) });
+        if (resp && resp.url) { window.location.href = resp.url; return; }
+      } catch (_) { /* fall through to direct plan switch */ }
+      try {
+        await api('/api/employer/plan', { method: 'POST', body: JSON.stringify({ plan: targetPlan }) });
+        alert('Plan updated to ' + targetPlan.toUpperCase());
+        loadDashboardData();
+      } catch (e) {
+        alert('Failed to start upgrade: ' + (e.message || 'Unknown error'));
+      }
+    }
+
     async function loadDashboardData() {
       try {
         const profileRes = await fetch('/auth/profile', { credentials: 'include' });
@@ -214,35 +230,31 @@
         document.getElementById('totalApplications').textContent = stats.totalApplications;
         document.getElementById('pendingReviews').textContent = stats.pendingReviews;
         document.getElementById('profileViews').textContent = stats.profileViews;
-        const plan = await api('/api/employer/plan');
-        const banner = document.getElementById('planBanner');
-        banner.classList.remove('hidden');
-        const limitText = plan.unlimited ? '∞' : (plan.limit ?? '—');
-        banner.innerHTML = `<strong>Plan:</strong> ${plan.plan.toUpperCase()} — ${plan.used}/${limitText} active jobs used.`;
-        const ua = document.getElementById('upgradeActions');
-        if (plan.plan !== 'pro') {
-          ua.classList.remove('hidden');
-          const startCheckout = async (targetPlan) => {
-            try {
-              // Try Stripe checkout first
-              const resp = await api('/api/employer/billing/checkout', { method: 'POST', body: JSON.stringify({ plan: targetPlan }) });
-              if (resp.url) { window.location.href = resp.url; return; }
-            } catch (_) {}
-            // Fallback: direct plan switch (no billing configured)
-            try {
-              await api('/api/employer/plan', { method: 'POST', body: JSON.stringify({ plan: targetPlan }) });
-              alert('Plan updated to ' + targetPlan.toUpperCase());
-              loadDashboardData();
-            } catch (e) {
-              alert('Failed to start upgrade: ' + e.message);
-            }
-          };
-          document.getElementById('upgradeBasic').onclick = () => startCheckout('basic');
-          document.getElementById('upgradePro').onclick = () => startCheckout('pro');
-        } else {
-          ua.classList.add('hidden');
+        try {
+          const plan = await api('/api/employer/plan');
+          const banner = document.getElementById('planBanner');
+          banner.classList.remove('hidden');
+          const limitText = plan.unlimited ? '∞' : (plan.limit ?? '—');
+          banner.innerHTML = `<strong>Plan:</strong> ${plan.plan.toUpperCase()} — ${plan.used}/${limitText} active jobs used.`;
+          const ua = document.getElementById('upgradeActions');
+          if (plan.plan === 'pro') {
+            ua.classList.add('hidden');
+          } else {
+            ua.classList.remove('hidden');
+          }
+        } catch (e) {
+          // If plan API fails, keep upgrade visible so user can still change plan
+          document.getElementById('upgradeActions').classList.remove('hidden');
         }
-      } catch (e) { console.error(e); }
+      } catch (e) {
+        console.error(e);
+        // Ensure upgrade buttons are wired even on broader failures
+      }
+      // Wire buttons (idempotent)
+      const ub = document.getElementById('upgradeBasic');
+      const up = document.getElementById('upgradePro');
+      if (ub) ub.onclick = () => startPlanUpgrade('basic');
+      if (up) up.onclick = () => startPlanUpgrade('pro');
     }
 
     function openPostJob() {
