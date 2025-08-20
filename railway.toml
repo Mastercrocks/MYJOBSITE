@@ -2,3 +2,19 @@
 
 [deploy]
 startCommand = "node init-data.js && node server.js"
+
+[service]
+env = { 
+	NODE_ENV = "production",
+	PORT = "3000",
+	PUBLIC_BASE_URL = "https://your-domain",
+	SESSION_SECRET = "set-in-railway",
+	JWT_SECRET = "set-in-railway",
+	EMAIL_USER = "set-in-railway",
+	EMAIL_PASS = "set-in-railway",
+	ADMIN_NOTIFY_EMAIL = "set-in-railway",
+	STRIPE_SECRET_KEY = "set-in-railway",
+	STRIPE_PRICE_BASIC = "set-in-railway",
+	STRIPE_PRICE_PRO = "set-in-railway",
+	STRIPE_WEBHOOK_SECRET = "set-in-railway"
+}

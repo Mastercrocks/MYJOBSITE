@@ -53,6 +53,7 @@ const trackPageView = require('./middleware/analytics');
 const authRoutes = require('./routes/auth-json'); // Use JSON-based auth instead of MySQL
 const adminDataRoutes = require('./routes/admin-data');
 const resumeUploadRoutes = require('./routes/resume-upload');
+const employerApi = require('./routes/employer-api');
 
 // Add analytics tracking middleware (before routes)
 app.use(trackPageView);
@@ -65,6 +66,9 @@ app.use('/api/admin', adminDataRoutes);
 
 // Mount resume upload routes
 app.use('/api', resumeUploadRoutes);
+
+// Mount employer API routes
+app.use('/api/employer', employerApi);
 
 // API routes FIRST (before static files)
 app.get('/api/fresh', (req, res) => {

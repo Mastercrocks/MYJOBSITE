@@ -452,6 +452,8 @@
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Plan</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Billing</th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Last Login</th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                                         </tr>
@@ -489,13 +491,15 @@
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Contact</th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Jobs Posted</th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Plan</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Billing</th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Joined</th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody id="employersTable" class="bg-white divide-y divide-gray-200">
                                         <tr>
-                                            <td colspan="6" class="px-6 py-8 text-center text-gray-500">Loading employers...</td>
+                                            <td colspan="8" class="px-6 py-8 text-center text-gray-500">Loading employers...</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -3529,7 +3533,11 @@
                             <div class="text-xs text-gray-500">${escapeHtml(employer.contactEmail || employer.email || '')}</div>
                         </td>
                         <td class="px-6 py-4 text-sm text-gray-900">${employer.jobsPosted || 0}</td>
-                        <td class="px-6 py-4"><span class="badge badge-${employer.status === 'active' ? 'success' : 'warning'}">${employer.status || 'Active'}</span></td>
+                                                <td class="px-6 py-4"><span class="badge badge-${employer.status === 'active' ? 'success' : 'warning'}">${employer.status || 'Active'}</span></td>
+                                                <td class="px-6 py-4 text-sm text-gray-900">${(employer.plan || 'free').toUpperCase()}</td>
+                                                <td class="px-6 py-4 text-sm">
+                                                    ${employer.billingStatus ? `<span class="badge ${employer.billingStatus==='active'?'badge-success':(employer.billingStatus==='trialing'?'badge-info':'badge-warning')}">${employer.billingStatus}</span>` : '<span class="text-gray-400 text-xs">—</span>'}
+                                                </td>
                         <td class="px-6 py-4 text-sm text-gray-500">${joinedDate}</td>
                         <td class="px-6 py-4 text-sm">
                             ${employer.status === 'pending' ? `

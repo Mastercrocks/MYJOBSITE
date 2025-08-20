@@ -544,7 +544,23 @@ router.get('/users', async (req, res) => {
 router.get('/employers', async (req, res) => {
     try {
         const employers = await readJSONFile('employers.json');
-        res.json({ employers });
+        const users = await readJSONFile('users.json');
+        const employersWithPlans = employers.map(emp => {
+            const user = users.find(u => (
+                (u.id && (String(u.id) === String(emp.id) || String(u.id) === String(emp.userId))) ||
+                (u.email && (u.email === emp.contactEmail || u.email === emp.email))
+            ));
+            const plan = (user?.plan || 'free');
+            const billing = user?.billing || {};
+            return {
+                ...emp,
+                plan,
+                billingStatus: billing.status || null,
+                subscriptionId: billing.subscriptionId || null,
+                customerId: billing.customerId || null
+            };
+        });
+        res.json({ employers: employersWithPlans });
     } catch (error) {
         console.error('Error getting employers:', error);
         res.status(500).json({ error: 'Failed to load employers' });
@@ -559,6 +575,25 @@ router.get('/applications', async (req, res) => {
     } catch (error) {
         console.error('Error getting applications:', error);
         res.status(500).json({ error: 'Failed to load applications' });
+    }
+});
+
+// Billing overview (subscriptions summary)
+router.get('/billing/overview', async (req, res) => {
+    try {
+        const users = await readJSONFile('users.json');
+        const employers = users.filter(u => (u.user_type || u.userType) === 'employer');
+        const counts = { free: 0, basic: 0, pro: 0 };
+        let activeSubscriptions = 0;
+        for (const u of employers) {
+            const plan = (u.plan || 'free').toLowerCase();
+            if (counts[plan] !== undefined) counts[plan]++;
+            if (u.billing && (u.billing.status === 'active' || u.billing.status === 'trialing')) activeSubscriptions++;
+        }
+        res.json({ counts, activeSubscriptions, totalEmployers: employers.length });
+    } catch (error) {
+        console.error('Error getting billing overview:', error);
+        res.status(500).json({ error: 'Failed to load billing overview' });
     }
 });
 

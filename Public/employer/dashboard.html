@@ -5,9 +5,8 @@
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-P5ETS8QMP7"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
+      function gtag(){dataLayer.push(arguments);} 
       gtag('js', new Date());
-
       gtag('config', 'G-P5ETS8QMP7');
     </script>
     
@@ -30,38 +29,42 @@
       }
       return true;
     }
-    
-    // Check auth on page load
-    if (!checkEmployerAuth()) {
-      // Redirect handled in function
-    }
+    if (!checkEmployerAuth()) {}
   </script>
 
   <div class="min-h-screen flex flex-col">
-    <!-- Header -->
     <header class="bg-white shadow-sm border-b">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16">
           <div class="flex items-center">
-            <a href="/" class="text-2xl font-bold text-blue-600">TalentSync</a>
+            <a href="/" class="text-2xl font-bold text-gray-900">TalentSync</a>
             <span class="ml-4 text-gray-500">Employer Dashboard</span>
           </div>
           <div class="flex items-center space-x-4">
             <span class="text-gray-700" id="welcomeMessage">Welcome, Employer!</span>
-            <button onclick="logout()" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition">
-              Logout
-            </button>
+            <button onclick="logout()" class="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300 transition">Logout</button>
           </div>
         </div>
       </div>
     </header>
 
-    <!-- Main Content -->
     <main class="flex-1 p-8">
       <div class="max-w-7xl mx-auto">
         <div class="mb-8">
-          <h1 class="text-3xl font-bold text-gray-900 mb-2">🏢 Employer Dashboard</h1>
+          <h1 class="text-3xl font-bold text-gray-900 mb-2">Employer Dashboard</h1>
           <p class="text-gray-600">Manage your job postings, review applications, and find top college talent.</p>
+        </div>
+
+        <!-- Plan banner -->
+        <div id="planBanner" class="hidden mb-6 p-4 rounded border bg-gray-50 text-gray-800"></div>
+        <div id="upgradeActions" class="hidden mb-8">
+          <div class="bg-white rounded-lg shadow p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div class="text-gray-700">Need more than 5 jobs? Upgrade your plan.</div>
+            <div class="flex gap-2">
+              <button id="upgradeBasic" class="px-4 py-2 border rounded hover:bg-gray-50">Upgrade to Basic ($25/mo)</button>
+              <button id="upgradePro" class="px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-900">Upgrade to Pro ($50/mo)</button>
+            </div>
+          </div>
         </div>
 
         <!-- Quick Stats -->
@@ -69,8 +72,8 @@
           <div class="bg-white rounded-lg shadow p-6">
             <div class="flex items-center">
               <div class="flex-shrink-0">
-                <div class="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
-                  <span class="text-white font-bold">📝</span>
+                <div class="w-8 h-8 bg-gray-200 rounded-md flex items-center justify-center">
+                  <span class="text-gray-700 font-bold">📝</span>
                 </div>
               </div>
               <div class="ml-5 w-0 flex-1">
@@ -85,8 +88,8 @@
           <div class="bg-white rounded-lg shadow p-6">
             <div class="flex items-center">
               <div class="flex-shrink-0">
-                <div class="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
-                  <span class="text-white font-bold">👥</span>
+                <div class="w-8 h-8 bg-gray-200 rounded-md flex items-center justify-center">
+                  <span class="text-gray-700 font-bold">👥</span>
                 </div>
               </div>
               <div class="ml-5 w-0 flex-1">
@@ -101,8 +104,8 @@
           <div class="bg-white rounded-lg shadow p-6">
             <div class="flex items-center">
               <div class="flex-shrink-0">
-                <div class="w-8 h-8 bg-yellow-500 rounded-md flex items-center justify-center">
-                  <span class="text-white font-bold">⏳</span>
+                <div class="w-8 h-8 bg-gray-200 rounded-md flex items-center justify-center">
+                  <span class="text-gray-700 font-bold">⏳</span>
                 </div>
               </div>
               <div class="ml-5 w-0 flex-1">
@@ -117,8 +120,8 @@
           <div class="bg-white rounded-lg shadow p-6">
             <div class="flex items-center">
               <div class="flex-shrink-0">
-                <div class="w-8 h-8 bg-purple-500 rounded-md flex items-center justify-center">
-                  <span class="text-white font-bold">📊</span>
+                <div class="w-8 h-8 bg-gray-200 rounded-md flex items-center justify-center">
+                  <span class="text-gray-700 font-bold">📊</span>
                 </div>
               </div>
               <div class="ml-5 w-0 flex-1">
@@ -137,14 +140,12 @@
             <div class="p-6">
               <div class="flex items-center justify-between mb-4">
                 <h3 class="text-lg font-semibold text-gray-900">Post a New Job</h3>
-                <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
-                  <span class="text-white text-xl">✏️</span>
+                <div class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+                  <span class="text-gray-700 text-xl">✏️</span>
                 </div>
               </div>
               <p class="text-gray-600 mb-4">Create a new job posting to attract college students and recent graduates.</p>
-              <button onclick="postNewJob()" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition font-medium">
-                Create Job Posting
-              </button>
+              <button onclick="openPostJob()" class="w-full bg-gray-800 text-white py-2 px-4 rounded-md hover:bg-gray-900 transition font-medium">Create Job Posting</button>
             </div>
           </div>
 
@@ -152,14 +153,12 @@
             <div class="p-6">
               <div class="flex items-center justify-between mb-4">
                 <h3 class="text-lg font-semibold text-gray-900">My Job Listings</h3>
-                <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
-                  <span class="text-white text-xl">📋</span>
+                <div class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+                  <span class="text-gray-700 text-xl">📋</span>
                 </div>
               </div>
               <p class="text-gray-600 mb-4">View and manage all your active and expired job postings.</p>
-              <button onclick="viewJobListings()" class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition font-medium">
-                View My Jobs
-              </button>
+              <button onclick="openMyJobs()" class="w-full bg-gray-800 text-white py-2 px-4 rounded-md hover:bg-gray-900 transition font-medium">View My Jobs</button>
             </div>
           </div>
 
@@ -167,60 +166,24 @@
             <div class="p-6">
               <div class="flex items-center justify-between mb-4">
                 <h3 class="text-lg font-semibold text-gray-900">Review Applications</h3>
-                <div class="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center">
-                  <span class="text-white text-xl">👥</span>
+                <div class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+                  <span class="text-gray-700 text-xl">👥</span>
                 </div>
               </div>
               <p class="text-gray-600 mb-4">Review applications from students and recent graduates.</p>
-              <button onclick="reviewApplications()" class="w-full bg-yellow-600 text-white py-2 px-4 rounded-md hover:bg-yellow-700 transition font-medium">
-                Review Applications
-              </button>
+              <button onclick="openApplications()" class="w-full bg-gray-800 text-white py-2 px-4 rounded-md hover:bg-gray-900 transition font-medium">Review Applications</button>
             </div>
           </div>
+        </div>
 
-          <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
-            <div class="p-6">
-              <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold text-gray-900">Search Resumes</h3>
-                <div class="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center">
-                  <span class="text-white text-xl">🔍</span>
-                </div>
-              </div>
-              <p class="text-gray-600 mb-4">Browse and search through candidate resumes and profiles.</p>
-              <button onclick="searchResumes()" class="w-full bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 transition font-medium">
-                Browse Talent
-              </button>
+        <!-- Modals -->
+        <div id="modal" class="hidden fixed inset-0 bg-black bg-opacity-50 items-center justify-center p-4">
+          <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl">
+            <div class="flex justify-between items-center border-b p-4">
+              <h3 id="modalTitle" class="text-lg font-semibold">Modal</h3>
+              <button onclick="closeModal()" class="text-gray-500 hover:text-gray-800">✖</button>
             </div>
-          </div>
-
-          <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
-            <div class="p-6">
-              <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold text-gray-900">Company Profile</h3>
-                <div class="w-12 h-12 bg-gray-500 rounded-full flex items-center justify-center">
-                  <span class="text-white text-xl">🏢</span>
-                </div>
-              </div>
-              <p class="text-gray-600 mb-4">Update your company information and profile details.</p>
-              <button onclick="editCompanyProfile()" class="w-full bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 transition font-medium">
-                Edit Profile
-              </button>
-            </div>
-          </div>
-
-          <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
-            <div class="p-6">
-              <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold text-gray-900">Analytics</h3>
-                <div class="w-12 h-12 bg-indigo-500 rounded-full flex items-center justify-center">
-                  <span class="text-white text-xl">📈</span>
-                </div>
-              </div>
-              <p class="text-gray-600 mb-4">View performance analytics and insights for your job postings.</p>
-              <button onclick="viewAnalytics()" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition font-medium">
-                View Analytics
-              </button>
-            </div>
+            <div id="modalBody" class="p-4 space-y-4"></div>
           </div>
         </div>
       </div>
@@ -228,77 +191,193 @@
   </div>
 
   <script>
-    // Load user profile and dashboard data
+    async function api(path, opts={}) {
+      const token = localStorage.getItem('authToken');
+      const res = await fetch(path, { 
+        ...opts, 
+        headers: { 'Content-Type': 'application/json', ...(opts.headers||{}), 'Authorization': `Bearer ${token}` },
+        credentials: 'include'
+      });
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    }
+
     async function loadDashboardData() {
       try {
-        const token = localStorage.getItem('authToken');
-        
-        // Get user profile
-        const profileResponse = await fetch('/auth/profile', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        if (profileResponse.ok) {
-          const profile = await profileResponse.json();
-          document.getElementById('welcomeMessage').textContent = 
-            `Welcome, ${profile.first_name || 'Employer'}!`;
+        const profileRes = await fetch('/auth/profile', { credentials: 'include' });
+        if (profileRes.ok) {
+          const profile = await profileRes.json();
+          document.getElementById('welcomeMessage').textContent = `Welcome, ${profile.first_name || profile.username || 'Employer'}!`;
         }
-        
-        // Load dashboard stats (placeholder for now)
-        document.getElementById('activeJobs').textContent = '3';
-        document.getElementById('totalApplications').textContent = '12';
-        document.getElementById('pendingReviews').textContent = '5';
-        document.getElementById('profileViews').textContent = '48';
-        
-      } catch (error) {
-        console.error('Error loading dashboard data:', error);
-      }
+        const stats = await api('/api/employer/stats');
+        document.getElementById('activeJobs').textContent = stats.activeJobs;
+        document.getElementById('totalApplications').textContent = stats.totalApplications;
+        document.getElementById('pendingReviews').textContent = stats.pendingReviews;
+        document.getElementById('profileViews').textContent = stats.profileViews;
+        const plan = await api('/api/employer/plan');
+        const banner = document.getElementById('planBanner');
+        banner.classList.remove('hidden');
+        const limitText = plan.unlimited ? '∞' : (plan.limit ?? '—');
+        banner.innerHTML = `<strong>Plan:</strong> ${plan.plan.toUpperCase()} — ${plan.used}/${limitText} active jobs used.`;
+        const ua = document.getElementById('upgradeActions');
+        if (plan.plan !== 'pro') {
+          ua.classList.remove('hidden');
+          const startCheckout = async (targetPlan) => {
+            try {
+              // Try Stripe checkout first
+              const resp = await api('/api/employer/billing/checkout', { method: 'POST', body: JSON.stringify({ plan: targetPlan }) });
+              if (resp.url) { window.location.href = resp.url; return; }
+            } catch (_) {}
+            // Fallback: direct plan switch (no billing configured)
+            try {
+              await api('/api/employer/plan', { method: 'POST', body: JSON.stringify({ plan: targetPlan }) });
+              alert('Plan updated to ' + targetPlan.toUpperCase());
+              loadDashboardData();
+            } catch (e) {
+              alert('Failed to start upgrade: ' + e.message);
+            }
+          };
+          document.getElementById('upgradeBasic').onclick = () => startCheckout('basic');
+          document.getElementById('upgradePro').onclick = () => startCheckout('pro');
+        } else {
+          ua.classList.add('hidden');
+        }
+      } catch (e) { console.error(e); }
     }
 
-    // Dashboard action functions
-    function postNewJob() {
-      alert('Job posting feature coming soon! You can integrate with your existing job posting system here.');
+    function openPostJob() {
+      const body = document.getElementById('modalBody');
+      document.getElementById('modalTitle').textContent = 'Create Job Posting';
+      body.innerHTML = `
+        <form id="jobForm" class="space-y-3">
+          <div><label class="block text-sm font-medium">Title</label><input name="title" class="mt-1 w-full border rounded px-3 py-2" required></div>
+          <div><label class="block text-sm font-medium">Company</label><input name="company" class="mt-1 w-full border rounded px-3 py-2" required></div>
+          <div><label class="block text-sm font-medium">Location</label><input name="location" class="mt-1 w-full border rounded px-3 py-2" required></div>
+          <div><label class="block text-sm font-medium">Salary (optional)</label><input name="salary" class="mt-1 w-full border rounded px-3 py-2"></div>
+          <div><label class="block text-sm font-medium">Type</label><input name="job_type" class="mt-1 w-full border rounded px-3 py-2" placeholder="Full-time"></div>
+          <div><label class="block text-sm font-medium">Application URL (optional)</label><input name="url" class="mt-1 w-full border rounded px-3 py-2" placeholder="https://..."></div>
+          <div><label class="block text-sm font-medium">Description</label><textarea name="description" rows="6" class="mt-1 w-full border rounded px-3 py-2" required></textarea></div>
+          <div class="flex justify-end gap-2">
+            <button type="button" onclick="closeModal()" class="px-4 py-2 border rounded">Cancel</button>
+            <button type="submit" class="px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-900">Publish</button>
+          </div>
+        </form>`;
+      document.getElementById('modal').classList.remove('hidden','opacity-0');
+      document.getElementById('modal').classList.add('flex');
+      document.getElementById('jobForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const data = Object.fromEntries(fd.entries());
+        try {
+          const res = await api('/api/employer/jobs', { method: 'POST', body: JSON.stringify(data) });
+          alert('Job created successfully');
+          closeModal();
+          loadDashboardData();
+        } catch (err) {
+          alert('Failed: ' + err.message);
+        }
+      };
     }
 
-    function viewJobListings() {
-      alert('Job listings view coming soon! This will show all your posted jobs.');
+    function openMyJobs() {
+      document.getElementById('modalTitle').textContent = 'My Job Listings';
+      const body = document.getElementById('modalBody');
+      body.innerHTML = '<div>Loading...</div>';
+      document.getElementById('modal').classList.remove('hidden');
+      document.getElementById('modal').classList.add('flex');
+      api('/api/employer/jobs').then(data => {
+        if (!data.jobs.length) { body.innerHTML = '<p class="text-gray-600">No jobs yet.</p>'; return; }
+        body.innerHTML = data.jobs.map(j => `
+          <div class="border rounded p-3 mb-2">
+            <div class="font-semibold">${j.title} — <span class="text-sm text-gray-500">${j.status||'active'}</span></div>
+            <div class="text-sm text-gray-600">${j.company} • ${j.location}</div>
+            <div class="mt-2 flex gap-2">
+              <button class="px-3 py-1 border rounded" onclick='editJob(${JSON.stringify(j.id)})'>Edit</button>
+              <button class="px-3 py-1 border rounded text-gray-700" onclick='deleteJob(${JSON.stringify(j.id)})'>Deactivate</button>
+            </div>
+          </div>`).join('');
+      }).catch(e => { body.innerHTML = '<p class="text-red-600">Failed to load jobs.</p>'; });
     }
 
-    function reviewApplications() {
-      alert('Application review coming soon! This will show all applications to your jobs.');
+    function editJob(id) {
+      api('/api/employer/jobs').then(data => {
+        const job = data.jobs.find(j => j.id.toString() === id.toString());
+        if (!job) return;
+        document.getElementById('modalTitle').textContent = 'Edit Job';
+        const body = document.getElementById('modalBody');
+        body.innerHTML = `
+          <form id="editForm" class="space-y-3">
+            <div><label class="block text-sm font-medium">Title</label><input name="title" class="mt-1 w-full border rounded px-3 py-2" value="${job.title||''}"></div>
+            <div><label class="block text-sm font-medium">Company</label><input name="company" class="mt-1 w-full border rounded px-3 py-2" value="${job.company||''}"></div>
+            <div><label class="block text-sm font-medium">Location</label><input name="location" class="mt-1 w-full border rounded px-3 py-2" value="${job.location||''}"></div>
+            <div><label class="block text-sm font-medium">Salary</label><input name="salary" class="mt-1 w-full border rounded px-3 py-2" value="${job.salary||''}"></div>
+            <div><label class="block text-sm font-medium">Type</label><input name="job_type" class="mt-1 w-full border rounded px-3 py-2" value="${job.job_type||''}"></div>
+            <div><label class="block text-sm font-medium">Application URL</label><input name="url" class="mt-1 w-full border rounded px-3 py-2" value="${job.url||''}"></div>
+            <div><label class="block text-sm font-medium">Description</label><textarea name="description" rows="6" class="mt-1 w-full border rounded px-3 py-2">${(job.description||'').replace(/</g,'&lt;')}</textarea></div>
+            <div class="flex justify-end gap-2">
+              <button type="button" onclick="openMyJobs()" class="px-4 py-2 border rounded">Back</button>
+              <button type="submit" class="px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-900">Save</button>
+            </div>
+          </form>`;
+        document.getElementById('editForm').onsubmit = async (e) => {
+          e.preventDefault();
+          const fd = new FormData(e.target);
+          const patch = Object.fromEntries(fd.entries());
+          try {
+            await api(`/api/employer/jobs/${id}`, { method: 'PUT', body: JSON.stringify(patch) });
+            alert('Saved');
+            openMyJobs();
+            loadDashboardData();
+          } catch (err) { alert('Failed: ' + err.message); }
+        };
+      });
     }
 
-    function searchResumes() {
-      alert('Resume search coming soon! This will allow you to browse candidate profiles.');
+    async function deleteJob(id) {
+      if (!confirm('Deactivate this job?')) return;
+      try {
+        await api(`/api/employer/jobs/${id}`, { method: 'DELETE' });
+        openMyJobs();
+        loadDashboardData();
+      } catch (e) { alert('Failed: ' + e.message); }
     }
 
-    function editCompanyProfile() {
-      alert('Profile editing coming soon! You can update your company information here.');
+    function openApplications() {
+      document.getElementById('modalTitle').textContent = 'Applications';
+      const body = document.getElementById('modalBody');
+      body.innerHTML = '<div>Loading...</div>';
+      document.getElementById('modal').classList.remove('hidden');
+      document.getElementById('modal').classList.add('flex');
+      api('/api/employer/applications').then(data => {
+        if (!data.applications.length) { body.innerHTML = '<p class="text-gray-600">No applications yet.</p>'; return; }
+        body.innerHTML = data.applications.map(a => `
+          <div class="border rounded p-3 mb-2">
+            <div class="font-semibold">${a.name || a.candidateName || 'Applicant'} — <span class="text-sm text-gray-500">${a.status||'Pending'}</span></div>
+            <div class="text-sm text-gray-600">Email: ${a.email || a.candidateEmail || 'N/A'}</div>
+            <div class="text-sm text-gray-600">Job ID: ${a.jobId}</div>
+            <div class="text-xs text-gray-400">${a.appliedAt || a.date || ''}</div>
+          </div>`).join('');
+      }).catch(e => { body.innerHTML = '<p class="text-red-600">Failed to load applications.</p>'; });
     }
 
-    function viewAnalytics() {
-      alert('Analytics dashboard coming soon! Track your job posting performance.');
+    function closeModal() {
+      const m = document.getElementById('modal');
+      m.classList.add('hidden');
+      m.classList.remove('flex');
     }
 
     async function logout() {
-      try {
-        await fetch('/auth/logout', { method: 'POST', credentials: 'include' });
-      } catch (_) {}
-      // Clear all auth-related keys
+      try { await fetch('/auth/logout', { method: 'POST', credentials: 'include' }); } catch (_) {}
       localStorage.removeItem('authToken');
       localStorage.removeItem('user');
       localStorage.removeItem('userType');
       localStorage.removeItem('userName');
       localStorage.removeItem('isLoggedIn');
-      // Best-effort cookie clear in browser (non-HTTP-only fallback)
       document.cookie = 'authToken=; Max-Age=0; path=/';
       document.cookie = 'connect.sid=; Max-Age=0; path=/';
       window.location.href = '/login.html';
     }
 
-    // Load dashboard data when page loads
     document.addEventListener('DOMContentLoaded', loadDashboardData);
   </script>
 </body>

@@ -1,6 +1,6 @@
 {
   "pageViews": {
-    "total": 459,
+    "total": 470,
     "daily": {
       "2025-08-11": 5,
       "2025-08-12": 12,
@@ -9,15 +9,16 @@
       "2025-08-15": 18,
       "2025-08-16": 10,
       "2025-08-17": 75,
-      "2025-08-19": 318
+      "2025-08-19": 322,
+      "2025-08-20": 7
     },
     "pages": {
-      "/": 85,
+      "/": 86,
       "/jobs": 36,
       "/register": 7,
       "/login": 11,
       "/employers": 40,
-      "/auth/check-auth": 224,
+      "/auth/check-auth": 225,
       "/blog": 1,
       "/blog/first-job-interview-tips": 1,
       "/auth/google": 18,
@@ -25,12 +26,13 @@
       "/dashboard": 6,
       "/admin": 1,
       "/admin/": 2,
-      "/auth/profile": 5,
-      "/resumes": 9
+      "/auth/profile": 13,
+      "/resumes": 9,
+      "/employer/dashboard": 1
     }
   },
   "visitors": {
-    "unique": 427,
+    "unique": 438,
     "returning": 7,
     "sessions": {
       "session_new_1755400605624_0": {
@@ -2167,8 +2169,63 @@
         "firstVisit": "2025-08-19T22:48:59.801Z",
         "lastVisit": "2025-08-19T22:48:59.801Z",
         "pageViews": 1
+      },
+      "t2C4w5I_e8u-tcRysp6c9bbeheHWl5o_": {
+        "firstVisit": "2025-08-19T23:43:31.617Z",
+        "lastVisit": "2025-08-19T23:43:31.617Z",
+        "pageViews": 1
+      },
+      "HDPAkJ5zvfPlYiOj9InvC7eQVbIy6BCQ": {
+        "firstVisit": "2025-08-19T23:43:32.559Z",
+        "lastVisit": "2025-08-19T23:43:32.559Z",
+        "pageViews": 1
+      },
+      "-8cg32-QgAdq8rT3lRTm8CvTeC_rH5go": {
+        "firstVisit": "2025-08-19T23:43:36.450Z",
+        "lastVisit": "2025-08-19T23:43:36.450Z",
+        "pageViews": 1
+      },
+      "bCFLvSz3jfwdM5I1PtJbSpf5BynDGa5y": {
+        "firstVisit": "2025-08-19T23:48:50.037Z",
+        "lastVisit": "2025-08-19T23:48:50.037Z",
+        "pageViews": 1
+      },
+      "cgCdQK1zG7N-6F3Z9F2z_Z9Lv9H7ESC6": {
+        "firstVisit": "2025-08-20T00:09:46.677Z",
+        "lastVisit": "2025-08-20T00:09:46.677Z",
+        "pageViews": 1
+      },
+      "qMBJEMFAkxrFgFb578x2nRQYLSTFBfwt": {
+        "firstVisit": "2025-08-20T00:09:54.603Z",
+        "lastVisit": "2025-08-20T00:09:54.603Z",
+        "pageViews": 1
+      },
+      "tFiBy_urMB1EvLbHdwVcB4b58F-7305q": {
+        "firstVisit": "2025-08-20T00:13:09.307Z",
+        "lastVisit": "2025-08-20T00:13:09.307Z",
+        "pageViews": 1
+      },
+      "QJzKlUmsO8EdsXxocd3PqLMXXV-TwrV0": {
+        "firstVisit": "2025-08-20T00:13:37.361Z",
+        "lastVisit": "2025-08-20T00:13:37.362Z",
+        "pageViews": 1
+      },
+      "7vxB-ULdd1GCkmKY0sWc6ilHsv45P8Gx": {
+        "firstVisit": "2025-08-20T00:14:20.840Z",
+        "lastVisit": "2025-08-20T00:14:20.840Z",
+        "pageViews": 1
+      },
+      "FZ7hwQb_yrbDVnSr3WatIOHcVdxs4oD0": {
+        "firstVisit": "2025-08-20T00:15:38.243Z",
+        "lastVisit": "2025-08-20T00:15:38.243Z",
+        "pageViews": 1
+      },
+      "EIv8JaoK9ftN-Cl659bBPsu0nmzI4zkl": {
+        "firstVisit": "2025-08-20T00:16:58.963Z",
+        "lastVisit": "2025-08-20T00:16:58.963Z",
+        "pageViews": 1
       }
     }
   },
-  "lastUpdated": "2025-08-19T22:48:59.801Z"
+  "lastUpdated": "2025-08-20T00:16:58.963Z"
 }
