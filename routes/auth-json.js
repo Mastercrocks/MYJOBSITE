@@ -11,13 +11,25 @@ const router = express.Router();
 const USERS_FILE = path.join(__dirname, '../data/users.json');
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production';
 
-// Rate limiting for auth routes
+// Rate limiting for auth routes (configurable + smarter keying)
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 requests per windowMs
+  windowMs: Number(process.env.AUTH_RATE_WINDOW_MS) || 15 * 60 * 1000, // default 15 minutes
+  max: Number(process.env.AUTH_RATE_MAX) || 20, // default 20 attempts
   message: { error: 'Too many authentication attempts, please try again later.' },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  // Count per IP + submitted username/email (reduces shared-IP lockouts)
+  keyGenerator: (req /*, res*/) => {
+    const ip = (req.ip || req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown').toString();
+    let id = '';
+    try {
+      const src = req.body || {};
+      id = (src.username || src.email || '').toString().toLowerCase();
+    } catch (_) { /* noop */ }
+    return `${ip}:${id}`;
+  },
+  // Don’t count successful logins toward the limit
+  skipSuccessfulRequests: true
 });
 
 // Helper functions
@@ -516,3 +528,8 @@ router.get('/check-auth', async (req, res) => {
 });
 
 module.exports = router;
+
+// Optional: simple health check for auth subsystem
+router.get('/health', (req, res) => {
+  res.json({ ok: true });
+});
