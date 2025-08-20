@@ -24,6 +24,33 @@ async function writeJsonSafe(file, data) {
   await fsp.writeFile(file, JSON.stringify(data, null, 2));
 }
 
+// Expiry helpers
+function ensureExpires(job) {
+  if (!job.expires_at) {
+    const base = new Date(job.posted_date || job.datePosted || job.created_at || job.createdAt || Date.now());
+    job.expires_at = new Date(base.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+  }
+  return job;
+}
+function markExpiredIfNeeded(job) {
+  const exp = job.expires_at ? new Date(job.expires_at) : null;
+  if (exp && !isNaN(exp) && exp.getTime() < Date.now() && (job.status || 'active') === 'active') {
+    job.status = 'expired';
+    job.updated_at = new Date().toISOString();
+  }
+  return job;
+}
+async function enforceExpiryOnArray(jobs) {
+  let changed = false;
+  const updated = (jobs || []).map(j => {
+    const before = JSON.stringify(j);
+    const after = markExpiredIfNeeded(ensureExpires({ ...j }));
+    if (before !== JSON.stringify(after)) changed = true;
+    return after;
+  });
+  return { jobs: updated, changed };
+}
+
 const PLAN_LIMITS = {
   free: 5,
   basic: 10, // $25 monthly
@@ -262,6 +289,7 @@ router.post('/jobs', authenticateToken, async (req, res) => {
     for (const f of required) {
       if (!body[f] || !String(body[f]).trim()) return res.status(400).json({ error: `${f} is required` });
     }
+    const nowIso = new Date().toISOString();
     const job = {
       id: Date.now(),
       title: String(body.title).trim(),
@@ -271,7 +299,8 @@ router.post('/jobs', authenticateToken, async (req, res) => {
       salary: body.salary || '',
       job_type: body.job_type || body.type || 'Full-time',
       category: body.category || '',
-      posted_date: new Date().toISOString(),
+      posted_date: nowIso,
+      expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
       source: 'Manual',
       url: body.url || '',
       status: 'active',
@@ -292,8 +321,10 @@ router.get('/jobs', authenticateToken, async (req, res) => {
   if (!user || status !== 'active' || (user.user_type || user.userType) !== 'employer') {
       return res.status(403).json({ error: 'Employer access required' });
     }
-    const jobs = await readJsonSafe(dataPath('jobs.json'), []);
-    const myJobs = jobs.filter(j => (j.postedBy || j.employerId) === user.id);
+  const raw = await readJsonSafe(dataPath('jobs.json'), []);
+  const { jobs, changed } = await enforceExpiryOnArray(raw);
+  if (changed) await writeJsonSafe(dataPath('jobs.json'), jobs);
+  const myJobs = jobs.filter(j => (j.postedBy || j.employerId) === user.id);
     res.json({ jobs: myJobs });
   } catch (e) { res.status(500).json({ error: 'Failed to load jobs' }); }
 });
@@ -307,11 +338,13 @@ router.put('/jobs/:id', authenticateToken, async (req, res) => {
       return res.status(403).json({ error: 'Employer access required' });
     }
     const id = req.params.id;
-    const jobs = await readJsonSafe(dataPath('jobs.json'), []);
+  const raw = await readJsonSafe(dataPath('jobs.json'), []);
+  const { jobs } = await enforceExpiryOnArray(raw);
     const idx = jobs.findIndex(j => j && j.id && j.id.toString() === id && (j.postedBy || j.employerId) === user.id);
     if (idx === -1) return res.status(404).json({ error: 'Job not found' });
     const patch = req.body || {};
-    jobs[idx] = { ...jobs[idx], ...patch, id: jobs[idx].id };
+  jobs[idx] = ensureExpires({ ...jobs[idx], ...patch, id: jobs[idx].id });
+  markExpiredIfNeeded(jobs[idx]);
     await writeJsonSafe(dataPath('jobs.json'), jobs);
     res.json({ success: true, job: jobs[idx] });
   } catch (e) { res.status(500).json({ error: 'Failed to update job' }); }
@@ -326,7 +359,8 @@ router.delete('/jobs/:id', authenticateToken, async (req, res) => {
       return res.status(403).json({ error: 'Employer access required' });
     }
     const id = req.params.id;
-    const jobs = await readJsonSafe(dataPath('jobs.json'), []);
+  const raw = await readJsonSafe(dataPath('jobs.json'), []);
+  const { jobs } = await enforceExpiryOnArray(raw);
     const idx = jobs.findIndex(j => j && j.id && j.id.toString() === id && (j.postedBy || j.employerId) === user.id);
     if (idx === -1) return res.status(404).json({ error: 'Job not found' });
     jobs[idx].status = 'inactive';
@@ -383,8 +417,9 @@ router.put('/profile', authenticateToken, async (req, res) => {
 // Employer stats
 router.get('/stats', authenticateToken, async (req, res) => {
   try {
-    const jobs = await readJsonSafe(dataPath('jobs.json'), []);
-    const myJobs = jobs.filter(j => (j.postedBy || j.employerId) === req.user.id);
+  const raw = await readJsonSafe(dataPath('jobs.json'), []);
+  const { jobs } = await enforceExpiryOnArray(raw);
+  const myJobs = jobs.filter(j => (j.postedBy || j.employerId) === req.user.id);
     const apps = await readJsonSafe(dataPath('applications.json'), []);
     const myJobIds = new Set(myJobs.map(j => j.id.toString()));
     const myApps = apps.filter(a => a && a.jobId && myJobIds.has(a.jobId.toString()));
