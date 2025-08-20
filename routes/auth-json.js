@@ -62,6 +62,10 @@ async function findUserById(id) {
   return users.find(user => user.id === id);
 }
 
+function getBaseUrl() {
+  return process.env.PUBLIC_BASE_URL || process.env.SITE_URL || 'http://localhost:3000';
+}
+
 // REGISTER NEW USER
 router.post('/register', async (req, res) => {
   try {
@@ -535,4 +539,87 @@ module.exports = router;
 // Optional: simple health check for auth subsystem
 router.get('/health', (req, res) => {
   res.json({ ok: true });
+});
+
+// FORGOT PASSWORD (students + employers)
+router.post('/forgot-password', authLimiter, async (req, res) => {
+  try {
+    const emailRaw = (req.body?.email || '').toString().trim().toLowerCase();
+    if (!emailRaw) return res.status(400).json({ success: false, message: 'Email is required' });
+
+    const users = await readUsers();
+    const idx = users.findIndex(u => (u?.email || '').toLowerCase() === emailRaw);
+    // Always respond success to avoid user enumeration
+    const generic = { success: true, message: 'If that email exists, a reset link has been sent.' };
+    if (idx === -1) return res.json(generic);
+
+    // Only allow for job seekers and employers
+    const type = (users[idx].user_type || users[idx].userType || '').toLowerCase();
+    if (!['job_seeker','employer','admin'].includes(type)) return res.json(generic);
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = Date.now() + (60 * 60 * 1000); // 1 hour
+    users[idx].reset_token = token;
+    users[idx].reset_token_expires = expiresAt;
+    await writeUsers(users);
+
+    // Send email (best-effort)
+    try {
+      const { sendAccountEmail, isEmailConfigured } = require('../services/emailService');
+      const resetUrl = `${getBaseUrl()}/reset-password.html?token=${encodeURIComponent(token)}&email=${encodeURIComponent(emailRaw)}`;
+      if (isEmailConfigured()) {
+        await sendAccountEmail({
+          to: emailRaw,
+          subject: 'Reset your TalentSync password',
+          text: `Click the link to reset your password (expires in 1 hour): ${resetUrl}`,
+          html: `<p>Click <a href="${resetUrl}">here</a> to reset your password.</p><p>This link expires in 1 hour.</p>`
+        });
+      } else {
+        console.warn('Email not configured. Password reset email not sent.');
+      }
+    } catch (e) {
+      console.warn('Failed to send reset email:', e.message);
+    }
+
+    return res.json(generic);
+  } catch (e) {
+    console.error('Forgot password error:', e);
+    return res.status(500).json({ success: false, message: 'Failed to process request' });
+  }
+});
+
+// RESET PASSWORD via token
+router.post('/reset-password', authLimiter, async (req, res) => {
+  try {
+    const token = (req.body?.token || '').toString().trim();
+    const email = (req.body?.email || '').toString().trim().toLowerCase();
+    const newPassword = (req.body?.newPassword || req.body?.password || '').toString();
+    if (!token || !email || !newPassword) {
+      return res.status(400).json({ success: false, message: 'Token, email, and new password are required' });
+    }
+    if (newPassword.length < 8) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 8 characters' });
+    }
+
+    const users = await readUsers();
+    const idx = users.findIndex(u => (u?.email || '').toLowerCase() === email);
+    if (idx === -1) return res.status(400).json({ success: false, message: 'Invalid or expired token' });
+    const record = users[idx] || {};
+    if (!record.reset_token || record.reset_token !== token || !record.reset_token_expires || Date.now() > Number(record.reset_token_expires)) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired token' });
+    }
+
+    // Hash and store
+    const bcrypt = require('bcryptjs');
+    users[idx].password_hash = await bcrypt.hash(newPassword, 12);
+    delete users[idx].password; // remove any legacy plaintext
+    users[idx].reset_token = null;
+    users[idx].reset_token_expires = null;
+    await writeUsers(users);
+
+    return res.json({ success: true, message: 'Password reset successful. You can now log in.' });
+  } catch (e) {
+    console.error('Reset password error:', e);
+    return res.status(500).json({ success: false, message: 'Failed to reset password' });
+  }
 });
