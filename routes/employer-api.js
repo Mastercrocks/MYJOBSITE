@@ -118,7 +118,7 @@ router.post('/billing/checkout', authenticateToken, async (req, res) => {
   try {
     const { plan } = req.body || {};
     if (!['basic','pro'].includes((plan||'').toLowerCase())) return res.status(400).json({ error: 'Invalid plan' });
-    if (!stripe || !PRICE_IDS[plan]) return res.status(400).json({ error: 'Billing not configured' });
+  if (!stripe || !PRICE_IDS[plan]) return res.status(400).json({ error: 'Billing not configured' });
 
     // Load user
     const users = await readJsonSafe(dataPath('users.json'), []);
@@ -127,6 +127,11 @@ router.post('/billing/checkout', authenticateToken, async (req, res) => {
   const status = (users[idx].status || 'active').toString().toLowerCase();
   if (status !== 'active') return res.status(403).json({ error: 'Employer access required' });
     const user = ensureBillingFields(users[idx]);
+    const uType = (user.user_type || user.userType || '').toString().toLowerCase();
+    const uStatus = (user.status || 'active').toString().toLowerCase();
+    if (uType !== 'employer' || uStatus !== 'active') {
+      return res.status(403).json({ error: 'Employer access required' });
+    }
 
     // Ensure a Stripe customer exists
     if (!user.billing.customerId) {

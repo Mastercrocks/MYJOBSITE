@@ -9,8 +9,9 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-t
 async function findUserById(id) {
   try {
     const data = await fs.readFile(USERS_FILE, 'utf8');
-    const users = JSON.parse(data);
-    return users.find(user => user.id === id);
+    const users = Array.isArray(JSON.parse(data)) ? JSON.parse(data) : [];
+    const target = id != null ? id.toString() : '';
+    return users.find(user => user && user.id != null && user.id.toString() === target) || null;
   } catch (error) {
     return null;
   }
@@ -48,7 +49,7 @@ const authenticateToken = async (req, res, next) => {
     }
 
     req.user = {
-      id: user.id,
+  id: user.id.toString(),
       username: user.username,
       email: user.email,
       user_type: user.user_type,
