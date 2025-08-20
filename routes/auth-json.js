@@ -563,10 +563,12 @@ router.post('/forgot-password', authLimiter, async (req, res) => {
     users[idx].reset_token_expires = expiresAt;
     await writeUsers(users);
 
+    // Build reset URL once
+    const resetUrl = `${getBaseUrl()}/reset-password.html?token=${encodeURIComponent(token)}&email=${encodeURIComponent(emailRaw)}`;
+
     // Send email (best-effort)
     try {
       const { sendAccountEmail, isEmailConfigured } = require('../services/emailService');
-      const resetUrl = `${getBaseUrl()}/reset-password.html?token=${encodeURIComponent(token)}&email=${encodeURIComponent(emailRaw)}`;
       if (isEmailConfigured()) {
         await sendAccountEmail({
           to: emailRaw,
@@ -576,11 +578,18 @@ router.post('/forgot-password', authLimiter, async (req, res) => {
         });
       } else {
         console.warn('Email not configured. Password reset email not sent.');
+        console.log('🔗 Password reset URL (dev):', resetUrl);
       }
     } catch (e) {
       console.warn('Failed to send reset email:', e.message);
+      console.log('🔗 Password reset URL (dev):', resetUrl);
     }
 
+    // Optionally include URL in non-production or when explicitly allowed
+    const includeUrl = (process.env.NODE_ENV !== 'production') || String(process.env.RESET_DEBUG || 'false').toLowerCase() === 'true';
+    if (includeUrl) {
+      return res.json({ ...generic, resetUrl });
+    }
     return res.json(generic);
   } catch (e) {
     console.error('Forgot password error:', e);

@@ -217,7 +217,7 @@ async function sendNewJobEmailCampaign(newJob) {
 // Get dashboard statistics
 router.get('/stats', async (req, res) => {
     try {
-        const [jobsRaw, users, employers, careerApps, jobApps, analytics, revenue, emailList, resumes] = await Promise.all([
+        const [jobsRaw, users, employersRaw, careerApps, jobApps, analytics, revenue, emailList, resumes] = await Promise.all([
             readJSONFile('jobs.json'),
             readJSONFile('users.json'),
             readJSONFile('employers.json'),
@@ -228,6 +228,37 @@ router.get('/stats', async (req, res) => {
             readJSONFile('email_list.json'),
             readJSONFile('resumes.json')
         ]);
+        // Build employers view by merging users.json (source of truth) with employers.json (legacy/company meta)
+        const employersFromUsers = (users || []).filter(u => (u.user_type || u.userType) === 'employer').map(u => ({
+            id: String(u.id || u.userId || ''),
+            userId: String(u.id || ''),
+            companyName: u.companyName || u.company || u.name || '',
+            contactEmail: u.email,
+            contactName: u.name || [u.firstName, u.lastName].filter(Boolean).join(' ') || '',
+            status: (u.status || 'active').toLowerCase(),
+            verified: !!u.verified,
+            jobsPosted: Array.isArray(u.jobs) ? u.jobs.length : (u.jobsPosted || 0),
+            createdAt: u.createdAt || u.registrationDate || u.joinedAt || new Date().toISOString(),
+            plan: (u.plan || 'free').toLowerCase(),
+            billing: u.billing || {}
+        }));
+        const employersLegacy = (employersRaw || []).map(e => ({
+            id: String(e.id || e.userId || ''),
+            userId: String(e.userId || e.id || ''),
+            companyName: e.companyName || e.company || '',
+            contactEmail: e.contactEmail || e.email || '',
+            contactName: e.contactName || '',
+            status: (e.status || 'active').toLowerCase(),
+            verified: !!e.verified,
+            jobsPosted: e.jobsPosted || 0,
+            createdAt: e.createdAt || new Date().toISOString()
+        }));
+        const employersByUserId = new Map();
+        employersLegacy.forEach(e => { if (e.userId) employersByUserId.set(String(e.userId), e); });
+        const employers = employersFromUsers.map(u => ({
+            ...(employersByUserId.get(String(u.userId)) || {}),
+            ...u
+        }));
 
         // Normalize jobs: active-only and normalize dates
         const normalizeJobDate = (j) => {
@@ -249,7 +280,7 @@ router.get('/stats', async (req, res) => {
         const newJobsThisMonth = activeJobs.filter(job => job._date && job._date >= thisMonth).length;
         
         // User statistics
-        const newUsersThisWeek = users.filter(user => new Date(user.createdAt) >= thisWeek).length;
+    const newUsersThisWeek = (users || []).filter(user => user.createdAt && new Date(user.createdAt) >= thisWeek).length;
         
         // Application statistics (combine career and job applications)
         const applications = [...(careerApps || []), ...(jobApps || [])];
@@ -314,8 +345,8 @@ router.get('/stats', async (req, res) => {
         res.json({
             totals: {
                 jobs: activeJobsCount,
-                users: users.length,
-                employers: employers.length,
+                users: (users || []).length,
+                employers: (employers || []).length,
                 applications: applications.length,
                 pageViews: analytics?.pageViews?.total || 0,
                 revenue: revenue?.revenue?.total || 0,
@@ -373,11 +404,11 @@ router.get('/stats', async (req, res) => {
             applications: applications
                 .sort((a, b) => new Date(b.appliedAt || 0) - new Date(a.appliedAt || 0))
                 .slice(0, 10),
-            employers: employers.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)).slice(0, 5),
+            employers: (employers || []).slice().sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)).slice(0, 5),
             
             // Quick stats for sidebar
             quickStats: {
-                activeEmployers: employers.filter(emp => emp.status === 'active').length,
+                activeEmployers: (employers || []).filter(emp => (emp.status || 'active').toLowerCase() === 'active').length,
                 pendingApplications: applications.filter(app => (app.status || '').toLowerCase() === 'pending').length,
                 resumesUploaded: (resumes || []).length,
                 featuredJobs: activeJobs.filter(job => job.featured === true || job.featured === 'true').length
@@ -400,21 +431,33 @@ router.get('/jobs', async (req, res) => {
         const company = req.query.company || '';
         const location = req.query.location || '';
 
-        // Filter jobs
-        let filteredJobs = jobs.filter(job => {
-            const matchesSearch = !search || 
-                job.title.toLowerCase().includes(search.toLowerCase()) ||
-                job.company.toLowerCase().includes(search.toLowerCase()) ||
-                job.location.toLowerCase().includes(search.toLowerCase());
-            const matchesCategory = !category || job.category === category;
-            const matchesCompany = !company || job.company === company;
-            const matchesLocation = !location || job.location === location;
-            
+        const norm = (v) => (v || '').toString().toLowerCase();
+        const searchNorm = norm(search);
+        const categoryNorm = norm(category);
+        const companyNorm = norm(company);
+        const locationNorm = norm(location);
+
+        // Filter jobs safely (handle missing fields)
+        let filteredJobs = (jobs || []).filter(job => {
+            const title = norm(job.title);
+            const comp = norm(job.company);
+            const loc = norm(job.location);
+
+            const matchesSearch = !search || title.includes(searchNorm) || comp.includes(searchNorm) || loc.includes(searchNorm);
+            const matchesCategory = !category || norm(job.category) === categoryNorm;
+            const matchesCompany = !company || comp === companyNorm;
+            const matchesLocation = !location || loc === locationNorm;
             return matchesSearch && matchesCategory && matchesCompany && matchesLocation;
         });
 
-        // Sort by posted date (newest first)
-        filteredJobs.sort((a, b) => new Date(b.posted_date) - new Date(a.posted_date));
+        // Sort by best-known date (posted_date | datePosted | scraped_at | created_at | createdAt)
+        const getDate = (j) => {
+            const d = j.posted_date || j.datePosted || j.scraped_at || j.created_at || j.createdAt;
+            if (!d) return 0;
+            const dt = new Date(d);
+            return isNaN(dt) ? 0 : dt.getTime();
+        };
+        filteredJobs.sort((a, b) => getDate(b) - getDate(a));
 
         // Paginate
         const startIndex = (page - 1) * limit;
@@ -543,27 +586,114 @@ router.get('/users', async (req, res) => {
 // Get all employers
 router.get('/employers', async (req, res) => {
     try {
-        const employers = await readJSONFile('employers.json');
-        const users = await readJSONFile('users.json');
-        const employersWithPlans = employers.map(emp => {
-            const user = users.find(u => (
-                (u.id && (String(u.id) === String(emp.id) || String(u.id) === String(emp.userId))) ||
-                (u.email && (u.email === emp.contactEmail || u.email === emp.email))
-            ));
-            const plan = (user?.plan || 'free');
-            const billing = user?.billing || {};
-            return {
-                ...emp,
-                plan,
-                billingStatus: billing.status || null,
-                subscriptionId: billing.subscriptionId || null,
-                customerId: billing.customerId || null
-            };
-        });
-        res.json({ employers: employersWithPlans });
+        const [employersRaw, users] = await Promise.all([
+            readJSONFile('employers.json'),
+            readJSONFile('users.json')
+        ]);
+
+        const employersFromUsers = (users || []).filter(u => (u.user_type || u.userType) === 'employer').map(u => ({
+            id: String(u.id || u.userId || ''),
+            userId: String(u.id || ''),
+            companyName: u.companyName || u.company || u.name || '',
+            contactEmail: u.email,
+            contactName: u.name || [u.firstName, u.lastName].filter(Boolean).join(' ') || '',
+            status: (u.status || 'active').toLowerCase(),
+            verified: !!u.verified,
+            jobsPosted: Array.isArray(u.jobs) ? u.jobs.length : (u.jobsPosted || 0),
+            createdAt: u.createdAt || u.registrationDate || u.joinedAt || new Date().toISOString(),
+            plan: (u.plan || 'free').toLowerCase(),
+            billing: u.billing || {}
+        }));
+        const employersLegacy = (employersRaw || []).map(e => ({
+            id: String(e.id || e.userId || ''),
+            userId: String(e.userId || e.id || ''),
+            companyName: e.companyName || e.company || '',
+            contactEmail: e.contactEmail || e.email || '',
+            contactName: e.contactName || '',
+            status: (e.status || 'active').toLowerCase(),
+            verified: !!e.verified,
+            jobsPosted: e.jobsPosted || 0,
+            createdAt: e.createdAt || new Date().toISOString()
+        }));
+        const employersByUserId = new Map();
+        employersLegacy.forEach(e => { if (e.userId) employersByUserId.set(String(e.userId), e); });
+        const merged = employersFromUsers.map(u => ({
+            ...(employersByUserId.get(String(u.userId)) || {}),
+            ...u,
+            plan: (u.plan || 'free').toLowerCase(),
+            billingStatus: u.billing?.status || null,
+            subscriptionId: u.billing?.subscriptionId || null,
+            customerId: u.billing?.customerId || null
+        }));
+        res.json({ employers: merged });
     } catch (error) {
         console.error('Error getting employers:', error);
         res.status(500).json({ error: 'Failed to load employers' });
+    }
+});
+
+// Get jobs for a specific employer (by employer ID with company fallback)
+router.get('/employers/:id/jobs', async (req, res) => {
+    try {
+        const employerId = String(req.params.id);
+        const [jobsRaw, users, employersRaw] = await Promise.all([
+            readJSONFile('jobs.json'),
+            readJSONFile('users.json'),
+            readJSONFile('employers.json')
+        ]);
+
+        // Build employer index similar to /employers
+        const employersFromUsers = (users || []).filter(u => (u.user_type || u.userType) === 'employer').map(u => ({
+            id: String(u.id || u.userId || ''),
+            userId: String(u.id || ''),
+            companyName: u.companyName || u.company || u.name || '',
+            contactEmail: u.email,
+            contactName: u.name || [u.firstName, u.lastName].filter(Boolean).join(' ') || '',
+            status: (u.status || 'active').toLowerCase(),
+            verified: !!u.verified,
+            plan: (u.plan || 'free').toLowerCase(),
+            billing: u.billing || {}
+        }));
+        const employersLegacy = (employersRaw || []).map(e => ({
+            id: String(e.id || e.userId || ''),
+            userId: String(e.userId || e.id || ''),
+            companyName: e.companyName || e.company || '',
+            contactEmail: e.contactEmail || e.email || '',
+            contactName: e.contactName || '',
+            status: (e.status || 'active').toLowerCase(),
+            verified: !!e.verified
+        }));
+        const byUserId = new Map();
+        employersLegacy.forEach(e => { if (e.userId) byUserId.set(String(e.userId), e); });
+        const employers = employersFromUsers.map(u => ({ ...(byUserId.get(String(u.userId)) || {}), ...u }));
+
+        const employer = employers.find(e => String(e.id) === employerId || String(e.userId) === employerId);
+        const companyNorm = (employer?.companyName || '').toString().trim().toLowerCase();
+
+        // Normalize date
+        const getDate = (j) => {
+            const d = j.posted_date || j.datePosted || j.scraped_at || j.created_at || j.createdAt;
+            if (!d) return 0;
+            const dt = new Date(d);
+            return isNaN(dt) ? 0 : dt.getTime();
+        };
+        const norm = v => (v || '').toString().trim().toLowerCase();
+
+        const jobs = (jobsRaw || []).filter(j => {
+            const byId = String(j.employerId || '') === employerId || String(j.postedBy || '') === employerId;
+            if (byId) return true;
+            if (!companyNorm) return false;
+            return norm(j.company) === companyNorm;
+        }).sort((a, b) => getDate(b) - getDate(a));
+
+        res.json({
+            employer: employer || { id: employerId },
+            total: jobs.length,
+            jobs
+        });
+    } catch (error) {
+        console.error('Error getting employer jobs:', error);
+        res.status(500).json({ error: 'Failed to load employer jobs' });
     }
 });
 
@@ -733,7 +863,7 @@ router.post('/jobs/bulk', async (req, res) => {
 router.put('/jobs/:id', async (req, res) => {
     try {
         const jobs = await readJSONFile('jobs.json');
-        const jobIndex = jobs.findIndex(job => job.id === req.params.id);
+    const jobIndex = jobs.findIndex(job => String(job.id) === String(req.params.id));
         
         if (jobIndex === -1) {
             return res.status(404).json({ error: 'Job not found' });
@@ -762,7 +892,7 @@ router.put('/jobs/:id', async (req, res) => {
 router.delete('/jobs/:id', async (req, res) => {
     try {
         const jobs = await readJSONFile('jobs.json');
-        const filteredJobs = jobs.filter(job => job.id !== req.params.id);
+    const filteredJobs = jobs.filter(job => String(job.id) !== String(req.params.id));
         
         if (filteredJobs.length === jobs.length) {
             return res.status(404).json({ error: 'Job not found' });
@@ -954,8 +1084,8 @@ router.get('/employers/export', async (req, res) => {
 // Verify employer company
 router.put('/employers/:id/verify', async (req, res) => {
     try {
-        const employers = await readJSONFile('employers.json');
-        const employerIndex = employers.findIndex(emp => emp.id === req.params.id);
+    const employers = await readJSONFile('employers.json');
+    const employerIndex = employers.findIndex(emp => String(emp.id) === String(req.params.id));
         
         if (employerIndex === -1) {
             return res.status(404).json({ error: 'Employer not found' });
@@ -981,7 +1111,7 @@ router.put('/employers/:id/verify', async (req, res) => {
 router.put('/employers/:id/approve', async (req, res) => {
     try {
         const employers = await readJSONFile('employers.json');
-        const employerIndex = employers.findIndex(emp => emp.id === parseInt(req.params.id));
+    const employerIndex = employers.findIndex(emp => String(emp.id) === String(req.params.id));
         
         if (employerIndex === -1) {
             return res.status(404).json({ error: 'Employer not found' });
@@ -1007,7 +1137,7 @@ router.put('/employers/:id/approve', async (req, res) => {
 router.put('/employers/:id/deny', async (req, res) => {
     try {
         const employers = await readJSONFile('employers.json');
-        const employerIndex = employers.findIndex(emp => emp.id === parseInt(req.params.id));
+    const employerIndex = employers.findIndex(emp => String(emp.id) === String(req.params.id));
         
         if (employerIndex === -1) {
             return res.status(404).json({ error: 'Employer not found' });

@@ -1730,6 +1730,13 @@
                 case 'users':
                     loadUsersData();
                     break;
+                case 'employers':
+                    // Ensure employers list loads when switching to this section
+                    if (typeof loadEmployersData === 'function') loadEmployersData();
+                    break;
+                case 'applications':
+                    if (typeof loadApplicationsData === 'function') loadApplicationsData();
+                    break;
                 case 'overview':
                     loadDashboardStats();
                     break;
@@ -2400,15 +2407,17 @@
                     row.className = 'hover:bg-gray-50';
                     
                     const statusClass = getJobStatusClass(job);
-                    const postedDate = new Date(job.posted_date).toLocaleDateString();
+                    const postedRaw = job.posted_date || job.datePosted || job.scraped_at || job.created_at || job.createdAt;
+                    const postedDate = postedRaw ? new Date(postedRaw).toLocaleDateString() : '—';
+                    const jobIdStr = (job.id !== undefined && job.id !== null) ? String(job.id) : '';
                     
                     row.innerHTML = `
                         <td class="px-6 py-4">
-                            <input type="checkbox" name="jobSelect" value="${job.id}" class="rounded">
+                            <input type="checkbox" name="jobSelect" value="${jobIdStr}" class="rounded">
                         </td>
                         <td class="px-6 py-4">
                             <div class="text-sm font-medium text-gray-900">${escapeHtml(job.title)}</div>
-                            <div class="text-xs text-gray-500">#${job.id.substring(0, 8)}...</div>
+                            <div class="text-xs text-gray-500">#${jobIdStr ? jobIdStr.substring(0, 8) + '...' : ''}</div>
                         </td>
                         <td class="px-6 py-4 text-sm text-gray-900">${escapeHtml(job.company)}</td>
                         <td class="px-6 py-4 text-sm text-gray-900">${escapeHtml(job.category)}</td>
@@ -2416,9 +2425,9 @@
                         <td class="px-6 py-4"><span class="badge ${statusClass}">${getJobStatus(job)}</span></td>
                         <td class="px-6 py-4 text-sm text-gray-500">${postedDate}</td>
                         <td class="px-6 py-4 text-sm">
-                            <button onclick="editJob('${job.id}')" class="text-blue-600 hover:text-blue-800 mr-2">Edit</button>
-                            <button onclick="sendSingleJobEmail('${job.id}')" class="text-purple-600 hover:text-purple-800 mr-2">📧 Email</button>
-                            <button onclick="deleteJob('${job.id}')" class="text-red-600 hover:text-red-800">Delete</button>
+                            <button onclick="editJob('${jobIdStr}')" class="text-blue-600 hover:text-blue-800 mr-2">Edit</button>
+                            <button onclick="sendSingleJobEmail('${jobIdStr}')" class="text-purple-600 hover:text-purple-800 mr-2">📧 Email</button>
+                            <button onclick="deleteJob('${jobIdStr}')" class="text-red-600 hover:text-red-800">Delete</button>
                         </td>
                     `;
                     
@@ -2490,7 +2499,8 @@
 
         // Helper functions
         function getJobStatus(job) {
-            const daysSincePosted = Math.floor((Date.now() - new Date(job.posted_date)) / (1000 * 60 * 60 * 24));
+            const baseDateStr = job.posted_date || job.datePosted || job.scraped_at || job.created_at || job.createdAt;
+            const daysSincePosted = baseDateStr ? Math.floor((Date.now() - new Date(baseDateStr)) / (1000 * 60 * 60 * 24)) : 9999;
             if (job.featured) return 'Featured';
             if (job.urgent) return 'Urgent';
             if (daysSincePosted > 30) return 'Expired';
@@ -3366,6 +3376,42 @@
             }
         }
 
+        // Approve Employer
+        async function approveEmployer(employerId) {
+            if (!confirm('Approve this employer?')) return;
+            try {
+                const res = await fetch(`/api/admin/employers/${employerId}/approve`, { method: 'PUT' });
+                const result = await res.json();
+                if (result.success) {
+                    alert('Employer approved');
+                    loadEmployersData();
+                } else {
+                    alert('Failed to approve: ' + (result.error || 'Unknown error'));
+                }
+            } catch (e) {
+                console.error('Approve employer error:', e);
+                alert('Failed to approve employer');
+            }
+        }
+
+        // Deny Employer
+        async function denyEmployer(employerId) {
+            if (!confirm('Deny this employer?')) return;
+            try {
+                const res = await fetch(`/api/admin/employers/${employerId}/deny`, { method: 'PUT' });
+                const result = await res.json();
+                if (result.success) {
+                    alert('Employer denied');
+                    loadEmployersData();
+                } else {
+                    alert('Failed to deny: ' + (result.error || 'Unknown error'));
+                }
+            } catch (e) {
+                console.error('Deny employer error:', e);
+                alert('Failed to deny employer');
+            }
+        }
+
         // Edit Job Function
         function editJob(jobId) {
             // You can implement this to open an edit modal or navigate to edit page
@@ -3579,9 +3625,98 @@
             alert('Edit employer functionality - Employer ID: ' + employerId);
         }
 
-        // View Employer Jobs Function
-        function viewEmployerJobs(employerId) {
-            alert('View employer jobs functionality - Employer ID: ' + employerId);
+        // View Employer Jobs Function (opens modal and loads jobs)
+        async function viewEmployerJobs(employerId) {
+            try {
+                // Create modal container if not present
+                let modal = document.getElementById('employerJobsModal');
+                if (!modal) {
+                    const html = `
+                    <div id="employerJobsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="display:none;">
+                        <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[80vh] overflow-hidden">
+                            <div class="flex items-center justify-between px-5 py-3 border-b">
+                                <div>
+                                    <h3 id="employerJobsTitle" class="text-lg font-semibold">Employer Jobs</h3>
+                                    <p id="employerJobsSubtitle" class="text-xs text-gray-500"></p>
+                                </div>
+                                <button class="text-gray-600 hover:text-gray-800" onclick="closeEmployerJobsModal()">✖</button>
+                            </div>
+                            <div class="p-5 overflow-auto">
+                                <div id="employerJobsTableWrap" class="overflow-x-auto">
+                                    <table class="min-w-full data-table">
+                                        <thead class="bg-gray-50">
+                                            <tr>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Company</th>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Location</th>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Posted</th>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="employerJobsTable" class="bg-white divide-y divide-gray-200">
+                                            <tr><td colspan="6" class="px-4 py-6 text-center text-gray-500">Loading jobs...</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="px-5 py-3 border-t text-right">
+                                <button class="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300" onclick="closeEmployerJobsModal()">Close</button>
+                            </div>
+                        </div>
+                    </div>`;
+                    document.body.insertAdjacentHTML('beforeend', html);
+                    modal = document.getElementById('employerJobsModal');
+                }
+
+                // Show modal
+                modal.style.display = 'flex';
+                document.getElementById('employerJobsTable').innerHTML = '<tr><td colspan="6" class="px-4 py-6 text-center text-gray-500">Loading jobs...</td></tr>';
+                document.getElementById('employerJobsTitle').textContent = 'Employer Jobs';
+                document.getElementById('employerJobsSubtitle').textContent = '';
+
+                // Fetch jobs
+                const resp = await fetch(`/api/admin/employers/${encodeURIComponent(employerId)}/jobs`);
+                const data = await resp.json();
+
+                document.getElementById('employerJobsTitle').textContent = data.employer?.companyName ? `${data.employer.companyName} — Jobs` : 'Employer Jobs';
+                document.getElementById('employerJobsSubtitle').textContent = `${data.total || 0} job(s)`;
+
+                const tbody = document.getElementById('employerJobsTable');
+                if (!Array.isArray(data.jobs) || data.jobs.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-6 text-center text-gray-500">No jobs found for this employer.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = '';
+                data.jobs.forEach(job => {
+                    const tr = document.createElement('tr');
+                    const postedRaw = job.posted_date || job.datePosted || job.scraped_at || job.created_at || job.createdAt;
+                    const posted = postedRaw ? new Date(postedRaw).toLocaleDateString() : '—';
+                    const statusBadge = `<span class="badge ${job.status==='active'?'badge-success':(job.status==='inactive'?'badge-warning':'badge-info')}">${job.status || 'active'}</span>`;
+                    const jobIdStr = (job.id!==undefined&&job.id!==null)?String(job.id):'';
+                    tr.innerHTML = `
+                        <td class="px-4 py-2 text-sm text-gray-900">${escapeHtml(job.title || 'Untitled')}</td>
+                        <td class="px-4 py-2 text-sm text-gray-900">${escapeHtml(job.company || '')}</td>
+                        <td class="px-4 py-2 text-sm text-gray-900">${escapeHtml(job.location || '')}</td>
+                        <td class="px-4 py-2">${statusBadge}</td>
+                        <td class="px-4 py-2 text-sm text-gray-500">${posted}</td>
+                        <td class="px-4 py-2 text-sm">
+                            <a href="${job.url || '#'}" target="_blank" class="text-blue-600 hover:text-blue-800 mr-3">Open</a>
+                            <button onclick="editJob('${jobIdStr}')" class="text-blue-600 hover:text-blue-800 mr-3">Edit</button>
+                            <button onclick="deleteJob('${jobIdStr}')" class="text-red-600 hover:text-red-800">Delete</button>
+                        </td>`;
+                    tbody.appendChild(tr);
+                });
+            } catch (e) {
+                console.error('Failed to load employer jobs', e);
+                alert('Failed to load employer jobs.');
+            }
+        }
+
+        function closeEmployerJobsModal() {
+            const modal = document.getElementById('employerJobsModal');
+            if (modal) modal.style.display = 'none';
         }
     </script>
 
