@@ -10,6 +10,12 @@ const stripeSecret = process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET 
 let stripe = null;
 try { if (stripeSecret) { stripe = require('stripe')(stripeSecret); } } catch (_) { stripe = null; }
 
+function getStripeMode() {
+  // Quick heuristic based on key content
+  const key = stripeSecret || '';
+  return key.includes('_live_') ? 'live' : 'test';
+}
+
 // Helpers
 const dataPath = (name) => path.join(__dirname, '../data', name);
 async function readJsonSafe(file, fallback) {
@@ -28,6 +34,14 @@ async function writeJsonSafe(file, data) {
 // Ensure a Stripe customer exists and belongs to the current Stripe mode (test/live)
 async function ensureStripeCustomerForUser(stripe, user, users, userIdx) {
   user.billing = user.billing || {};
+  const currentMode = getStripeMode();
+  // If we previously stored a customer for a different mode, clear it first
+  if (user.billing.env && user.billing.env !== currentMode) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn(`Stripe mode changed from ${user.billing.env} to ${currentMode}; resetting customerId for user ${user.id}`);
+    }
+    try { delete user.billing.customerId; } catch (_) {}
+  }
   const existingId = user.billing.customerId;
   if (existingId) {
     try {
@@ -54,6 +68,7 @@ async function ensureStripeCustomerForUser(stripe, user, users, userIdx) {
   });
   user.billing.customerId = customer.id;
   user.billing.provider = 'stripe';
+  user.billing.env = currentMode;
   // Persist updated billing info
   users[userIdx] = user;
   await writeJsonSafe(dataPath('users.json'), users);
@@ -241,6 +256,30 @@ router.post('/billing/checkout', authenticateToken, async (req, res) => {
       return res.status(500).json({ error: 'Billing profile invalid. Please retry upgrade.' });
     }
     res.status(500).json({ error: 'Failed to create checkout session' });
+  }
+});
+
+// Reset billing customer for current employer (auth required)
+router.post('/billing/reset', authenticateToken, async (req, res) => {
+  try {
+    const users = await readJsonSafe(dataPath('users.json'), []);
+    const idx = users.findIndex(u => u && u.id && u.id.toString() === req.user.id.toString());
+    if (idx === -1) return res.status(404).json({ error: 'User not found' });
+    const user = users[idx];
+    const uType = (user.user_type || user.userType || '').toString().toLowerCase();
+    const uStatus = (user.status || 'active').toString().toLowerCase();
+    if (uType !== 'employer' || uStatus !== 'active') {
+      return res.status(403).json({ error: 'Employer access required' });
+    }
+    user.billing = user.billing || {};
+    delete user.billing.customerId;
+    delete user.billing.subscriptionId;
+    user.billing.status = 'none';
+    delete user.billing.env;
+    await writeJsonSafe(dataPath('users.json'), users);
+    res.json({ success: true, message: 'Billing profile reset. Try upgrade again.' });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to reset billing' });
   }
 });
 

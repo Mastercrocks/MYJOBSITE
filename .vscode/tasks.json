@@ -8,6 +8,15 @@
 			"isBackground": false,
 			"problemMatcher": [],
 			"group": "build"
+		},
+		{
+			"label": "Restart server (dev)",
+			"type": "shell",
+			"command": "Get-Process -Id (Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue | Select-Object -First 1).OwningProcess | Stop-Process -Force; $env:NODE_ENV='development'; node server.js",
+			"problemMatcher": [
+				"$eslint-stylish"
+			],
+			"group": "build"
 		}
 	]
 }
