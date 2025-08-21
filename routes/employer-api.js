@@ -435,4 +435,19 @@ router.get('/stats', authenticateToken, async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'Failed to load stats' }); }
 });
 
+// Lightweight config status (non-sensitive): helps diagnose billing setup
+router.get('/billing/config-status', authenticateToken, (req, res) => {
+  try {
+    res.json({
+      provider: stripe ? 'stripe' : 'none',
+      hasSecret: !!stripeSecret,
+      priceBasicConfigured: !!PRICE_IDS.basic,
+      priceProConfigured: !!PRICE_IDS.pro,
+      publicBaseUrl: process.env.PUBLIC_BASE_URL || null
+    });
+  } catch (_) {
+    res.json({ provider: 'none', hasSecret: false, priceBasicConfigured: false, priceProConfigured: false, publicBaseUrl: null });
+  }
+});
+
 module.exports = router;
