@@ -25,6 +25,41 @@ async function writeJsonSafe(file, data) {
   await fsp.writeFile(file, JSON.stringify(data, null, 2));
 }
 
+// Ensure a Stripe customer exists and belongs to the current Stripe mode (test/live)
+async function ensureStripeCustomerForUser(stripe, user, users, userIdx) {
+  user.billing = user.billing || {};
+  const existingId = user.billing.customerId;
+  if (existingId) {
+    try {
+      const cust = await stripe.customers.retrieve(existingId);
+      // If retrieved and not deleted, reuse it
+      if (cust && !cust.deleted) return cust.id;
+    } catch (err) {
+      // If the stored customer is from the wrong Stripe mode, Stripe returns resource_missing (No such customer)
+      // We'll fall through to create a new one.
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn('Stripe customer lookup failed; will create new. Reason:', err?.message || String(err));
+      }
+      // Clear stale ID so it's not accidentally reused anywhere else
+      try {
+        delete user.billing.customerId;
+      } catch (_) {}
+    }
+  }
+  // Create a new customer for this environment/mode
+  const customer = await stripe.customers.create({
+    email: user.email,
+    name: user.companyName || user.username || `Employer ${user.id}`,
+    metadata: { userId: String(user.id) }
+  });
+  user.billing.customerId = customer.id;
+  user.billing.provider = 'stripe';
+  // Persist updated billing info
+  users[userIdx] = user;
+  await writeJsonSafe(dataPath('users.json'), users);
+  return customer.id;
+}
+
 const PLAN_LIMITS = {
   free: 5,
   basic: 10, // $25 monthly
@@ -158,34 +193,53 @@ router.post('/billing/checkout', authenticateToken, async (req, res) => {
       return res.status(403).json({ error: 'Employer access required' });
     }
 
-    // Ensure a Stripe customer exists
-    if (!user.billing.customerId) {
-      const customer = await stripe.customers.create({
-        email: user.email,
-        name: user.companyName || user.username || `Employer ${user.id}`,
-        metadata: { userId: String(user.id) }
-      });
-      user.billing.customerId = customer.id;
-      user.billing.provider = 'stripe';
-      await writeJsonSafe(dataPath('users.json'), users);
-    }
+  // Ensure a Stripe customer exists for the current Stripe mode (handles test/live mismatch)
+  const customerId = await ensureStripeCustomerForUser(stripe, user, users, idx);
 
     // Build base URL: prefer PUBLIC_BASE_URL, else derive from request
     const baseUrl = (process.env.PUBLIC_BASE_URL
       || `${(req.headers['x-forwarded-proto'] || req.protocol)}://${req.get('host')}`)
       .replace(/\/$/, '');
 
-    const session = await stripe.checkout.sessions.create({
-      mode: 'subscription',
-      customer: user.billing.customerId,
-      line_items: [{ price: PRICE_IDS[plan], quantity: 1 }],
-      success_url: `${baseUrl}/employer/dashboard?checkout=success`,
-      cancel_url: `${baseUrl}/employer/dashboard?checkout=cancel`,
-      metadata: { userId: String(user.id), plan }
-    });
+    // Try to create checkout session; if it fails due to customer mismatch, recreate and retry once
+    let session;
+    try {
+      session = await stripe.checkout.sessions.create({
+        mode: 'subscription',
+        customer: customerId,
+        line_items: [{ price: PRICE_IDS[plan], quantity: 1 }],
+        success_url: `${baseUrl}/employer/dashboard?checkout=success`,
+        cancel_url: `${baseUrl}/employer/dashboard?checkout=cancel`,
+        metadata: { userId: String(user.id), plan }
+      });
+    } catch (e) {
+      const msg = (e && e.message) || '';
+      const isMissingCustomer = /No such customer/i.test(msg) || (e && e.code === 'resource_missing' && e.param === 'customer');
+      if (isMissingCustomer) {
+        const freshCustomerId = await ensureStripeCustomerForUser(stripe, user, users, idx);
+        session = await stripe.checkout.sessions.create({
+          mode: 'subscription',
+          customer: freshCustomerId,
+          line_items: [{ price: PRICE_IDS[plan], quantity: 1 }],
+          success_url: `${baseUrl}/employer/dashboard?checkout=success`,
+          cancel_url: `${baseUrl}/employer/dashboard?checkout=cancel`,
+          metadata: { userId: String(user.id), plan }
+        });
+      } else {
+        throw e;
+      }
+    }
     res.json({ url: session.url });
   } catch (e) {
-    console.error('Stripe checkout error:', e);
+    console.error('Stripe checkout error:', e?.message || e);
+    // Provide a slightly more actionable error for common config issues
+    const msg = (e && e.message) || '';
+    if (/No such price/i.test(msg)) {
+      return res.status(500).json({ error: 'Billing not configured for selected plan (price not found). Contact support.' });
+    }
+    if (/No such customer/i.test(msg)) {
+      return res.status(500).json({ error: 'Billing profile invalid. Please retry upgrade.' });
+    }
     res.status(500).json({ error: 'Failed to create checkout session' });
   }
 });
