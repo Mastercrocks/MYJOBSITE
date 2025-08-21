@@ -5,7 +5,7 @@ const fsp = require('fs').promises;
 const path = require('path');
 const { authenticateToken } = require('../middleware/auth-json');
 const { sendAccountEmail } = require('../services/emailService');
-// Accept both STRIPE_SECRET_KEY and legacy STRIPE_SECRET
+// Accept both STRIPE_SECRET_KEY and STRIPE_SECRET
 const stripeSecret = process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET || '';
 let stripe = null;
 try { if (stripeSecret) { stripe = require('stripe')(stripeSecret); } } catch (_) { stripe = null; }
@@ -25,33 +25,6 @@ async function writeJsonSafe(file, data) {
   await fsp.writeFile(file, JSON.stringify(data, null, 2));
 }
 
-// Expiry helpers
-function ensureExpires(job) {
-  if (!job.expires_at) {
-    const base = new Date(job.posted_date || job.datePosted || job.created_at || job.createdAt || Date.now());
-    job.expires_at = new Date(base.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
-  }
-  return job;
-}
-function markExpiredIfNeeded(job) {
-  const exp = job.expires_at ? new Date(job.expires_at) : null;
-  if (exp && !isNaN(exp) && exp.getTime() < Date.now() && (job.status || 'active') === 'active') {
-    job.status = 'expired';
-    job.updated_at = new Date().toISOString();
-  }
-  return job;
-}
-async function enforceExpiryOnArray(jobs) {
-  let changed = false;
-  const updated = (jobs || []).map(j => {
-    const before = JSON.stringify(j);
-    const after = markExpiredIfNeeded(ensureExpires({ ...j }));
-    if (before !== JSON.stringify(after)) changed = true;
-    return after;
-  });
-  return { jobs: updated, changed };
-}
-
 const PLAN_LIMITS = {
   free: 5,
   basic: 10, // $25 monthly
@@ -60,7 +33,7 @@ const PLAN_LIMITS = {
 
 // Stripe Price IDs (set in env). Example:
 // BASIC: price_XXXX for $25/mo, PRO: price_YYYY for $50/mo
-// Accept both STRIPE_PRICE_BASIC/PRO and STRIPE_BASIC_PRICE_ID/PRO_PRICE_ID
+// Accept STRIPE_PRICE_BASIC/PRO and also STRIPE_BASIC_PRICE_ID/STRIPE_PRO_PRICE_ID
 const PRICE_IDS = {
   basic: process.env.STRIPE_PRICE_BASIC || process.env.STRIPE_BASIC_PRICE_ID || '',
   pro: process.env.STRIPE_PRICE_PRO || process.env.STRIPE_PRO_PRICE_ID || ''
@@ -111,7 +84,7 @@ router.get('/plan', authenticateToken, async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'Failed to load plan' }); }
 });
 
-// Update employer plan (supports Stripe or manual mode)
+// Update employer plan (placeholder for billing integration)
 router.post('/plan', authenticateToken, async (req, res) => {
   try {
     const { plan } = req.body || {};
@@ -126,8 +99,7 @@ router.post('/plan', authenticateToken, async (req, res) => {
 
     // Enforce paid upgrade path: only allow switching to paid plans if Stripe is configured and billing shows active
     const target = plan.toLowerCase();
-    const manualAllowed = ((process.env.BILLING_MODE || '').toLowerCase() === 'manual') || String(process.env.ALLOW_MANUAL_UPGRADE || '').toLowerCase() === 'true';
-    if (target !== 'free' && !manualAllowed) {
+    if (target !== 'free') {
       const billing = users[idx].billing || {};
       const isActiveSub = billing.provider === 'stripe' && billing.status === 'active' && !!billing.subscriptionId;
       if (!isActiveSub) {
@@ -292,7 +264,6 @@ router.post('/jobs', authenticateToken, async (req, res) => {
     for (const f of required) {
       if (!body[f] || !String(body[f]).trim()) return res.status(400).json({ error: `${f} is required` });
     }
-    const nowIso = new Date().toISOString();
     const job = {
       id: Date.now(),
       title: String(body.title).trim(),
@@ -302,8 +273,7 @@ router.post('/jobs', authenticateToken, async (req, res) => {
       salary: body.salary || '',
       job_type: body.job_type || body.type || 'Full-time',
       category: body.category || '',
-      posted_date: nowIso,
-      expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      posted_date: new Date().toISOString(),
       source: 'Manual',
       url: body.url || '',
       status: 'active',
@@ -324,10 +294,8 @@ router.get('/jobs', authenticateToken, async (req, res) => {
   if (!user || status !== 'active' || (user.user_type || user.userType) !== 'employer') {
       return res.status(403).json({ error: 'Employer access required' });
     }
-  const raw = await readJsonSafe(dataPath('jobs.json'), []);
-  const { jobs, changed } = await enforceExpiryOnArray(raw);
-  if (changed) await writeJsonSafe(dataPath('jobs.json'), jobs);
-  const myJobs = jobs.filter(j => (j.postedBy || j.employerId) === user.id);
+    const jobs = await readJsonSafe(dataPath('jobs.json'), []);
+    const myJobs = jobs.filter(j => (j.postedBy || j.employerId) === user.id);
     res.json({ jobs: myJobs });
   } catch (e) { res.status(500).json({ error: 'Failed to load jobs' }); }
 });
@@ -341,13 +309,11 @@ router.put('/jobs/:id', authenticateToken, async (req, res) => {
       return res.status(403).json({ error: 'Employer access required' });
     }
     const id = req.params.id;
-  const raw = await readJsonSafe(dataPath('jobs.json'), []);
-  const { jobs } = await enforceExpiryOnArray(raw);
+    const jobs = await readJsonSafe(dataPath('jobs.json'), []);
     const idx = jobs.findIndex(j => j && j.id && j.id.toString() === id && (j.postedBy || j.employerId) === user.id);
     if (idx === -1) return res.status(404).json({ error: 'Job not found' });
     const patch = req.body || {};
-  jobs[idx] = ensureExpires({ ...jobs[idx], ...patch, id: jobs[idx].id });
-  markExpiredIfNeeded(jobs[idx]);
+    jobs[idx] = { ...jobs[idx], ...patch, id: jobs[idx].id };
     await writeJsonSafe(dataPath('jobs.json'), jobs);
     res.json({ success: true, job: jobs[idx] });
   } catch (e) { res.status(500).json({ error: 'Failed to update job' }); }
@@ -362,8 +328,7 @@ router.delete('/jobs/:id', authenticateToken, async (req, res) => {
       return res.status(403).json({ error: 'Employer access required' });
     }
     const id = req.params.id;
-  const raw = await readJsonSafe(dataPath('jobs.json'), []);
-  const { jobs } = await enforceExpiryOnArray(raw);
+    const jobs = await readJsonSafe(dataPath('jobs.json'), []);
     const idx = jobs.findIndex(j => j && j.id && j.id.toString() === id && (j.postedBy || j.employerId) === user.id);
     if (idx === -1) return res.status(404).json({ error: 'Job not found' });
     jobs[idx].status = 'inactive';
@@ -420,9 +385,8 @@ router.put('/profile', authenticateToken, async (req, res) => {
 // Employer stats
 router.get('/stats', authenticateToken, async (req, res) => {
   try {
-  const raw = await readJsonSafe(dataPath('jobs.json'), []);
-  const { jobs } = await enforceExpiryOnArray(raw);
-  const myJobs = jobs.filter(j => (j.postedBy || j.employerId) === req.user.id);
+    const jobs = await readJsonSafe(dataPath('jobs.json'), []);
+    const myJobs = jobs.filter(j => (j.postedBy || j.employerId) === req.user.id);
     const apps = await readJsonSafe(dataPath('applications.json'), []);
     const myJobIds = new Set(myJobs.map(j => j.id.toString()));
     const myApps = apps.filter(a => a && a.jobId && myJobIds.has(a.jobId.toString()));
@@ -434,24 +398,6 @@ router.get('/stats', authenticateToken, async (req, res) => {
       profileViews: 0
     });
   } catch (e) { res.status(500).json({ error: 'Failed to load stats' }); }
-});
-
-// Lightweight config status (non-sensitive): helps diagnose billing setup
-router.get('/billing/config-status', authenticateToken, (req, res) => {
-  try {
-    res.json({
-      provider: stripe ? 'stripe' : 'none',
-      hasSecret: !!stripeSecret,
-      priceBasicConfigured: !!PRICE_IDS.basic,
-      priceProConfigured: !!PRICE_IDS.pro,
-      publicBaseUrl: process.env.PUBLIC_BASE_URL || null,
-      mode: (process.env.BILLING_MODE || (stripe ? 'stripe' : 'manual')).toLowerCase(),
-      basicPaymentLink: process.env.BASIC_PAYMENT_LINK || process.env.STRIPE_BASIC_PAYMENT_LINK || null,
-      proPaymentLink: process.env.PRO_PAYMENT_LINK || process.env.STRIPE_PRO_PAYMENT_LINK || null
-    });
-  } catch (_) {
-    res.json({ provider: 'none', hasSecret: false, priceBasicConfigured: false, priceProConfigured: false, publicBaseUrl: null, mode: 'manual', basicPaymentLink: null, proPaymentLink: null });
-  }
 });
 
 module.exports = router;
