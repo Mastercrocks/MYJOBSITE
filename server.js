@@ -43,7 +43,15 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Parse JSON and URL-encoded bodies
+// Parse JSON and URL-encoded bodies (except Stripe webhook which needs raw)
+// We'll mount a raw parser for the webhook path before JSON middleware.
+const stripeWebhookPath = '/api/employer/billing/webhook';
+app.use((req, res, next) => {
+    if (req.originalUrl === stripeWebhookPath) {
+        return express.raw({ type: 'application/json' })(req, res, next);
+    }
+    return next();
+});
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 

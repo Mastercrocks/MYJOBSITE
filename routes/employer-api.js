@@ -84,6 +84,19 @@ router.get('/plan', authenticateToken, async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'Failed to load plan' }); }
 });
 
+// Lightweight billing config status (no secrets), useful for live checks
+router.get('/billing/config-status', authenticateToken, async (req, res) => {
+  try {
+    const hasStripe = !!stripe;
+    const ids = {
+      basic: PRICE_IDS.basic ? 'set' : 'missing',
+      pro: PRICE_IDS.pro ? 'set' : 'missing'
+    };
+    const base = (process.env.PUBLIC_BASE_URL || `${(req.headers['x-forwarded-proto'] || req.protocol)}://${req.get('host')}`);
+    res.json({ provider: hasStripe ? 'stripe' : 'none', priceIds: ids, baseUrl: base });
+  } catch (_) { res.json({ provider: 'unknown' }); }
+});
+
 // Update employer plan (placeholder for billing integration)
 router.post('/plan', authenticateToken, async (req, res) => {
   try {
@@ -157,12 +170,17 @@ router.post('/billing/checkout', authenticateToken, async (req, res) => {
       await writeJsonSafe(dataPath('users.json'), users);
     }
 
+    // Build base URL: prefer PUBLIC_BASE_URL, else derive from request
+    const baseUrl = (process.env.PUBLIC_BASE_URL
+      || `${(req.headers['x-forwarded-proto'] || req.protocol)}://${req.get('host')}`)
+      .replace(/\/$/, '');
+
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       customer: user.billing.customerId,
       line_items: [{ price: PRICE_IDS[plan], quantity: 1 }],
-      success_url: `${process.env.PUBLIC_BASE_URL || 'http://localhost:3000'}/employer/dashboard?checkout=success`,
-      cancel_url: `${process.env.PUBLIC_BASE_URL || 'http://localhost:3000'}/employer/dashboard?checkout=cancel`,
+      success_url: `${baseUrl}/employer/dashboard?checkout=success`,
+      cancel_url: `${baseUrl}/employer/dashboard?checkout=cancel`,
       metadata: { userId: String(user.id), plan }
     });
     res.json({ url: session.url });
