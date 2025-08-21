@@ -1,3 +1,19 @@
+# Node
+node_modules/
+npm-debug.log*
+
+# Env/secrets
+.env
+
+# OS/Editor
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/tasks.json
+
+# Data backups & uploads
+data/*.backup.*.json
+uploads/
 # Dependencies
 node_modules/
 npm-debug.log*
