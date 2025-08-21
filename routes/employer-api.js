@@ -5,7 +5,8 @@ const fsp = require('fs').promises;
 const path = require('path');
 const { authenticateToken } = require('../middleware/auth-json');
 const { sendAccountEmail } = require('../services/emailService');
-const stripeSecret = process.env.STRIPE_SECRET_KEY || '';
+// Accept both STRIPE_SECRET_KEY and legacy STRIPE_SECRET
+const stripeSecret = process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET || '';
 let stripe = null;
 try { if (stripeSecret) { stripe = require('stripe')(stripeSecret); } } catch (_) { stripe = null; }
 
@@ -59,9 +60,10 @@ const PLAN_LIMITS = {
 
 // Stripe Price IDs (set in env). Example:
 // BASIC: price_XXXX for $25/mo, PRO: price_YYYY for $50/mo
+// Accept both STRIPE_PRICE_BASIC/PRO and STRIPE_BASIC_PRICE_ID/PRO_PRICE_ID
 const PRICE_IDS = {
-  basic: process.env.STRIPE_PRICE_BASIC || '',
-  pro: process.env.STRIPE_PRICE_PRO || ''
+  basic: process.env.STRIPE_PRICE_BASIC || process.env.STRIPE_BASIC_PRICE_ID || '',
+  pro: process.env.STRIPE_PRICE_PRO || process.env.STRIPE_PRO_PRICE_ID || ''
 };
 
 async function getUserRecord(userId) {
