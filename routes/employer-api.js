@@ -111,7 +111,7 @@ router.get('/plan', authenticateToken, async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'Failed to load plan' }); }
 });
 
-// Update employer plan (placeholder for billing integration)
+// Update employer plan (supports Stripe or manual mode)
 router.post('/plan', authenticateToken, async (req, res) => {
   try {
     const { plan } = req.body || {};
@@ -126,7 +126,8 @@ router.post('/plan', authenticateToken, async (req, res) => {
 
     // Enforce paid upgrade path: only allow switching to paid plans if Stripe is configured and billing shows active
     const target = plan.toLowerCase();
-    if (target !== 'free') {
+    const manualAllowed = ((process.env.BILLING_MODE || '').toLowerCase() === 'manual') || String(process.env.ALLOW_MANUAL_UPGRADE || '').toLowerCase() === 'true';
+    if (target !== 'free' && !manualAllowed) {
       const billing = users[idx].billing || {};
       const isActiveSub = billing.provider === 'stripe' && billing.status === 'active' && !!billing.subscriptionId;
       if (!isActiveSub) {
@@ -443,10 +444,13 @@ router.get('/billing/config-status', authenticateToken, (req, res) => {
       hasSecret: !!stripeSecret,
       priceBasicConfigured: !!PRICE_IDS.basic,
       priceProConfigured: !!PRICE_IDS.pro,
-      publicBaseUrl: process.env.PUBLIC_BASE_URL || null
+      publicBaseUrl: process.env.PUBLIC_BASE_URL || null,
+      mode: (process.env.BILLING_MODE || (stripe ? 'stripe' : 'manual')).toLowerCase(),
+      basicPaymentLink: process.env.BASIC_PAYMENT_LINK || process.env.STRIPE_BASIC_PAYMENT_LINK || null,
+      proPaymentLink: process.env.PRO_PAYMENT_LINK || process.env.STRIPE_PRO_PAYMENT_LINK || null
     });
   } catch (_) {
-    res.json({ provider: 'none', hasSecret: false, priceBasicConfigured: false, priceProConfigured: false, publicBaseUrl: null });
+    res.json({ provider: 'none', hasSecret: false, priceBasicConfigured: false, priceProConfigured: false, publicBaseUrl: null, mode: 'manual', basicPaymentLink: null, proPaymentLink: null });
   }
 });
 
