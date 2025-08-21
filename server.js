@@ -80,26 +80,12 @@ app.get('/api/fresh', (req, res) => {
         let manualJobs = [];
         let scrapedJobs = [];
 
-        const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
-        const ensureExpires = (job) => {
-            if (!job.expires_at) {
-                const base = new Date(job.posted_date || job.datePosted || job.scraped_at || job.created_at || job.createdAt || Date.now());
-                job.expires_at = new Date(base.getTime() + thirtyDaysMs).toISOString();
-            }
-            return job;
-        };
-        const notExpired = (job) => {
-            const exp = job.expires_at ? new Date(job.expires_at) : null;
-            return !(exp && !isNaN(exp) && exp.getTime() < Date.now());
-        };
-
         // Load manual/admin jobs
     if (fs.existsSync(jobsPath)) {
             try {
                 const jobs = JSON.parse(fs.readFileSync(jobsPath, 'utf8')) || [];
                 manualJobs = jobs
-                    .map(j => ensureExpires({ ...j }))
-                    .filter(j => (j.status || 'active') === 'active' && notExpired(j))
+                    .filter(j => (j.status || 'active') === 'active')
                     .map(j => ({
                         // Preserve existing fields, normalize some keys
                         ...j,
@@ -118,13 +104,13 @@ app.get('/api/fresh', (req, res) => {
     if (fs.existsSync(scrapedPath)) {
             try {
                 const scraped = JSON.parse(fs.readFileSync(scrapedPath, 'utf8')) || [];
-                scrapedJobs = scraped.map(j => ensureExpires({
+                scrapedJobs = scraped.map(j => ({
                     ...j,
                     status: j.status || 'active',
             url: j.url || j.apply_url || j.link || '',
                     job_type: j.job_type || j.type || 'Full-time',
                     posted_date: j.posted_date || j.datePosted || j.posted_date || new Date().toISOString(),
-                })).filter(j => j.status === 'active' && notExpired(j));
+                })).filter(j => j.status === 'active');
             } catch (e) {
                 console.error('Failed to parse scraped_jobs.json:', e);
             }
@@ -873,22 +859,6 @@ app.post('/api/jobs/:jobId/apply', (req, res) => {
     try {
         const jobId = req.params.jobId;
         const { userId, coverLetter } = req.body;
-        const jobsPathCheck = path.join(__dirname, 'data', 'jobs.json');
-        try {
-            if (fs.existsSync(jobsPathCheck)) {
-                const arr = JSON.parse(fs.readFileSync(jobsPathCheck, 'utf8')) || [];
-                const job = arr.find(j => j && j.id && j.id.toString() === jobId.toString());
-                if (job) {
-                    // Ensure expires_at exists and check
-                    const base = new Date(job.posted_date || job.datePosted || job.scraped_at || job.created_at || job.createdAt || Date.now());
-                    const expiresAt = job.expires_at ? new Date(job.expires_at) : new Date(base.getTime() + 30 * 24 * 60 * 60 * 1000);
-                    const expired = !isNaN(expiresAt) && expiresAt.getTime() < Date.now();
-                    if ((job.status || 'active') !== 'active' || expired) {
-                        return res.status(410).json({ success: false, message: 'This job is no longer accepting applications.' });
-                    }
-                }
-            }
-        } catch (_) { /* ignore apply-time job lookup errors */ }
         
         const applicationsPath = path.join(__dirname, 'data', 'applications.json');
         let applications = [];

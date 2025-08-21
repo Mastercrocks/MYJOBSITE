@@ -16,6 +16,10 @@ data/users.json
 data/employers.json
 uploads/
 
+# Ignore data backups to avoid accidental PII commits
+data/*.backup.*.json
+data/*backup*.json
+
 # Allow sample job data for deployment
 !data/scraped_jobs.json
 !data/jobs.json

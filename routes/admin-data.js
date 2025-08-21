@@ -45,41 +45,6 @@ async function writeJSONFile(filename, data) {
     }
 }
 
-// ===== Job expiry helpers (30-day default) =====
-function getPostedDate(job) {
-    const d = job.posted_date || job.datePosted || job.scraped_at || job.created_at || job.createdAt;
-    const dt = d ? new Date(d) : null;
-    return (dt && !isNaN(dt)) ? dt : null;
-}
-
-function computeExpiresAt(job) {
-    const base = getPostedDate(job) || new Date();
-    const expires = new Date(base.getTime() + 30 * 24 * 60 * 60 * 1000);
-    return expires.toISOString();
-}
-
-async function enforceJobExpiry(jobs) {
-    let changed = false;
-    const now = Date.now();
-    const updated = (jobs || []).map(j => {
-        const job = { ...j };
-        // Ensure expires_at exists
-        if (!job.expires_at) {
-            job.expires_at = computeExpiresAt(job);
-            changed = true;
-        }
-        // Mark expired if past expires_at
-        const exp = new Date(job.expires_at);
-        if (!isNaN(exp) && exp.getTime() < now && (job.status || 'active') === 'active') {
-            job.status = 'expired';
-            job.updated_at = new Date().toISOString();
-            changed = true;
-        }
-        return job;
-    });
-    return { jobs: updated, changed };
-}
-
 // 🚀 AUTOMATED EMAIL MARKETING: Send new job to email list
 async function sendNewJobEmailCampaign(newJob) {
     try {
@@ -252,7 +217,7 @@ async function sendNewJobEmailCampaign(newJob) {
 // Get dashboard statistics
 router.get('/stats', async (req, res) => {
     try {
-        const [jobsRaw0, users, employersRaw, careerApps, jobApps, analytics, revenue, emailList, resumes] = await Promise.all([
+        const [jobsRaw, users, employersRaw, careerApps, jobApps, analytics, revenue, emailList, resumes] = await Promise.all([
             readJSONFile('jobs.json'),
             readJSONFile('users.json'),
             readJSONFile('employers.json'),
@@ -263,12 +228,6 @@ router.get('/stats', async (req, res) => {
             readJSONFile('email_list.json'),
             readJSONFile('resumes.json')
         ]);
-        // Enforce expiry and persist if needed
-        const { jobs: jobsEnforced, changed: jobsChanged } = await enforceJobExpiry(jobsRaw0 || []);
-        if (jobsChanged) {
-            await writeJSONFile('jobs.json', jobsEnforced);
-        }
-        const jobsRaw = jobsEnforced;
         // Build employers view by merging users.json (source of truth) with employers.json (legacy/company meta)
         const employersFromUsers = (users || []).filter(u => (u.user_type || u.userType) === 'employer').map(u => ({
             id: String(u.id || u.userId || ''),
@@ -307,7 +266,7 @@ router.get('/stats', async (req, res) => {
             const dt = d ? new Date(d) : null;
             return (dt && !isNaN(dt)) ? dt : null;
         };
-    const jobs = (jobsRaw || []).map(j => ({ ...j, _date: normalizeJobDate(j) }));
+        const jobs = (jobsRaw || []).map(j => ({ ...j, _date: normalizeJobDate(j) }));
         const activeJobs = jobs.filter(j => (j.status || 'active') === 'active');
         const activeJobsCount = activeJobs.length;
 
@@ -464,9 +423,7 @@ router.get('/stats', async (req, res) => {
 // Get all jobs with pagination and filters
 router.get('/jobs', async (req, res) => {
     try {
-    const raw = await readJSONFile('jobs.json');
-    const { jobs, changed } = await enforceJobExpiry(raw || []);
-    if (changed) await writeJSONFile('jobs.json', jobs);
+        const jobs = await readJSONFile('jobs.json');
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 50;
         const search = req.query.search || '';
@@ -481,7 +438,7 @@ router.get('/jobs', async (req, res) => {
         const locationNorm = norm(location);
 
         // Filter jobs safely (handle missing fields)
-    let filteredJobs = (jobs || []).filter(job => {
+        let filteredJobs = (jobs || []).filter(job => {
             const title = norm(job.title);
             const comp = norm(job.company);
             const loc = norm(job.location);
@@ -505,7 +462,7 @@ router.get('/jobs', async (req, res) => {
         // Paginate
         const startIndex = (page - 1) * limit;
         const endIndex = startIndex + limit;
-    const paginatedJobs = filteredJobs.slice(startIndex, endIndex);
+        const paginatedJobs = filteredJobs.slice(startIndex, endIndex);
 
         res.json({
             jobs: paginatedJobs,
@@ -545,7 +502,6 @@ router.post('/import/rss', async (req, res) => {
 
             const description = (item.contentSnippet || item.content || item.summary || '').toString().trim();
 
-            const postedIso = new Date(item.isoDate || item.pubDate || Date.now()).toISOString();
             const job = {
                 id: Date.now() + Math.floor(Math.random() * 1000000),
                 title,
@@ -562,8 +518,7 @@ router.post('/import/rss', async (req, res) => {
                 urgent: false,
                 status: 'active',
                 source: sourceLabel || 'RSS',
-                posted_date: postedIso,
-                expires_at: new Date(new Date(postedIso).getTime() + 30 * 24 * 60 * 60 * 1000).toISOString()
+                posted_date: new Date(item.isoDate || item.pubDate || Date.now()).toISOString()
             };
 
             jobs.unshift(job);
@@ -816,7 +771,6 @@ router.post('/jobs', async (req, res) => {
         // Compute apply URL fallback
         const computedUrl = applicationUrl || (applicationEmail ? `mailto:${applicationEmail}` : `https://talentsync.shop/job-detail.html?id=${jobId}`);
 
-        const nowIso = new Date().toISOString();
         const newJob = {
             id: jobId,
             title: req.body.title,
@@ -828,9 +782,8 @@ router.post('/jobs', async (req, res) => {
             source: 'Manual',
             job_type: jobType,
             remote: req.body.remote === 'true',
-            posted_date: nowIso,
-            scraped_at: nowIso,
-            expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            posted_date: new Date().toISOString(),
+            scraped_at: new Date().toISOString(),
             category: category,
             entry_level: experienceLevel.toLowerCase().includes('entry'),
             experience_level: experienceLevel,

@@ -13,7 +13,8 @@
     "url": "https://www.wyndy.com/nanny-jobs/salisbury-md/details-10046917466?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic",
     "status": "active",
     "employerId": "1754876032748",
-    "postedBy": "1754876032748"
+    "postedBy": "1754876032748",
+    "expires_at": "2025-09-19T00:46:09.505Z"
   },
   {
     "id": "manual_1755409436999_52uwq5m8w",
@@ -37,7 +38,8 @@
     "urgent": false,
     "application_email": "",
     "application_url": "",
-    "status": "active"
+    "status": "active",
+    "expires_at": "2025-09-16T05:43:56.999Z"
   },
   {
     "id": "1",
@@ -52,7 +54,9 @@
     ],
     "salary": ",000",
     "datePosted": "2024-12-10",
-    "status": "active"
+    "status": "expired",
+    "expires_at": "2025-01-09T00:00:00.000Z",
+    "updated_at": "2025-08-20T23:29:30.983Z"
   },
   {
     "id": "2",
@@ -67,7 +71,9 @@
     ],
     "salary": ",000",
     "datePosted": "2024-12-09",
-    "status": "active"
+    "status": "expired",
+    "expires_at": "2025-01-08T00:00:00.000Z",
+    "updated_at": "2025-08-20T23:29:30.983Z"
   },
   {
     "id": "3",
@@ -82,7 +88,9 @@
     ],
     "salary": "/hour",
     "datePosted": "2024-12-08",
-    "status": "active"
+    "status": "expired",
+    "expires_at": "2025-01-07T00:00:00.000Z",
+    "updated_at": "2025-08-20T23:29:30.983Z"
   },
   {
     "id": "4",
@@ -97,6 +105,8 @@
     ],
     "salary": ",000",
     "datePosted": "2024-12-07",
-    "status": "active"
+    "status": "expired",
+    "expires_at": "2025-01-06T00:00:00.000Z",
+    "updated_at": "2025-08-20T23:29:30.983Z"
   }
 ]
