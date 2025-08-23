@@ -801,15 +801,24 @@ router.post('/jobs', async (req, res) => {
         const success = await writeJSONFile('jobs.json', jobs);
         if (success) {
             // 🚀 AUTO-SEND EMAIL MARKETING CAMPAIGN FOR NEW JOB
+            let emailResult = null;
+            let emailErrorMsg = null;
             try {
-                await sendNewJobEmailCampaign(newJob);
+                emailResult = await sendNewJobEmailCampaign(newJob);
                 console.log(`✅ Auto email campaign sent for job: ${newJob.title}`);
             } catch (emailError) {
-                console.error('❌ Failed to send auto email campaign:', emailError);
-                // Don't fail the job posting if email fails
+                emailErrorMsg = emailError && emailError.message ? emailError.message : String(emailError);
+                console.error('❌ Failed to send auto email campaign:', emailErrorMsg);
             }
-            
-            res.json({ success: true, job: newJob, message: 'Job added successfully and email campaign sent!' });
+            res.json({
+                success: true,
+                job: newJob,
+                message: emailErrorMsg
+                    ? 'Job added, but email campaign failed: ' + emailErrorMsg
+                    : 'Job added successfully and email campaign sent!',
+                emailError: emailErrorMsg || null,
+                emailResult: emailResult || null
+            });
         } else {
             res.status(500).json({ error: 'Failed to save job' });
         }
