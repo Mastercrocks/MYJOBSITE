@@ -115,7 +115,7 @@ app.get('/api/fresh', (req, res) => {
             url: j.url || j.apply_url || j.applyUrl || j.applyLink || j.application_url || j.apply || j.link || '',
                         job_type: j.job_type || j.type || 'Full-time',
                         posted_date: j.posted_date || j.datePosted || new Date().toISOString(),
-                        source: j.source || 'Manual'
+                        source: j.source || ''
                     }));
             } catch (e) {
                 console.error('Failed to parse jobs.json:', e);
