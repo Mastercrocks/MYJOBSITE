@@ -1,5 +1,19 @@
+
 // Load environment variables
 require('dotenv').config();
+
+// Connect to MongoDB Atlas with Mongoose
+const mongoose = require('mongoose');
+if (process.env.MONGODB_URI) {
+    mongoose.connect(process.env.MONGODB_URI, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true
+    })
+        .then(() => console.log('✅ Connected to MongoDB Atlas'))
+        .catch(err => console.error('❌ MongoDB connection error:', err.message));
+} else {
+    console.warn('⚠️  No MONGODB_URI found in environment. MongoDB will not be used.');
+}
 
 const express = require('express');
 const compression = require('compression');
