@@ -1972,6 +1972,4 @@ router.post('/test-auto-campaign', async (req, res) => {
         res.status(500).json({ error: 'Failed to send test campaign' });
     }
 });
-// ...existing code...
-}
 module.exports = router;
