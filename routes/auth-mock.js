@@ -5,6 +5,9 @@ const fs = require('fs');
 const path = require('path');
 const router = express.Router();
 
+const mongoose = require('mongoose');
+const Employer = require('../models/Employer');
+
 // File-based storage for demo purposes
 const EMPLOYERS_FILE = path.join(__dirname, '..', 'data', 'employers.json');
 
@@ -110,13 +113,8 @@ router.post('/register', async (req, res) => {
             return res.status(400).json({ error: 'All required fields must be provided' });
         }
 
-        const employers = readEmployers();
-        
-        // Check if user already exists
-        const existingUser = employers.find(emp => 
-            emp.username === username || emp.email === email
-        );
-
+        // Check if employer already exists in MongoDB
+        const existingUser = await Employer.findOne({ email });
         if (existingUser) {
             return res.status(409).json({ error: 'Username or email already exists' });
         }
@@ -124,33 +122,22 @@ router.post('/register', async (req, res) => {
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Create new user
-        const newUser = {
-            id: employers.length + 1,
-            username,
+        // Create new employer in MongoDB
+        const newEmployer = new Employer({
+            name: firstName + ' ' + lastName,
             email,
             password: hashedPassword,
-            firstName,
-            lastName,
-            userType: userType || 'employer',
-            companyName,
-            jobTitle,
-            status: 'active',
-            createdAt: new Date().toISOString()
-        };
-
-        employers.push(newUser);
-        
-        if (!writeEmployers(employers)) {
-            return res.status(500).json({ error: 'Failed to save user data' });
-        }
+            company: companyName,
+            created_at: new Date()
+        });
+        await newEmployer.save();
 
         // Generate JWT token
         const token = jwt.sign(
             { 
-                userId: newUser.id, 
-                username: newUser.username,
-                userType: newUser.userType 
+                userId: newEmployer._id, 
+                username: username,
+                userType: userType || 'employer' 
             },
             process.env.JWT_SECRET || 'fallback-secret',
             { expiresIn: '24h' }
@@ -160,14 +147,14 @@ router.post('/register', async (req, res) => {
             message: 'Registration successful',
             token,
             user: {
-                id: newUser.id,
-                username: newUser.username,
-                email: newUser.email,
-                firstName: newUser.firstName,
-                lastName: newUser.lastName,
-                userType: newUser.userType,
-                companyName: newUser.companyName,
-                jobTitle: newUser.jobTitle
+                id: newEmployer._id,
+                username: username,
+                email: newEmployer.email,
+                firstName,
+                lastName,
+                userType: userType || 'employer',
+                companyName,
+                jobTitle
             }
         });
 

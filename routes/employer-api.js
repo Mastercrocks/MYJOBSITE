@@ -5,6 +5,8 @@ const fsp = require('fs').promises;
 const path = require('path');
 const { authenticateToken } = require('../middleware/auth-json');
 const { sendAccountEmail } = require('../services/emailService');
+const Job = require('../models/Job');
+const Employer = require('../models/Employer');
 // Accept both STRIPE_SECRET_KEY and STRIPE_SECRET
 const stripeSecret = process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET || '';
 let stripe = null;
@@ -355,60 +357,58 @@ router.post('/billing/webhook', express.raw({ type: 'application/json' }), async
 // Create job (plan enforced)
 router.post('/jobs', authenticateToken, async (req, res) => {
   try {
-    const user = await getUserRecord(req.user.id);
-  const status = user ? (user.status || 'active').toString().toLowerCase() : 'inactive';
-  if (!user || status !== 'active' || (user.user_type || user.userType) !== 'employer') {
-      return res.status(403).json({ error: 'Employer access required' });
+    // Find employer by auth user id
+    const employer = await Employer.findById(req.user.id);
+    if (!employer) {
+      return res.status(403).json({ error: 'Employer not found' });
     }
-    const jobs = await readJsonSafe(dataPath('jobs.json'), []);
-    const activeMine = jobs.filter(j => (j.postedBy || j.employerId) === user.id && (j.status||'active')==='active').length;
-    const plan = getUserPlan(user);
-    const limit = PLAN_LIMITS[plan];
-    if (activeMine >= limit) {
-      return res.status(403).json({ 
-        error: `Job limit reached for ${plan} plan`,
-        plan, limit, used: activeMine
+    // Save employer info to EMPLOYERS.js (for migration)
+    try {
+      const { saveEmployer } = require('../EMPLOYERS');
+      saveEmployer({
+        name: employer.name,
+        email: employer.email,
+        company: employer.company,
+        created_at: employer.created_at || new Date(),
       });
+    } catch (err) {
+      console.error('EMPLOYERS.js save error:', err);
     }
     const body = req.body || {};
     const required = ['title','company','location','description'];
     for (const f of required) {
       if (!body[f] || !String(body[f]).trim()) return res.status(400).json({ error: `${f} is required` });
     }
-    const job = {
-      id: Date.now(),
+    // Create job in MongoDB
+    const job = new Job({
       title: String(body.title).trim(),
       company: String(body.company).trim(),
       location: String(body.location).trim(),
       description: String(body.description).trim(),
       salary: body.salary || '',
       job_type: body.job_type || body.type || 'Full-time',
-      category: body.category || '',
-      posted_date: new Date().toISOString(),
-      source: 'Manual',
-      url: body.url || '',
-      status: 'active',
-      employerId: user.id,
-      postedBy: user.id
-    };
-    jobs.unshift(job);
-    await writeJsonSafe(dataPath('jobs.json'), jobs);
+      posted_date: new Date(),
+      employer: employer._id
+    });
+    await job.save();
     res.json({ success: true, job });
-  } catch (e) { res.status(500).json({ error: 'Failed to create job' }); }
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to create job' });
+  }
 });
 
 // List my jobs
 router.get('/jobs', authenticateToken, async (req, res) => {
   try {
-    const user = await getUserRecord(req.user.id);
-  const status = user ? (user.status || 'active').toString().toLowerCase() : 'inactive';
-  if (!user || status !== 'active' || (user.user_type || user.userType) !== 'employer') {
-      return res.status(403).json({ error: 'Employer access required' });
+    const employer = await Employer.findById(req.user.id);
+    if (!employer) {
+      return res.status(403).json({ error: 'Employer not found' });
     }
-    const jobs = await readJsonSafe(dataPath('jobs.json'), []);
-    const myJobs = jobs.filter(j => (j.postedBy || j.employerId) === user.id);
-    res.json({ jobs: myJobs });
-  } catch (e) { res.status(500).json({ error: 'Failed to load jobs' }); }
+    const jobs = await Job.find({ employer: employer._id });
+    res.json({ jobs });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to load jobs' });
+  }
 });
 
 // Update my job

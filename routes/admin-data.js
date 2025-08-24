@@ -583,49 +583,12 @@ router.get('/users', async (req, res) => {
     }
 });
 
-// Get all employers
+// Get all employers from MongoDB
+const Employer = require('../models/Employer');
 router.get('/employers', async (req, res) => {
     try {
-        const [employersRaw, users] = await Promise.all([
-            readJSONFile('employers.json'),
-            readJSONFile('users.json')
-        ]);
-
-        const employersFromUsers = (users || []).filter(u => (u.user_type || u.userType) === 'employer').map(u => ({
-            id: String(u.id || u.userId || ''),
-            userId: String(u.id || ''),
-            companyName: u.companyName || u.company || u.name || '',
-            contactEmail: u.email,
-            contactName: u.name || [u.firstName, u.lastName].filter(Boolean).join(' ') || '',
-            status: (u.status || 'active').toLowerCase(),
-            verified: !!u.verified,
-            jobsPosted: Array.isArray(u.jobs) ? u.jobs.length : (u.jobsPosted || 0),
-            createdAt: u.createdAt || u.registrationDate || u.joinedAt || new Date().toISOString(),
-            plan: (u.plan || 'free').toLowerCase(),
-            billing: u.billing || {}
-        }));
-        const employersLegacy = (employersRaw || []).map(e => ({
-            id: String(e.id || e.userId || ''),
-            userId: String(e.userId || e.id || ''),
-            companyName: e.companyName || e.company || '',
-            contactEmail: e.contactEmail || e.email || '',
-            contactName: e.contactName || '',
-            status: (e.status || 'active').toLowerCase(),
-            verified: !!e.verified,
-            jobsPosted: e.jobsPosted || 0,
-            createdAt: e.createdAt || new Date().toISOString()
-        }));
-        const employersByUserId = new Map();
-        employersLegacy.forEach(e => { if (e.userId) employersByUserId.set(String(e.userId), e); });
-        const merged = employersFromUsers.map(u => ({
-            ...(employersByUserId.get(String(u.userId)) || {}),
-            ...u,
-            plan: (u.plan || 'free').toLowerCase(),
-            billingStatus: u.billing?.status || null,
-            subscriptionId: u.billing?.subscriptionId || null,
-            customerId: u.billing?.customerId || null
-        }));
-        res.json({ employers: merged });
+        const employers = await Employer.find().lean();
+        res.json({ employers });
     } catch (error) {
         console.error('Error getting employers:', error);
         res.status(500).json({ error: 'Failed to load employers' });
@@ -752,9 +715,7 @@ router.put('/applications/status', async (req, res) => {
 // Add new job manually
 router.post('/jobs', async (req, res) => {
     try {
-        const jobs = await readJSONFile('jobs.json');
-        const jobId = `manual_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
+        const Job = require('../models/Job');
         // Normalize booleans and enums from form
         const toBool = (v) => (typeof v === 'boolean' ? v : String(v).toLowerCase() === 'true');
         const expRaw = (req.body.experience_level || '').toString().toLowerCase();
@@ -769,104 +730,45 @@ router.post('/jobs', async (req, res) => {
         const applicationUrl = req.body.application_url;
 
         // Compute apply URL fallback
-        const computedUrl = applicationUrl || (applicationEmail ? `mailto:${applicationEmail}` : `https://talentsync.shop/job-detail.html?id=${jobId}`);
+        const computedUrl = applicationUrl || (applicationEmail ? `mailto:${applicationEmail}` : undefined);
 
-        const newJob = {
-            id: jobId,
+        // Create new job in MongoDB
+        const newJob = new Job({
             title: req.body.title,
             company: req.body.company,
             location: req.body.location,
             description: req.body.description,
-            url: computedUrl,
             salary: req.body.salary || 'Not specified',
-            source: 'Manual',
             job_type: jobType,
-            remote: req.body.remote === 'true',
-            posted_date: new Date().toISOString(),
-            scraped_at: new Date().toISOString(),
-            category: category,
-            entry_level: experienceLevel.toLowerCase().includes('entry'),
-            experience_level: experienceLevel,
-            requirements: req.body.skills ? req.body.skills.split(',').map(s => s.trim()) : [],
-            benefits: [],
-            featured: featured,
-            urgent: urgent,
-            application_email: applicationEmail,
-            application_url: applicationUrl,
-            status: 'active'
-        };
+            posted_date: new Date(),
+            // Add more fields to the Job model/schema if needed
+        });
+        await newJob.save();
 
-        jobs.unshift(newJob); // Add to beginning of array
-        
-        const success = await writeJSONFile('jobs.json', jobs);
-        if (success) {
-            // 🚀 AUTO-SEND EMAIL MARKETING CAMPAIGN FOR NEW JOB
-            let emailResult = null;
-            let emailErrorMsg = null;
-            try {
-                emailResult = await sendNewJobEmailCampaign(newJob);
-                console.log(`✅ Auto email campaign sent for job: ${newJob.title}`);
-            } catch (emailError) {
-                emailErrorMsg = emailError && emailError.message ? emailError.message : String(emailError);
-                console.error('❌ Failed to send auto email campaign:', emailErrorMsg);
-            }
-            res.json({
-                success: true,
-                job: newJob,
-                message: emailErrorMsg
-                    ? 'Job added, but email campaign failed: ' + emailErrorMsg
-                    : 'Job added successfully and email campaign sent!',
-                emailError: emailErrorMsg || null,
-                emailResult: emailResult || null
-            });
-        } else {
-            res.status(500).json({ error: 'Failed to save job' });
+        // 🚀 AUTO-SEND EMAIL MARKETING CAMPAIGN FOR NEW JOB
+        let emailResult = null;
+        let emailErrorMsg = null;
+        try {
+            emailResult = await sendNewJobEmailCampaign(newJob);
+            console.log(`✅ Auto email campaign sent for job: ${newJob.title}`);
+        } catch (emailError) {
+            emailErrorMsg = emailError && emailError.message ? emailError.message : String(emailError);
+            console.error('❌ Failed to send auto email campaign:', emailErrorMsg);
         }
+        res.json({
+            success: true,
+            job: newJob,
+            message: emailErrorMsg
+                ? 'Job added, but email campaign failed: ' + emailErrorMsg
+                : 'Job added successfully and email campaign sent!',
+            emailError: emailErrorMsg || null,
+            emailResult: emailResult || null
+        });
     } catch (error) {
         console.error('Error adding job:', error);
         res.status(500).json({ error: 'Failed to add job' });
     }
-});
 
-// Bulk update jobs (used by dashboard modal)
-router.post('/jobs/bulk', async (req, res) => {
-    try {
-        const { action, jobIds } = req.body || {};
-        if (!Array.isArray(jobIds) || !action) {
-            return res.status(400).json({ success: false, error: 'Invalid request' });
-        }
-
-        const jobs = await readJSONFile('jobs.json');
-        let affected = 0;
-
-        const setFlag = (job, field, value) => { job[field] = value; };
-
-        const updated = jobs.map(job => {
-            if (!jobIds.includes(job.id)) return job;
-            affected++;
-            switch (action) {
-                case 'activate': job.status = 'active'; break;
-                case 'deactivate': job.status = 'inactive'; break;
-                case 'feature': setFlag(job, 'featured', true); break;
-                case 'unfeature': setFlag(job, 'featured', false); break;
-                case 'urgent': setFlag(job, 'urgent', true); break;
-                case 'unurgent': setFlag(job, 'urgent', false); break;
-                case 'delete': return null; // mark for deletion
-                default: break;
-            }
-            job.updated_at = new Date().toISOString();
-            return job;
-        }).filter(Boolean);
-
-        const success = await writeJSONFile('jobs.json', updated);
-        if (!success) return res.status(500).json({ success: false, error: 'Failed to save changes' });
-
-        res.json({ success: true, message: `Bulk action '${action}' applied to ${affected} job(s)` });
-    } catch (error) {
-        console.error('Error performing bulk job action:', error);
-        res.status(500).json({ success: false, error: 'Server error' });
-    }
-});
 
 // Update existing job
 router.put('/jobs/:id', async (req, res) => {
@@ -1071,16 +973,13 @@ router.put('/users/:id', async (req, res) => {
 // Export employers to CSV
 router.get('/employers/export', async (req, res) => {
     try {
-        const employers = await readJSONFile('employers.json');
-        
+        const employers = await Employer.find().lean();
         // Create CSV content
-        const csvHeaders = 'ID,Company Name,Contact Email,Contact Name,Status,Verified,Jobs Posted,Created Date\n';
+        const csvHeaders = 'ID,Name,Email,Company,Created Date\n';
         const csvRows = employers.map(employer => {
-            return `"${employer.id || ''}","${employer.companyName || ''}","${employer.contactEmail || ''}","${employer.contactName || ''}","${employer.status || 'Active'}","${employer.verified || 'No'}","${employer.jobsPosted || '0'}","${employer.createdAt || ''}"`;
+            return `"${employer._id}","${employer.name || ''}","${employer.email || ''}","${employer.company || ''}","${employer.created_at || ''}"`;
         }).join('\n');
-        
         const csvContent = csvHeaders + csvRows;
-        
         res.setHeader('Content-Type', 'text/csv');
         res.setHeader('Content-Disposition', 'attachment; filename="employers_export.csv"');
         res.send(csvContent);
@@ -1093,23 +992,15 @@ router.get('/employers/export', async (req, res) => {
 // Verify employer company
 router.put('/employers/:id/verify', async (req, res) => {
     try {
-    const employers = await readJSONFile('employers.json');
-    const employerIndex = employers.findIndex(emp => String(emp.id) === String(req.params.id));
-        
-        if (employerIndex === -1) {
+        const employer = await Employer.findByIdAndUpdate(
+            req.params.id,
+            { $set: { verified: true, verifiedAt: new Date(), verifiedBy: 'Admin' } },
+            { new: true }
+        );
+        if (!employer) {
             return res.status(404).json({ error: 'Employer not found' });
         }
-
-        employers[employerIndex].verified = true;
-        employers[employerIndex].verifiedAt = new Date().toISOString();
-        employers[employerIndex].verifiedBy = 'Admin';
-
-        const success = await writeJSONFile('employers.json', employers);
-        if (success) {
-            res.json({ success: true, employer: employers[employerIndex], message: 'Company verified successfully' });
-        } else {
-            res.status(500).json({ error: 'Failed to verify company' });
-        }
+        res.json({ success: true, employer, message: 'Company verified successfully' });
     } catch (error) {
         console.error('Error verifying employer:', error);
         res.status(500).json({ error: 'Failed to verify company' });
@@ -1119,23 +1010,15 @@ router.put('/employers/:id/verify', async (req, res) => {
 // Approve employer application
 router.put('/employers/:id/approve', async (req, res) => {
     try {
-        const employers = await readJSONFile('employers.json');
-    const employerIndex = employers.findIndex(emp => String(emp.id) === String(req.params.id));
-        
-        if (employerIndex === -1) {
+        const employer = await Employer.findByIdAndUpdate(
+            req.params.id,
+            { $set: { status: 'active', approvedAt: new Date(), approvedBy: 'Admin' } },
+            { new: true }
+        );
+        if (!employer) {
             return res.status(404).json({ error: 'Employer not found' });
         }
-
-        employers[employerIndex].status = 'active';
-        employers[employerIndex].approvedAt = new Date().toISOString();
-        employers[employerIndex].approvedBy = 'Admin';
-
-        const success = await writeJSONFile('employers.json', employers);
-        if (success) {
-            res.json({ success: true, employer: employers[employerIndex], message: 'Employer approved successfully' });
-        } else {
-            res.status(500).json({ error: 'Failed to approve employer' });
-        }
+        res.json({ success: true, employer, message: 'Employer approved successfully' });
     } catch (error) {
         console.error('Error approving employer:', error);
         res.status(500).json({ error: 'Failed to approve employer' });
@@ -1145,24 +1028,15 @@ router.put('/employers/:id/approve', async (req, res) => {
 // Deny employer application
 router.put('/employers/:id/deny', async (req, res) => {
     try {
-        const employers = await readJSONFile('employers.json');
-    const employerIndex = employers.findIndex(emp => String(emp.id) === String(req.params.id));
-        
-        if (employerIndex === -1) {
+        const employer = await Employer.findByIdAndUpdate(
+            req.params.id,
+            { $set: { status: 'denied', deniedAt: new Date(), deniedBy: 'Admin', deniedReason: req.body.reason || 'Application denied by admin' } },
+            { new: true }
+        );
+        if (!employer) {
             return res.status(404).json({ error: 'Employer not found' });
         }
-
-        employers[employerIndex].status = 'denied';
-        employers[employerIndex].deniedAt = new Date().toISOString();
-        employers[employerIndex].deniedBy = 'Admin';
-        employers[employerIndex].deniedReason = req.body.reason || 'Application denied by admin';
-
-        const success = await writeJSONFile('employers.json', employers);
-        if (success) {
-            res.json({ success: true, employer: employers[employerIndex], message: 'Employer denied successfully' });
-        } else {
-            res.status(500).json({ error: 'Failed to deny employer' });
-        }
+        res.json({ success: true, employer, message: 'Employer denied successfully' });
     } catch (error) {
         console.error('Error denying employer:', error);
         res.status(500).json({ error: 'Failed to deny employer' });
@@ -1172,25 +1046,15 @@ router.put('/employers/:id/deny', async (req, res) => {
 // Update employer
 router.put('/employers/:id', async (req, res) => {
     try {
-        const employers = await readJSONFile('employers.json');
-        const employerIndex = employers.findIndex(emp => emp.id === req.params.id);
-        
-        if (employerIndex === -1) {
+        const employer = await Employer.findByIdAndUpdate(
+            req.params.id,
+            { $set: { ...req.body, updatedAt: new Date() } },
+            { new: true }
+        );
+        if (!employer) {
             return res.status(404).json({ error: 'Employer not found' });
         }
-
-        employers[employerIndex] = {
-            ...employers[employerIndex],
-            ...req.body,
-            updatedAt: new Date().toISOString()
-        };
-
-        const success = await writeJSONFile('employers.json', employers);
-        if (success) {
-            res.json({ success: true, employer: employers[employerIndex], message: 'Employer updated successfully' });
-        } else {
-            res.status(500).json({ error: 'Failed to update employer' });
-        }
+        res.json({ success: true, employer, message: 'Employer updated successfully' });
     } catch (error) {
         console.error('Error updating employer:', error);
         res.status(500).json({ error: 'Failed to update employer' });
@@ -2097,9 +1961,7 @@ router.post('/test-auto-campaign', async (req, res) => {
             entry_level: true,
             remote: true
         };
-        
         const result = await sendNewJobEmailCampaign(testJob);
-        
         res.json({ 
             success: true, 
             message: 'Test campaign sent successfully!', 
@@ -2110,5 +1972,6 @@ router.post('/test-auto-campaign', async (req, res) => {
         res.status(500).json({ error: 'Failed to send test campaign' });
     }
 });
-
+// ...existing code...
+}
 module.exports = router;
