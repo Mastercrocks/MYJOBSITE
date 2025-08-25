@@ -19,6 +19,7 @@ try {
 
 // JSON file paths (legacy fallback)
 const USERS_FILE = path.join(__dirname, '../data/users.json');
+const EMPLOYERS_FILE = path.join(__dirname, '../data/employers.json');
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production';
 
 // Rate limiting for auth routes (configurable + smarter keying)
@@ -104,7 +105,8 @@ function getBaseUrl() {
 // REGISTER NEW USER (Mongo-first with JSON fallback)
 router.post('/register', async (req, res) => {
   try {
-    let { username, email, password, firstName, lastName, userType = 'job_seeker', phone, company } = req.body || {};
+    let { username, email, password, firstName, lastName, userType = 'job_seeker', phone, company, companyName } = req.body || {};
+    company = company || companyName;
     username = (username ?? '').toString().trim();
     email = (email ?? '').toString().trim().toLowerCase();
     password = (password ?? '').toString();
@@ -140,6 +142,52 @@ router.post('/register', async (req, res) => {
       if ((userType || '').toLowerCase() === 'employer') {
         try { await ensureEmployerDocForUser(userDoc, { company }); } catch (_) {}
       }
+
+      // Also mirror to local JSON for redundancy
+      try {
+        const ensureDir = async (filePath) => { await fs.mkdir(path.dirname(filePath), { recursive: true }); };
+        if ((userType || '').toLowerCase() === 'employer') {
+          await ensureDir(EMPLOYERS_FILE);
+          let emps = [];
+          try { const raw = await fs.readFile(EMPLOYERS_FILE, 'utf8'); emps = Array.isArray(JSON.parse(raw)) ? JSON.parse(raw) : []; } catch (_) { emps = []; }
+          const exists = emps.some(e => (e?.email || '').toLowerCase() === email);
+          if (!exists) {
+            emps.push({
+              id: userDoc._id.toString(),
+              username,
+              email,
+              company: company || '',
+              firstName,
+              lastName,
+              userType: 'employer',
+              createdAt: new Date().toISOString(),
+              status: 'active'
+            });
+            await fs.writeFile(EMPLOYERS_FILE, JSON.stringify(emps, null, 2));
+          }
+        } else {
+          await ensureDir(USERS_FILE);
+          let arr = [];
+          try { const raw = await fs.readFile(USERS_FILE, 'utf8'); arr = Array.isArray(JSON.parse(raw)) ? JSON.parse(raw) : []; } catch (_) { arr = []; }
+          const existsU = arr.some(u => (u?.email || '').toLowerCase() === email);
+          if (!existsU) {
+            // Store hashed password only
+            const passwordRecord = await bcrypt.hash(password, 12);
+            arr.push({
+              id: userDoc._id.toString(),
+              username,
+              email,
+              password_hash: passwordRecord,
+              user_type: 'job_seeker',
+              first_name: firstName || '',
+              last_name: lastName || '',
+              status: 'active',
+              created_at: new Date().toISOString()
+            });
+            await fs.writeFile(USERS_FILE, JSON.stringify(arr, null, 2));
+          }
+        }
+      } catch (_) {}
 
       const token = jwt.sign({ userId: userDoc._id.toString() }, JWT_SECRET, { expiresIn: '7d' });
       res.cookie('authToken', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/', maxAge: 7 * 24 * 60 * 60 * 1000 });
@@ -199,6 +247,30 @@ router.post('/register', async (req, res) => {
     };
     users.push(newUser);
     await writeUsers(users);
+
+    // Also mirror employers to employers.json in fallback
+    try {
+      await fs.mkdir(path.dirname(EMPLOYERS_FILE), { recursive: true });
+      let emps = [];
+      try { const raw = await fs.readFile(EMPLOYERS_FILE, 'utf8'); emps = Array.isArray(JSON.parse(raw)) ? JSON.parse(raw) : []; } catch (_) { emps = []; }
+      if ((userType || '').toLowerCase() === 'employer') {
+        const exists = emps.some(e => (e?.email || '').toLowerCase() === email);
+        if (!exists) {
+          emps.push({
+            id: newUser.id,
+            username,
+            email,
+            company: company || companyName || '',
+            firstName,
+            lastName,
+            userType: 'employer',
+            createdAt: new Date().toISOString(),
+            status: 'active'
+          });
+          await fs.writeFile(EMPLOYERS_FILE, JSON.stringify(emps, null, 2));
+        }
+      }
+    } catch (_) {}
 
     const token = jwt.sign({ userId: newUser.id }, JWT_SECRET, { expiresIn: '7d' });
     res.cookie('authToken', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/', maxAge: 7 * 24 * 60 * 60 * 1000 });
