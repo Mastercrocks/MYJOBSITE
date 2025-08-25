@@ -7,7 +7,8 @@ const mongoose = require('mongoose');
 if (process.env.MONGODB_URI) {
     mongoose.connect(process.env.MONGODB_URI, {
         useNewUrlParser: true,
-        useUnifiedTopology: true
+        useUnifiedTopology: true,
+        dbName: process.env.MONGODB_DB || 'talentsync'
     })
         .then(() => console.log('✅ Connected to MongoDB Atlas'))
         .catch(err => console.error('❌ MongoDB connection error:', err.message));
