@@ -9,6 +9,9 @@ const Parser = require('rss-parser');
 
 // Email configuration for auto campaigns
 const emailConfig = {
+// Add missing closing brackets for any unclosed functions or route handlers
+// (This is a repair for a likely missing bracket in a large file)
+
     host: 'smtp.gmail.com',
     port: 587,
     secure: false,
@@ -769,6 +772,7 @@ router.post('/jobs', async (req, res) => {
         res.status(500).json({ error: 'Failed to add job' });
     }
 
+});
 
 // Update existing job
 router.put('/jobs/:id', async (req, res) => {
@@ -1565,7 +1569,7 @@ function generateJobEmailHTML(jobs, customMessage) {
     </html>`;
 }
 
-module.exports = router;
+// ...existing code...
 router.post('/scrape-job-url', async (req, res) => {
     try {
         console.log('Received scrape request:', req.body);
@@ -1972,4 +1976,6 @@ router.post('/test-auto-campaign', async (req, res) => {
         res.status(500).json({ error: 'Failed to send test campaign' });
     }
 });
+
+// Ensure all route handlers are closed
 module.exports = router;

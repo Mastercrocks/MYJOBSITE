@@ -179,16 +179,7 @@
                 <input type="password" id="pin" name="pin" maxlength="6" placeholder="••••••" required autocomplete="off">
             </div>
 
-            <!-- Username/Password Authentication (Backup) -->
-            <div class="form-group" id="usernameAuthGroup" style="display: none;">
-                <label for="username">Username</label>
-                <input type="text" id="username" name="username" placeholder="Enter admin username" autocomplete="off">
-            </div>
-
-            <div class="form-group" id="passwordAuthGroup" style="display: none;">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" placeholder="Enter admin password" autocomplete="off">
-            </div>
+            <!-- Username/Password Authentication removed -->
 
             <button type="submit" class="login-button">
                 Access Admin Dashboard
@@ -198,15 +189,11 @@
                 Invalid credentials. Please try again.
             </div>
             
-            <div class="text-center mt-4">
-                <button type="button" onclick="toggleAuthMethod()" class="text-sm text-blue-600 hover:text-blue-800">
-                    Switch to <span id="authToggleText">Username/Password</span>
-                </button>
-            </div>
+            <!-- Auth toggle removed -->
         </form>
 
         <div class="security-note">
-            🛡️ Secure admin access with username and password authentication. Session expires after 8 hours for security.
+            🛡️ Secure admin access with PIN authentication. Session expires after 8 hours for security.
         </div>
 
         <div class="back-link">
@@ -216,177 +203,48 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM loaded, setting up event listeners');
-            
             const form = document.getElementById('adminLoginForm');
-            if (!form) {
-                console.error('Form not found!');
-                return;
-            }
-            
+            if (!form) return;
             form.addEventListener('submit', function(e) {
-                console.log('Form submitted!');
                 e.preventDefault();
-                
-                // Check if form is valid
-                console.log('Form validity:', form.checkValidity());
-                
                 const pin = document.getElementById('pin').value;
-                const username = document.getElementById('username').value;
-                const password = document.getElementById('password').value;
-                
-                console.log('Values:', { pin, username, password });
-            const errorMessage = document.getElementById('errorMessage');
-            const ADMIN_PIN = '251996';
-            const ADMIN_USERNAME = 'admin';
-            const ADMIN_PASSWORD = 'talentsync2025';
-            
-            // Clear previous error
-            errorMessage.style.display = 'none';
-            
-            // Check which authentication method is being used
-            const usernameGroup = document.getElementById('usernameAuthGroup');
-            const usingPin = usernameGroup.style.display === 'none' || usernameGroup.style.display === '';
-            let isValidAuth = false;
-            
-            console.log('Authentication method - Using PIN:', usingPin);
-            console.log('Username group display:', usernameGroup.style.display);
-            
-            if (usingPin) {
-                // PIN Authentication (Primary)
-                isValidAuth = pin === ADMIN_PIN;
-                console.log('PIN entered:', pin, 'Expected:', ADMIN_PIN, 'Valid:', isValidAuth);
-            } else {
-                // Username/Password Authentication (Backup)
-                isValidAuth = username === ADMIN_USERNAME && password === ADMIN_PASSWORD;
-                console.log('Username/Password entered:', username, password, 'Valid:', isValidAuth);
-            }
-            
-            if (isValidAuth) {
-                // Store authentication in localStorage
-                const loginTime = new Date().getTime();
-                localStorage.setItem('adminSession', 'authenticated');
-                localStorage.setItem('adminLoginTime', loginTime.toString());
-                
-                // Show success feedback
-                document.querySelector('.login-button').textContent = 'Access Granted...';
-                document.querySelector('.login-button').style.background = '#10b981';
-                
-                // Redirect to admin dashboard
-                setTimeout(() => {
-                    window.location.href = '/admin/dashboard.html';
-                }, 1000);
-                
-            } else {
-                // Show error message
-                errorMessage.textContent = usingPin ? 'Invalid PIN. Please try again.' : 'Invalid username or password. Please try again.';
-                errorMessage.style.display = 'block';
-                
-                // Add shake animation
-                const loginCard = document.querySelector('.login-card');
-                loginCard.style.animation = 'none';
-                setTimeout(() => {
-                    loginCard.style.animation = 'shake 0.5s';
-                }, 10);
-                
-                // Clear fields
-                if (usingPin) {
+                const errorMessage = document.getElementById('errorMessage');
+                const ADMIN_PIN = '251996';
+                errorMessage.style.display = 'none';
+                if (pin === ADMIN_PIN) {
+                    const loginTime = new Date().getTime();
+                    localStorage.setItem('adminSession', 'authenticated');
+                    localStorage.setItem('adminLoginTime', loginTime.toString());
+                    document.querySelector('.login-button').textContent = 'Access Granted...';
+                    document.querySelector('.login-button').style.background = '#10b981';
+                    setTimeout(() => {
+                        window.location.href = '/admin/dashboard.html';
+                    }, 1000);
+                } else {
+                    errorMessage.textContent = 'Invalid PIN. Please try again.';
+                    errorMessage.style.display = 'block';
                     document.getElementById('pin').value = '';
                     document.getElementById('pin').focus();
-                } else {
-                    document.getElementById('username').value = '';
-                    document.getElementById('password').value = '';
-                    document.getElementById('username').focus();
-                }
-                
-                // Reset button text
-                document.querySelector('.login-button').textContent = 'Access Admin Dashboard';
-                document.querySelector('.login-button').style.background = '#3b82f6';
-            }
-        });
-        
-        // Also add a click event listener as backup
-        const loginButton = document.querySelector('.login-button');
-        if (loginButton) {
-            loginButton.addEventListener('click', function(e) {
-                console.log('Button clicked directly!');
-                if (e.target.type === 'submit') {
-                    console.log('Submit button clicked, form should submit');
+                    document.querySelector('.login-button').textContent = 'Access Admin Dashboard';
+                    document.querySelector('.login-button').style.background = '#3b82f6';
                 }
             });
-        }
-        
-        }); // End DOMContentLoaded
-
-        // Toggle Authentication Method
-        function toggleAuthMethod() {
-            const pinGroup = document.getElementById('pinAuthGroup');
-            const usernameGroup = document.getElementById('usernameAuthGroup');
-            const passwordGroup = document.getElementById('passwordAuthGroup');
-            const toggleText = document.getElementById('authToggleText');
-            const headerText = document.querySelector('.login-header p');
-            
-            if (pinGroup.style.display === 'none') {
-                // Switch to PIN
-                pinGroup.style.display = 'block';
-                usernameGroup.style.display = 'none';
-                passwordGroup.style.display = 'none';
-                toggleText.textContent = 'Username/Password';
-                headerText.textContent = 'Enter your 6-digit PIN to access the admin dashboard';
-                document.getElementById('pin').required = true;
-                document.getElementById('username').required = false;
-                document.getElementById('password').required = false;
-            } else {
-                // Switch to Username/Password
-                pinGroup.style.display = 'none';
-                usernameGroup.style.display = 'block';
-                passwordGroup.style.display = 'block';
-                toggleText.textContent = 'PIN Authentication';
-                headerText.textContent = 'Enter your credentials to access the admin dashboard';
-                document.getElementById('pin').required = false;
-                document.getElementById('username').required = true;
-                document.getElementById('password').required = true;
-            }
-            
-            // Clear error message
-            document.getElementById('errorMessage').style.display = 'none';
-            
-            // Clear all fields
-            document.getElementById('pin').value = '';
-            document.getElementById('username').value = '';
-            document.getElementById('password').value = '';
-        }
-
-        // Check if already authenticated
-        function checkExistingAuth() {
+            // Check if already authenticated
             const adminSession = localStorage.getItem('adminSession');
             const loginTime = localStorage.getItem('adminLoginTime');
-            
             if (adminSession === 'authenticated' && loginTime) {
                 const currentTime = new Date().getTime();
                 const timeDiff = currentTime - parseInt(loginTime);
                 const hoursDiff = timeDiff / (1000 * 60 * 60);
-                
-                // If logged in within last 8 hours, redirect to dashboard
                 if (hoursDiff < 8) {
                     window.location.href = '/admin/dashboard.html';
                 } else {
-                    // Session expired, clear storage
                     localStorage.removeItem('adminSession');
                     localStorage.removeItem('adminLoginTime');
                 }
             }
-        }
-
-        // Check authentication status on page load
-        checkExistingAuth();
-
-        // Auto-focus PIN field on load
-        document.getElementById('pin').focus();
-        
-        // Add debugging for button
-        console.log('Login button found:', document.querySelector('.login-button'));
-        console.log('Form found:', document.getElementById('adminLoginForm'));
+            document.getElementById('pin').focus();
+        });
     </script>
 </body>
 </html>
