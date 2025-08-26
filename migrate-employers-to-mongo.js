@@ -14,7 +14,7 @@ if (!MONGO_URI) {
 }
 
 async function migrateEmployers() {
-  await mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
+  await mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true, dbName: process.env.MONGODB_DB || 'talentsync' });
   console.log('Connected to MongoDB');
 
   if (!fs.existsSync(employersPath)) {

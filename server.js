@@ -77,6 +77,7 @@ const authRoutes = require('./routes/auth-json'); // Use JSON-based auth instead
 const adminDataRoutes = require('./routes/admin-data');
 const resumeUploadRoutes = require('./routes/resume-upload');
 const employerApi = require('./routes/employer-api');
+const Job = require('./models/Job');
 
 // Add analytics tracking middleware (before routes)
 app.use(trackPageView);
@@ -94,29 +95,28 @@ app.use('/api', resumeUploadRoutes);
 app.use('/api/employer', employerApi);
 
 // API routes FIRST (before static files)
-app.get('/api/fresh', (req, res) => {
+app.get('/api/fresh', async (req, res) => {
     try {
         const jobsPath = path.join(__dirname, 'data', 'jobs.json');
         const scrapedPath = path.join(__dirname, 'data', 'scraped_jobs.json');
-    const includeScraped = (req.query.includeScraped || '').toString().toLowerCase() === 'true';
+        const includeScraped = (req.query.includeScraped || '').toString().toLowerCase() === 'true';
 
         let manualJobs = [];
         let scrapedJobs = [];
+        let mongoJobs = [];
 
-        // Load manual/admin jobs
-    if (fs.existsSync(jobsPath)) {
+        // Load manual/admin jobs from JSON (legacy/manual)
+        if (fs.existsSync(jobsPath)) {
             try {
                 const jobs = JSON.parse(fs.readFileSync(jobsPath, 'utf8')) || [];
                 manualJobs = jobs
                     .filter(j => (j.status || 'active') === 'active')
                     .map(j => ({
-                        // Preserve existing fields, normalize some keys
                         ...j,
-            // Normalize application URL so frontend can use job.url consistently
-            url: j.url || j.apply_url || j.applyUrl || j.applyLink || j.application_url || j.apply || j.link || '',
+                        url: j.url || j.apply_url || j.applyUrl || j.applyLink || j.application_url || j.apply || j.link || '',
                         job_type: j.job_type || j.type || 'Full-time',
                         posted_date: j.posted_date || j.datePosted || new Date().toISOString(),
-                        source: j.source || ''
+                        source: j.source || 'manual'
                     }));
             } catch (e) {
                 console.error('Failed to parse jobs.json:', e);
@@ -124,13 +124,13 @@ app.get('/api/fresh', (req, res) => {
         }
 
         // Load scraped jobs (LinkedIn/ZipRecruiter/etc.)
-    if (fs.existsSync(scrapedPath)) {
+        if (fs.existsSync(scrapedPath)) {
             try {
                 const scraped = JSON.parse(fs.readFileSync(scrapedPath, 'utf8')) || [];
                 scrapedJobs = scraped.map(j => ({
                     ...j,
                     status: j.status || 'active',
-            url: j.url || j.apply_url || j.link || '',
+                    url: j.url || j.apply_url || j.link || '',
                     job_type: j.job_type || j.type || 'Full-time',
                     posted_date: j.posted_date || j.datePosted || j.posted_date || new Date().toISOString(),
                 })).filter(j => j.status === 'active');
@@ -139,8 +139,30 @@ app.get('/api/fresh', (req, res) => {
             }
         }
 
-    // Combine jobs based on flag (default: manual only)
-    const combined = includeScraped ? [...scrapedJobs, ...manualJobs] : manualJobs;
+        // Load jobs from MongoDB if connected
+        try {
+            if (mongoose.connection && mongoose.connection.readyState === 1) {
+                const docs = await Job.find({}).lean();
+                mongoJobs = (docs || []).map(j => ({
+                    id: j._id.toString(),
+                    title: j.title,
+                    company: j.company,
+                    location: j.location,
+                    description: j.description,
+                    url: j.url || '',
+                    job_type: j.job_type || 'Full-time',
+                    posted_date: j.posted_date || j.created_at || new Date().toISOString(),
+                    status: (j.status || 'active'),
+                    source: 'mongo'
+                })).filter(j => (j.status || 'active') === 'active');
+            }
+        } catch (e) {
+            console.error('Failed to load jobs from Mongo:', e.message);
+        }
+
+        // Combine jobs
+        const combinedBase = [...mongoJobs, ...manualJobs];
+        const combined = includeScraped ? [...scrapedJobs, ...combinedBase] : combinedBase;
 
         // Build source counts
         const countBy = (pred) => combined.filter(pred).length;
@@ -150,14 +172,11 @@ app.get('/api/fresh', (req, res) => {
             indeed: countBy(j => (j.source || '').toLowerCase().includes('indeed')),
             glassdoor: countBy(j => (j.source || '').toLowerCase().includes('glassdoor')),
             manual: countBy(j => (j.source || '').toLowerCase().includes('manual')),
+            mongo: countBy(j => (j.source || '').toLowerCase().includes('mongo')),
             total: combined.length
         };
 
-    res.json({
-            success: true,
-            jobs: combined,
-            sources
-        });
+        res.json({ success: true, jobs: combined, sources });
     } catch (error) {
         console.error('Error reading jobs:', error);
         res.json({ success: false, jobs: [], sources: { total: 0 } });
