@@ -4,7 +4,7 @@ const fs = require('fs');
 const fsp = require('fs').promises;
 const path = require('path');
 const { authenticateToken } = require('../middleware/auth-json');
-const { sendAccountEmail } = require('../services/emailService');
+const { sendAccountEmail, sendJobMarketingEmail, isEmailConfigured } = require('../services/emailService');
 const Job = require('../models/Job');
 const Employer = require('../models/Employer');
 // Accept both STRIPE_SECRET_KEY and STRIPE_SECRET
@@ -31,6 +31,59 @@ async function readJsonSafe(file, fallback) {
 async function writeJsonSafe(file, data) {
   await fsp.mkdir(path.dirname(file), { recursive: true });
   await fsp.writeFile(file, JSON.stringify(data, null, 2));
+}
+
+// Send an email campaign to all subscribers for a new job
+async function sendCampaignForJob(job) {
+  try {
+    if (!isEmailConfigured()) {
+      console.warn('Email not configured (missing EMAIL_USER/EMAIL_PASS). Skipping job campaign.');
+      return { sent: 0, failed: 0 };
+    }
+    const emails = await readJsonSafe(dataPath('email_list.json'), []);
+    if (!Array.isArray(emails) || emails.length === 0) {
+      console.log('No subscribers found; skipping job campaign');
+      return { sent: 0, failed: 0 };
+    }
+
+    const subject = `New Job: ${job.title} at ${job.company}`;
+    const applyUrl = job.url || 'https://talentsync.shop/jobs.html';
+    const text = `New Job Alert\n\n${job.title} at ${job.company}\nLocation: ${job.location}\nType: ${job.job_type || 'Full-time'}\n\nApply: ${applyUrl}`;
+    const html = generateSimpleJobHTML(job, applyUrl);
+
+    let sent = 0, failed = 0;
+    for (const rec of emails) {
+      try {
+        await sendJobMarketingEmail({ to: rec.email, subject, text, html });
+        sent++;
+        await new Promise(r => setTimeout(r, 100)); // small delay to avoid throttling
+      } catch (e) {
+        console.error('Failed to send job email to', rec?.email, e?.message || e);
+        failed++;
+      }
+    }
+    console.log(`Job campaign completed. Sent=${sent}, Failed=${failed}`);
+    return { sent, failed };
+  } catch (e) {
+    console.error('Campaign send error:', e);
+    return { sent: 0, failed: 0 };
+  }
+}
+
+function generateSimpleJobHTML(job, applyUrl) {
+  return `
+  <div style="font-family:Arial,sans-serif;line-height:1.6;color:#333;max-width:600px;margin:0 auto">
+    <h2>🚀 New Job: ${job.title}</h2>
+    <p><strong>Company:</strong> ${job.company}</p>
+    <p><strong>Location:</strong> ${job.location}</p>
+    <p><strong>Type:</strong> ${job.job_type || 'Full-time'}</p>
+    ${job.salary ? `<p><strong>Salary:</strong> ${job.salary}</p>` : ''}
+    <div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:12px;margin:12px 0">
+      ${String(job.description || '').slice(0, 350)}${(job.description || '').length > 350 ? '...' : ''}
+    </div>
+    <p><a href="${applyUrl}" style="background:#2563eb;color:#fff;text-decoration:none;padding:10px 16px;border-radius:6px;display:inline-block">Apply Now</a></p>
+    <p style="color:#64748b;font-size:12px">You are receiving this email because you subscribed to job alerts from TalentSync.</p>
+  </div>`;
 }
 
 // Ensure a Stripe customer exists and belongs to the current Stripe mode (test/live)
@@ -391,6 +444,14 @@ router.post('/jobs', authenticateToken, async (req, res) => {
       employer: employer._id
     });
     await job.save();
+
+    // Trigger email campaign to subscribers
+    try {
+      await sendCampaignForJob(job);
+    } catch (e) {
+      console.warn('Job email campaign failed:', e?.message || e);
+    }
+
     res.json({ success: true, job });
   } catch (e) {
     res.status(500).json({ error: 'Failed to create job' });
