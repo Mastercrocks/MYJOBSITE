@@ -1,1 +1,26 @@
-[]
+[
+  {
+    "id": 1756168638824,
+    "type": "auto_job_alert",
+    "jobId": "68ad01babe0a06e7bf17a569",
+    "jobTitle": "Remote Customer Service",
+    "company": "That's No Moon",
+    "subject": "🚀 New Job Alert: Remote Customer Service at That's No Moon",
+    "sentTo": 0,
+    "failed": 6,
+    "sentAt": "2025-08-26T00:37:18.824Z",
+    "status": "completed"
+  },
+  {
+    "id": 1756168483954,
+    "type": "auto_job_alert",
+    "jobId": "68ad011cbe0a06e7bf17a567",
+    "jobTitle": "Remote Customer Service",
+    "company": "SO Globe Life",
+    "subject": "🚀 New Job Alert: Remote Customer Service at SO Globe Life",
+    "sentTo": 0,
+    "failed": 6,
+    "sentAt": "2025-08-26T00:34:43.955Z",
+    "status": "completed"
+  }
+]
