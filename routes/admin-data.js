@@ -424,6 +424,31 @@ router.get('/stats', async (req, res) => {
 router.get('/jobs', async (req, res) => {
     try {
         const jobs = await readJSONFile('jobs.json');
+        // Load Mongo jobs and merge with JSON so admin sees full inventory
+        let mongoJobs = [];
+        try {
+            const Job = require('../models/Job');
+            const docs = await Job.find({}).lean();
+            mongoJobs = (docs || []).map(j => ({
+                id: j._id?.toString(),
+                title: j.title,
+                company: j.company,
+                location: j.location,
+                description: j.description,
+                url: j.url || '',
+                salary: j.salary || '',
+                job_type: j.job_type || 'Full-time',
+                status: j.status || 'active',
+                posted_date: j.posted_date || j.created_at || new Date().toISOString(),
+            }));
+        } catch (_) { /* ignore mongo errors; fallback to JSON-only */ }
+
+        // Combine and de-dup by title+company+location+job_type
+        const combined = Array.isArray(jobs) ? mongoJobs.concat(jobs) : mongoJobs;
+        const key = (j) => `${(j.title||'').toLowerCase()}|${(j.company||'').toLowerCase()}|${(j.location||'').toLowerCase()}|${(j.job_type||'').toLowerCase()}`;
+        const dedupMap = new Map();
+        for (const j of combined) { const k = key(j); if (!dedupMap.has(k)) dedupMap.set(k, j); }
+        const allJobs = Array.from(dedupMap.values());
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 50;
         const search = req.query.search || '';
@@ -438,7 +463,7 @@ router.get('/jobs', async (req, res) => {
         const locationNorm = norm(location);
 
         // Filter jobs safely (handle missing fields)
-        let filteredJobs = (jobs || []).filter(job => {
+    let filteredJobs = (allJobs || []).filter(job => {
             const title = norm(job.title);
             const comp = norm(job.company);
             const loc = norm(job.location);
