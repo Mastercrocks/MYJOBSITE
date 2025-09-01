@@ -813,7 +813,7 @@
             });
         });
 
-        // Load and display jobs (fetch all pages; fallback to legacy source if empty)
+        // Load and display jobs (fetch all pages; robust fallback if JSON parsing fails)
         async function loadJobs() {
             try {
                 console.log('🚀 Loading jobs from Mongo-backed API...');
@@ -822,16 +822,31 @@
                 let page = 1;
                 let aggregated = [];
                 let totalPages = 1;
+                let parseFailed = false;
                 do {
-                    const resp = await fetch(`/api/jobs-v2?limit=${pageSize}&page=${page}`);
-                    const data = await resp.json();
-                    if (!data.success) break;
-                    aggregated = aggregated.concat(Array.isArray(data.jobs) ? data.jobs : []);
-                    totalPages = data.totalPages || 1;
-                    page++;
+                    try {
+                        const resp = await fetch(`/api/jobs-v2?limit=${pageSize}&page=${page}`, { headers: { 'Accept': 'application/json' } });
+                        const text = await resp.text();
+                        let data;
+                        try {
+                            data = JSON.parse(text);
+                        } catch (e) {
+                            console.warn('jobs-v2 returned non-JSON; will fallback. First page text sample:', text.slice(0, 120));
+                            parseFailed = true;
+                            break;
+                        }
+                        if (!data || data.success === false) break;
+                        aggregated = aggregated.concat(Array.isArray(data.jobs) ? data.jobs : []);
+                        totalPages = data.totalPages || 1;
+                        page++;
+                    } catch (innerErr) {
+                        console.warn('jobs-v2 fetch error; will fallback:', innerErr);
+                        parseFailed = true;
+                        break;
+                    }
                 } while (page <= totalPages);
 
-                if (aggregated.length > 0) {
+                if (!parseFailed && aggregated.length > 0) {
                     console.log(`✅ Loaded ${aggregated.length} jobs from Mongo API (${totalPages} pages)`);
                     allJobs = aggregated;
                     window.totalJobs = aggregated.length;
@@ -841,16 +856,29 @@
 
                 // Fallback to legacy combined feed (includes JSON/scraped if present)
                 console.log('↩️  Fallback: loading from /api/fresh with scraped jobs');
-                const resp2 = await fetch('/api/fresh?includeScraped=true');
-                const data2 = await resp2.json();
-                if (data2.success && Array.isArray(data2.jobs) && data2.jobs.length > 0) {
-                    console.log(`✅ Loaded ${data2.jobs.length} jobs from legacy feed`);
-                    allJobs = data2.jobs;
-                    window.totalJobs = data2.jobs.length;
-                    filterAndDisplayJobs();
-                } else {
-                    console.log('❌ No jobs found in any source');
-                    showNoJobsMessage();
+                try {
+                    const resp2 = await fetch('/api/fresh?includeScraped=true', { headers: { 'Accept': 'application/json' } });
+                    const text2 = await resp2.text();
+                    let data2;
+                    try {
+                        data2 = JSON.parse(text2);
+                    } catch (e2) {
+                        console.error('Legacy /api/fresh returned non-JSON too. Sample:', text2.slice(0, 120));
+                        showErrorMessage();
+                        return;
+                    }
+                    if (data2.success && Array.isArray(data2.jobs) && data2.jobs.length > 0) {
+                        console.log(`✅ Loaded ${data2.jobs.length} jobs from legacy feed`);
+                        allJobs = data2.jobs;
+                        window.totalJobs = data2.jobs.length;
+                        filterAndDisplayJobs();
+                    } else {
+                        console.log('❌ No jobs found in any source');
+                        showNoJobsMessage();
+                    }
+                } catch (fallbackErr) {
+                    console.error('Error loading fallback jobs:', fallbackErr);
+                    showErrorMessage();
                 }
             } catch (error) {
                 console.error('Error loading jobs:', error);

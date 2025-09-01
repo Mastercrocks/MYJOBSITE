@@ -1,5 +1,6 @@
 [
   {
+    "type": "student",
     "id": "1755408045783",
     "email": "jamesen9@gmail.com",
     "name": "Peterson D",
@@ -12,6 +13,7 @@
     "totalEmailsSent": 0
   },
   {
+    "type": "student",
     "id": "1755635949628",
     "email": "petersondameu@gmail.com",
     "name": "Peter",
@@ -22,6 +24,7 @@
     "totalEmailsSent": 0
   },
   {
+    "type": "student",
     "id": "1755642233928kfmrs",
     "email": "ecomarket828@gmail.com",
     "name": "Peterson Dameus",
@@ -35,6 +38,7 @@
     "totalEmailsSent": 0
   },
   {
+    "type": "student",
     "id": "1755642233928vezbf",
     "email": "newuser@test.com",
     "name": "New User",
@@ -48,6 +52,7 @@
     "totalEmailsSent": 0
   },
   {
+    "type": "student",
     "id": "1755642233928pe3gk",
     "email": "pdameus@test.com",
     "name": "New User",
@@ -61,6 +66,7 @@
     "totalEmailsSent": 0
   },
   {
+    "type": "student",
     "id": "1755642233928x5nqb",
     "email": "bradpeterstore@gmail.com",
     "name": "Second TEST",
@@ -70,6 +76,69 @@
     ],
     "status": "active",
     "addedDate": "2025-08-19T22:23:53.927Z",
+    "lastEmailSent": null,
+    "totalEmailsSent": 0
+  },
+  {
+    "type": "employer",
+    "id": "1756697512990",
+    "email": "petersondameu@gmail.com",
+    "name": "for employers",
+    "tags": [],
+    "status": "active",
+    "addedDate": "2025-09-01T03:31:52.990Z",
+    "lastEmailSent": null,
+    "totalEmailsSent": 0
+  },
+  {
+    "type": "employer",
+    "id": "1756703911470fqix5",
+    "email": "jamesen9@gmail.com",
+    "name": "Peterson Dameus",
+    "tags": [
+      "employer-user"
+    ],
+    "status": "active",
+    "addedDate": "2025-09-01T05:18:31.459Z",
+    "lastEmailSent": null,
+    "totalEmailsSent": 0
+  },
+  {
+    "type": "employer",
+    "id": "1756703911470b2wba",
+    "email": "coharrison2020@gmail.com",
+    "name": "",
+    "tags": [
+      "employer-user"
+    ],
+    "status": "active",
+    "addedDate": "2025-09-01T05:18:31.459Z",
+    "lastEmailSent": null,
+    "totalEmailsSent": 0
+  },
+  {
+    "type": "employer",
+    "id": "1756703911470vxipm",
+    "email": "stamarketing101@gmail.com",
+    "name": "",
+    "tags": [
+      "employer-user"
+    ],
+    "status": "active",
+    "addedDate": "2025-09-01T05:18:31.459Z",
+    "lastEmailSent": null,
+    "totalEmailsSent": 0
+  },
+  {
+    "type": "employer",
+    "id": "17567039114706znpk",
+    "email": "bradpeterstore@gmail.com",
+    "name": "Second TEST",
+    "tags": [
+      "employer-user"
+    ],
+    "status": "active",
+    "addedDate": "2025-09-01T05:18:31.459Z",
     "lastEmailSent": null,
     "totalEmailsSent": 0
   }
