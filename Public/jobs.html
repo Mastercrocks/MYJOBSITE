@@ -1058,6 +1058,15 @@
                 new Date(job.posted_date).toLocaleDateString() : 'Recently';
             document.getElementById('modalJobDescription').innerHTML = job.description || 'No description available.';
 
+                        // Record a profile view (job detail view) for employer analytics
+                        try {
+                            const jobId = String(job.id || job._id || job.url || job.title);
+                            const employerId = String(job.employerId || job.postedBy || '');
+                            if (employerId) {
+                                fetch(`/api/jobs/${encodeURIComponent(jobId)}/view`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ employerId }) }).catch(()=>{});
+                            }
+                        } catch (_) {}
+
             // Set up apply button
             const applyBtn = document.getElementById('applyJobBtn');
             const onSiteApply = document.getElementById('onSiteApplySection');

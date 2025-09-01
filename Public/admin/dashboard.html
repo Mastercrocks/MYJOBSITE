@@ -1813,42 +1813,28 @@
                     console.warn('totalUsers element not found');
                 }
                 
-                // Find and update jobs count (active jobs only)
-                const jobsElement = document.querySelector('[data-stat="jobs"]') || 
-                    Array.from(document.querySelectorAll('.text-3xl')).find(el => {
-                        const parent = el.parentElement;
-                        const textEl = parent?.querySelector('.text-sm');
-                        return textEl && (textEl.textContent.includes('Jobs') || textEl.textContent.includes('Active Jobs'));
-                    });
-                if (jobsElement) {
-                    jobsElement.textContent = Number(data.totals.jobs || 0).toLocaleString();
+                // Update jobs count (active jobs only)
+                const jobsElementById = document.getElementById('activeJobs');
+                if (jobsElementById) {
+                    jobsElementById.textContent = Number(data.totals.jobs || 0).toLocaleString();
+                } else {
+                    const jobsElement = document.querySelector('[data-stat="jobs"]');
+                    if (jobsElement) jobsElement.textContent = Number(data.totals.jobs || 0).toLocaleString();
                 }
                 
-                // Find and update applications count
-                const appsElement = document.querySelector('[data-stat="applications"]') || 
-                    Array.from(document.querySelectorAll('.text-3xl')).find(el => {
-                        const parent = el.parentElement;
-                        const textEl = parent?.querySelector('.text-sm');
-                        return textEl && textEl.textContent.includes('Application');
-                    });
-                if (appsElement) {
-                    appsElement.textContent = Number(data.totals.applications || 0).toLocaleString();
+                // Update applications count
+                const appsElementById = document.getElementById('totalApplications');
+                if (appsElementById) {
+                    appsElementById.textContent = Number(data.totals.applications || 0).toLocaleString();
+                } else {
+                    const appsElement = document.querySelector('[data-stat="applications"]');
+                    if (appsElement) appsElement.textContent = Number(data.totals.applications || 0).toLocaleString();
                 }
                 
-                // Find and update employers count (or page views if no employers stat)
-                const employersElement = document.querySelector('[data-stat="employers"]') || 
-                    Array.from(document.querySelectorAll('.text-3xl')).find(el => {
-                        const parent = el.parentElement;
-                        const textEl = parent?.querySelector('.text-sm');
-                        return textEl && (textEl.textContent.includes('Page') || textEl.textContent.includes('Employer'));
-                    });
-                if (employersElement) {
-                    const parentText = employersElement.parentElement.querySelector('.text-sm')?.textContent;
-                    if (parentText && parentText.includes('Page')) {
-                        employersElement.textContent = Number(data.totals.pageViews || 0).toLocaleString();
-                    } else {
-                        employersElement.textContent = Number(data.totals.employers || 0).toLocaleString();
-                    }
+                // Update page views directly if tile exists
+                const pageViewsEl = document.getElementById('pageViews');
+                if (pageViewsEl) {
+                    pageViewsEl.textContent = Number(data.totals.pageViews || 0).toLocaleString();
                 }
                 
                 // Update weekly growth indicators

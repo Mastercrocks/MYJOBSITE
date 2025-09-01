@@ -1,4 +1,5 @@
 // Debug Email System - Find out why emails aren't being sent
+require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
 const nodemailer = require('nodemailer');
@@ -15,7 +16,7 @@ const emailConfig = {
     secure: false,
     auth: {
         user: process.env.EMAIL_USER || 'jamesen9@gmail.com',
-        pass: process.env.EMAIL_PASS || 'jvsi aept dlma kahv'
+        pass: (process.env.EMAIL_PASS || '').replace(/\s/g, '') || 'jvsi aept dlma kahv'
     }
 };
 
@@ -43,9 +44,11 @@ transporter.verify((error, success) => {
 async function testSendEmail() {
     console.log('\n3. 📨 Testing Email Send...');
     
+    const fromAddr = process.env.EMAIL_FROM || process.env.EMAIL_USER || 'jamesen9@gmail.com';
+    const toAddr = process.env.ADMIN_NOTIFY_EMAIL || process.env.EMAIL_USER || 'jamesen9@gmail.com';
     const testEmail = {
-        from: '"TalentSync Test" <jamesen9@gmail.com>',
-        to: 'jamesen9@gmail.com',
+        from: `"TalentSync Test" <${fromAddr}>`,
+        to: toAddr,
         subject: '🧪 Test Email from TalentSync Debug',
         html: `
             <h2>🧪 Email System Test</h2>

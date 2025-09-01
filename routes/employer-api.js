@@ -4,7 +4,7 @@ const fs = require('fs');
 const fsp = require('fs').promises;
 const path = require('path');
 const { authenticateToken } = require('../middleware/auth-json');
-const { sendAccountEmail, sendJobMarketingEmail, isEmailConfigured } = require('../services/emailService');
+const { sendAccountEmail, sendJobMarketingEmail, isEmailConfigured, verifyEmailTransport } = require('../services/emailService');
 const Job = require('../models/Job');
 const Employer = require('../models/Employer');
 // Accept both STRIPE_SECRET_KEY and STRIPE_SECRET
@@ -59,6 +59,12 @@ async function sendCampaignForJob(job) {
   try {
     if (!isEmailConfigured()) {
       console.warn('Email not configured (missing EMAIL_USER/EMAIL_PASS). Skipping job campaign.');
+      return { sent: 0, failed: 0 };
+    }
+    // Verify transport/auth once to avoid repeating failures for each recipient
+    const ok = await verifyEmailTransport();
+    if (!ok) {
+      console.warn('Skipping job campaign due to invalid email credentials.');
       return { sent: 0, failed: 0 };
     }
     const emails = await readJsonSafe(dataPath('email_list.json'), []);
@@ -230,8 +236,12 @@ router.get('/billing/config-status', authenticateToken, async (req, res) => {
       basic: PRICE_IDS.basic ? 'set' : 'missing',
       pro: PRICE_IDS.pro ? 'set' : 'missing'
     };
-    const base = (process.env.PUBLIC_BASE_URL || `${(req.headers['x-forwarded-proto'] || req.protocol)}://${req.get('host')}`);
-    res.json({ provider: hasStripe ? 'stripe' : 'none', priceIds: ids, baseUrl: base });
+  const base = (process.env.PUBLIC_BASE_URL || `${(req.headers['x-forwarded-proto'] || req.protocol)}://${req.get('host')}`);
+  const mode = hasStripe ? getStripeMode() : 'none';
+  // Detect obviously restricted keys that cannot create Checkout Sessions
+  const keyPreview = (process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET || '').toString();
+  const likelyRestricted = /^(rk_|Rk_)/.test(keyPreview);
+  res.json({ provider: hasStripe ? 'stripe' : 'none', mode, priceIds: ids, baseUrl: base, notes: likelyRestricted ? 'Restricted Stripe key detected; use a full secret key (sk_...).' : undefined });
   } catch (_) { res.json({ provider: 'unknown' }); }
 });
 
@@ -330,7 +340,11 @@ router.post('/billing/checkout', authenticateToken, async (req, res) => {
     }
     res.json({ url: session.url });
   } catch (e) {
-    console.error('Stripe checkout error:', e?.message || e);
+    // Log detailed Stripe error context for diagnostics (safe: no secrets)
+    try {
+      const detail = { message: e?.message || String(e), type: e?.type, code: e?.code, param: e?.param };
+      console.error('Stripe checkout error:', JSON.stringify(detail));
+    } catch (_) { console.error('Stripe checkout error:', e?.message || e); }
     // Provide a slightly more actionable error for common config issues
     const msg = (e && e.message) || '';
     if (/No such price/i.test(msg)) {
@@ -338,6 +352,9 @@ router.post('/billing/checkout', authenticateToken, async (req, res) => {
     }
     if (/No such customer/i.test(msg)) {
       return res.status(500).json({ error: 'Billing profile invalid. Please retry upgrade.' });
+    }
+    if (/api key provided/i.test(msg) || /invalid api key/i.test(msg) || /must use a secret key/i.test(msg)) {
+      return res.status(500).json({ error: 'Stripe key invalid or restricted. Use a full secret key (sk_...).' });
     }
     res.status(500).json({ error: 'Failed to create checkout session' });
   }
@@ -477,52 +494,69 @@ router.post('/billing/webhook', express.raw({ type: 'application/json' }), async
 // Create job (plan enforced)
 router.post('/jobs', authenticateToken, async (req, res) => {
   try {
-    // Find employer by auth user id
-    const employer = await Employer.findById(req.user.id);
-    if (!employer) {
-      return res.status(403).json({ error: 'Employer not found' });
-    }
-    // Enforce plan limits before creating a job
+    // Find employer by auth user id (Mongo if available)
+    const employer = await Employer.findById(req.user.id).catch(() => null);
+    let usingMongo = !!employer;
+
+    // Enforce plan limits before creating a job (Mongo or JSON fallback)
     try {
       const user = await getUserRecord(req.user.id);
       const plan = getUserPlan(user);
       const limit = PLAN_LIMITS[plan];
       if (limit !== Infinity) {
-        const activeCount = await Job.countDocuments({ employer: employer._id, status: 'active' });
+        let activeCount = 0;
+        if (usingMongo) {
+          activeCount = await Job.countDocuments({ employer: employer._id, status: 'active' });
+        } else {
+          const jobs = await readJsonSafe(dataPath('jobs.json'), []);
+          activeCount = jobs.filter(j => ((j.postedBy || j.employerId) === req.user.id) && (j.status||'active')==='active').length;
+        }
         if (activeCount >= limit) {
           return res.status(403).json({ error: `Free plan limit reached. You can post up to ${limit} active jobs. Upgrade to add more.` });
         }
       }
     } catch (_) { /* soft-fail: default to allowing create if plan lookup has issues */ }
-    // Save employer info to EMPLOYERS.js (for migration)
-    try {
-      const { saveEmployer } = require('../EMPLOYERS');
-      saveEmployer({
-        name: employer.name,
-        email: employer.email,
-        company: employer.company,
-        created_at: employer.created_at || new Date(),
-      });
-    } catch (err) {
-      console.error('EMPLOYERS.js save error:', err);
-    }
+  // Note: Removed legacy EMPLOYERS.js mirror to avoid runtime errors when module is empty
     const body = req.body || {};
     const required = ['title','company','location','description'];
     for (const f of required) {
       if (!body[f] || !String(body[f]).trim()) return res.status(400).json({ error: `${f} is required` });
     }
-    // Create job in MongoDB
-    const job = new Job({
-      title: String(body.title).trim(),
-      company: String(body.company).trim(),
-      location: String(body.location).trim(),
-      description: String(body.description).trim(),
-      salary: body.salary || '',
-      job_type: body.job_type || body.type || 'Full-time',
-      posted_date: new Date(),
-      employer: employer._id
-    });
-    await job.save();
+    // Create job in MongoDB or JSON fallback
+    let job;
+    if (usingMongo) {
+      job = new Job({
+        title: String(body.title).trim(),
+        company: String(body.company).trim(),
+        location: String(body.location).trim(),
+        description: String(body.description).trim(),
+        salary: body.salary || '',
+        job_type: body.job_type || body.type || 'Full-time',
+        posted_date: new Date(),
+        employer: employer._id
+      });
+      await job.save();
+    } else {
+      const jobs = await readJsonSafe(dataPath('jobs.json'), []);
+      const id = `manual_${Date.now()}_${Math.random().toString(36).slice(2,10)}`;
+      job = {
+        id,
+        title: String(body.title).trim(),
+        company: String(body.company).trim(),
+        location: String(body.location).trim(),
+        description: String(body.description).trim(),
+        salary: body.salary || '',
+        job_type: body.job_type || body.type || 'Full-time',
+        posted_date: new Date().toISOString(),
+        status: 'active',
+        url: body.url || '',
+        employerId: req.user.id,
+        postedBy: req.user.id,
+        expires_at: new Date(Date.now() + 30*24*60*60*1000).toISOString()
+      };
+      jobs.unshift(job);
+      await writeJsonSafe(dataPath('jobs.json'), jobs);
+    }
 
     // Trigger email campaign to subscribers
     try {
@@ -531,7 +565,7 @@ router.post('/jobs', authenticateToken, async (req, res) => {
       console.warn('Job email campaign failed:', e?.message || e);
     }
 
-    res.json({ success: true, job });
+  res.json({ success: true, job });
   } catch (e) {
     res.status(500).json({ error: 'Failed to create job' });
   }
@@ -540,12 +574,15 @@ router.post('/jobs', authenticateToken, async (req, res) => {
 // List my jobs
 router.get('/jobs', authenticateToken, async (req, res) => {
   try {
-    const employer = await Employer.findById(req.user.id);
-    if (!employer) {
-      return res.status(403).json({ error: 'Employer not found' });
+    const employer = await Employer.findById(req.user.id).catch(() => null);
+    if (employer) {
+      const jobs = await Job.find({ employer: employer._id });
+      return res.json({ jobs });
     }
-    const jobs = await Job.find({ employer: employer._id });
-    res.json({ jobs });
+    // Fallback to JSON store
+    const jobs = await readJsonSafe(dataPath('jobs.json'), []);
+    const mine = jobs.filter(j => (j.postedBy || j.employerId) === req.user.id);
+    return res.json({ jobs: mine });
   } catch (e) {
     res.status(500).json({ error: 'Failed to load jobs' });
   }
@@ -554,25 +591,39 @@ router.get('/jobs', authenticateToken, async (req, res) => {
 // Update my job
 router.put('/jobs/:id', authenticateToken, async (req, res) => {
   try {
-    // Require employer
-    const employer = await Employer.findById(req.user.id);
-    if (!employer) return res.status(403).json({ error: 'Employer access required' });
     const id = req.params.id;
-    // Update job in Mongo only if it belongs to this employer
-    const job = await Job.findOneAndUpdate({ _id: id, employer: employer._id }, { $set: { ...req.body } }, { new: true });
-    if (!job) return res.status(404).json({ error: 'Job not found' });
-    res.json({ success: true, job });
+    const employer = await Employer.findById(req.user.id).catch(() => null);
+    if (employer) {
+      const job = await Job.findOneAndUpdate({ _id: id, employer: employer._id }, { $set: { ...req.body } }, { new: true });
+      if (!job) return res.status(404).json({ error: 'Job not found' });
+      return res.json({ success: true, job });
+    }
+    // JSON fallback
+    const jobs = await readJsonSafe(dataPath('jobs.json'), []);
+    const idx = jobs.findIndex(j => j && j.id && j.id.toString() === id.toString() && (j.postedBy || j.employerId) === req.user.id);
+    if (idx === -1) return res.status(404).json({ error: 'Job not found' });
+    jobs[idx] = { ...jobs[idx], ...req.body };
+    await writeJsonSafe(dataPath('jobs.json'), jobs);
+    res.json({ success: true, job: jobs[idx] });
   } catch (e) { res.status(500).json({ error: 'Failed to update job' }); }
 });
 
 // Delete/deactivate my job
 router.delete('/jobs/:id', authenticateToken, async (req, res) => {
   try {
-    const employer = await Employer.findById(req.user.id);
-    if (!employer) return res.status(403).json({ error: 'Employer access required' });
     const id = req.params.id;
-    const job = await Job.findOneAndUpdate({ _id: id, employer: employer._id }, { $set: { status: 'inactive' } }, { new: true });
-    if (!job) return res.status(404).json({ error: 'Job not found' });
+    const employer = await Employer.findById(req.user.id).catch(() => null);
+    if (employer) {
+      const job = await Job.findOneAndUpdate({ _id: id, employer: employer._id }, { $set: { status: 'inactive' } }, { new: true });
+      if (!job) return res.status(404).json({ error: 'Job not found' });
+      return res.json({ success: true });
+    }
+    // JSON fallback
+    const jobs = await readJsonSafe(dataPath('jobs.json'), []);
+    const idx = jobs.findIndex(j => j && j.id && j.id.toString() === id.toString() && (j.postedBy || j.employerId) === req.user.id);
+    if (idx === -1) return res.status(404).json({ error: 'Job not found' });
+    jobs[idx].status = 'inactive';
+    await writeJsonSafe(dataPath('jobs.json'), jobs);
     res.json({ success: true });
   } catch (e) { res.status(500).json({ error: 'Failed to delete job' }); }
 });
@@ -625,17 +676,49 @@ router.put('/profile', authenticateToken, async (req, res) => {
 // Employer stats
 router.get('/stats', authenticateToken, async (req, res) => {
   try {
-    const jobs = await readJsonSafe(dataPath('jobs.json'), []);
-    const myJobs = jobs.filter(j => (j.postedBy || j.employerId) === req.user.id);
+    // Gather my jobs from Mongo and JSON
+    let mongoJobs = [];
+    try {
+      const employer = await Employer.findById(req.user.id).lean();
+      if (employer) {
+        mongoJobs = await Job.find({ employer: employer._id }).lean();
+      }
+    } catch (_) { mongoJobs = []; }
+    const jsonJobs = await readJsonSafe(dataPath('jobs.json'), []);
+    const myJsonJobs = jsonJobs.filter(j => (j.postedBy || j.employerId) === req.user.id);
+
+    // Active jobs count across both stores
+    const activeJson = myJsonJobs.filter(j => (j.status||'active') === 'active').length;
+    const activeMongo = mongoJobs.filter(j => (j.status||'active') === 'active').length;
+
+    // Applications: match by employerId when present, else by jobId set across both stores
     const apps = await readJsonSafe(dataPath('applications.json'), []);
-    const myJobIds = new Set(myJobs.map(j => j.id.toString()));
-    const myApps = apps.filter(a => a && a.jobId && myJobIds.has(a.jobId.toString()));
+    const myJobIds = new Set([
+      ...myJsonJobs.map(j => j.id?.toString()).filter(Boolean),
+      ...mongoJobs.map(j => j._id?.toString()).filter(Boolean)
+    ]);
+    const myApps = apps.filter(a => {
+      const belongsByEmployer = (a.employerId || '').toString() === req.user.id.toString();
+      const belongsByJobId = a.jobId && myJobIds.has(a.jobId.toString());
+      return belongsByEmployer || belongsByJobId;
+    });
     const pending = myApps.filter(a => (a.status||'').toLowerCase() === 'pending').length;
+
+    // Profile views: sum job_views for my jobs (tracked per jobId)
+    const jobViews = await readJsonSafe(dataPath('job_views.json'), []);
+    const myViews = jobViews.reduce((sum, rec) => {
+      try {
+        if ((rec.employerId || '').toString() === req.user.id.toString()) return sum + (Number(rec.views)||0);
+        if (rec.jobId && myJobIds.has(rec.jobId.toString())) return sum + (Number(rec.views)||0);
+        return sum;
+      } catch (_) { return sum; }
+    }, 0);
+
     res.json({
-      activeJobs: myJobs.filter(j => (j.status||'active')==='active').length,
+      activeJobs: activeJson + activeMongo,
       totalApplications: myApps.length,
       pendingReviews: pending,
-      profileViews: 0
+      profileViews: myViews
     });
   } catch (e) { res.status(500).json({ error: 'Failed to load stats' }); }
 });

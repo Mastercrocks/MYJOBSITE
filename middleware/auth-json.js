@@ -12,6 +12,7 @@ try {
 }
 
 const USERS_FILE = path.join(__dirname, '../data/users.json');
+const EMPLOYERS_FILE = path.join(__dirname, '../data/employers.json');
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production';
 
 // Helper: read user from JSON store
@@ -20,10 +21,26 @@ async function findUserByIdJSON(id) {
     const raw = await fs.readFile(USERS_FILE, 'utf8');
     const users = Array.isArray(JSON.parse(raw)) ? JSON.parse(raw) : [];
     const target = id != null ? id.toString() : '';
-    return users.find(u => u && u.id != null && u.id.toString() === target) || null;
-  } catch (_) {
-    return null;
-  }
+    const found = users.find(u => u && u.id != null && u.id.toString() === target) || null;
+    if (found) return found;
+  } catch (_) { /* fall through to employers.json */ }
+  // Fallback: some legacy employer accounts may exist only in employers.json
+  try {
+    const rawE = await fs.readFile(EMPLOYERS_FILE, 'utf8');
+    const emps = Array.isArray(JSON.parse(rawE)) ? JSON.parse(rawE) : [];
+    const target = id != null ? id.toString() : '';
+    const emp = emps.find(e => e && e.id != null && e.id.toString() === target);
+    if (emp) {
+      return {
+        id: emp.id.toString(),
+        username: emp.username || (emp.email ? emp.email.split('@')[0] : ''),
+        email: (emp.email || '').toLowerCase(),
+        user_type: emp.userType || emp.user_type || 'employer',
+        status: emp.status || 'active'
+      };
+    }
+  } catch (_) { /* ignore */ }
+  return null;
 }
 
 // Helper: read user from MongoDB store

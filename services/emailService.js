@@ -60,16 +60,32 @@ async function sendAccountEmail({ to, subject, text, html }) {
 // New function specifically for job marketing emails
 async function sendJobMarketingEmail({ to, subject, text, html }) {
   console.log('📧 Sending job marketing email to:', to);
-  
+
+  // Prefer configured sender to satisfy DMARC/DMARC alignment with SMTP providers (e.g., Yahoo)
+  const fromAddress = process.env.EMAIL_FROM || process.env.EMAIL_USER || 'talentsync@talentsync.shop';
+  const fromName = process.env.EMAIL_FROM_NAME || 'TalentSync Job Alerts';
+
   const mailOptions = {
-    from: `TalentSync Job Alerts <talentsync@talentsync.shop>`,
+    from: `${fromName} <${fromAddress}>`,
     to,
     subject,
     text,
     html,
-    replyTo: 'talentsync@talentsync.shop'
+    replyTo: fromAddress
   };
   return transporter.sendMail(mailOptions);
 }
 
-module.exports = { sendAccountEmail, sendJobMarketingEmail, isEmailConfigured, getEmailStatus };
+// Verify the transport/auth before bulk-sending to avoid log spam on invalid creds
+async function verifyEmailTransport() {
+  try {
+    // nodemailer verify attempts to connect and authenticate
+    await transporter.verify();
+    return true;
+  } catch (e) {
+    console.warn('✉️  Email transport verify failed:', e?.message || e);
+    return false;
+  }
+}
+
+module.exports = { sendAccountEmail, sendJobMarketingEmail, isEmailConfigured, getEmailStatus, verifyEmailTransport };

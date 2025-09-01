@@ -4,22 +4,10 @@ const fs = require('fs').promises;
 const path = require('path');
 const https = require('https');
 const http = require('http');
-const nodemailer = require('nodemailer');
 const Parser = require('rss-parser');
+const { sendJobMarketingEmail, isEmailConfigured, verifyEmailTransport } = require('../services/emailService');
 
-// Email configuration for auto campaigns
-const emailConfig = {
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
-    auth: {
-        user: process.env.EMAIL_USER || 'jamesen9@gmail.com',
-        pass: process.env.EMAIL_PASS || 'your-email-password'
-    }
-};
-
-// Create email transporter
-const transporter = nodemailer.createTransport(emailConfig);
+// Email handled via services/emailService shared with employer flow
 
 // Helper function to read JSON files
 async function readJSONFile(filename) {
@@ -49,21 +37,29 @@ async function writeJSONFile(filename, data) {
     }
 }
 
-// 🚀 AUTOMATED EMAIL MARKETING: Send new job to email list
+// 🚀 AUTOMATED EMAIL MARKETING: Send new job to student email list
 async function sendNewJobEmailCampaign(newJob) {
     try {
         console.log(`📧 Starting auto email campaign for: ${newJob.title}`);
         
-    // Get email list (students only)
-    let emailList = await readJSONFile('email_list.json');
-    // Default any missing types to 'student' for backward compatibility
-    emailList = (emailList || []).map(e => ({ type: 'student', ...e, type: e.type || 'student' }));
-    // Only active student subscribers
-    emailList = emailList.filter(e => (e.status || 'active') === 'active' && (e.type || 'student') === 'student');
+        // Get email list (students only)
+        let emailList = await readJSONFile('email_list.json');
+        emailList = (emailList || []).map(e => ({ type: e.type || 'student', status: e.status || 'active', ...e }));
+        emailList = emailList.filter(e => e.status === 'active' && e.type === 'student' && e.email);
         
         if (!emailList || emailList.length === 0) {
             console.log('📭 No email subscribers found - skipping auto campaign');
             return;
+        }
+
+        if (!isEmailConfigured()) {
+            console.warn('✉️  Email not configured. Skipping job campaign.');
+            return { success: false, sent: 0, failed: 0, reason: 'not_configured' };
+        }
+        const ok = await verifyEmailTransport();
+        if (!ok) {
+            console.warn('✉️  Email transport verification failed. Skipping job campaign.');
+            return { success: false, sent: 0, failed: 0, reason: 'verify_failed' };
         }
 
         // Create professional email template
@@ -128,7 +124,7 @@ async function sendNewJobEmailCampaign(newJob) {
                 </div>
                 
                 <div style="text-align: center;">
-                    <a href="${newJob.url}" class="apply-btn" style="color: white;">
+                    <a href="${newJob.url || 'https://talentsync.shop/jobs.html'}" class="apply-btn" style="color: white;">
                         🚀 Apply Now
                     </a>
                 </div>
@@ -165,21 +161,17 @@ async function sendNewJobEmailCampaign(newJob) {
 </html>`;
 
         // Send to all subscribers
-        let successCount = 0;
-        let failCount = 0;
+    let successCount = 0;
+    let failCount = 0;
         
         for (const subscriber of emailList) {
             try {
-                const mailOptions = {
-                    from: '"TalentSync Job Alerts" <jamesen9@gmail.com>',
-                    replyTo: 'talentsync@talentsync.shop',
+                await sendJobMarketingEmail({
                     to: subscriber.email,
                     subject: emailSubject,
                     html: emailTemplate,
-                    text: `New Job Alert: ${newJob.title} at ${newJob.company}\n\nLocation: ${newJob.location}\nType: ${newJob.job_type}\nSalary: ${newJob.salary}\n\nApply now: ${newJob.url}\n\nVisit TalentSync: https://talentsync.shop`
-                };
-
-                await transporter.sendMail(mailOptions);
+                    text: `New Job Alert: ${newJob.title} at ${newJob.company}\n\nLocation: ${newJob.location}\nType: ${newJob.job_type}\nSalary: ${newJob.salary}\n\nApply now: ${newJob.url || 'https://talentsync.shop/jobs.html'}\n\nVisit TalentSync: https://talentsync.shop`
+                });
                 successCount++;
                 console.log(`📧 Sent to: ${subscriber.email}`);
                 
@@ -188,7 +180,7 @@ async function sendNewJobEmailCampaign(newJob) {
                 
             } catch (error) {
                 failCount++;
-            console.error(`❌ Failed to send to ${'${subscriber.email}'}:`, error.message);
+                console.error(`❌ Failed to send to ${subscriber.email}:`, error.message);
             }
         }
         
@@ -214,7 +206,7 @@ async function sendNewJobEmailCampaign(newJob) {
         
         await writeJSONFile('email_campaigns.json', campaigns);
         
-        return { success: true, sent: successCount, failed: failCount };
+    return { success: true, sent: successCount, failed: failCount };
         
     } catch (error) {
         console.error('❌ Auto email campaign error:', error);
@@ -225,7 +217,7 @@ async function sendNewJobEmailCampaign(newJob) {
 // Get dashboard statistics
 router.get('/stats', async (req, res) => {
     try {
-        const [jobsRaw, users, employersRaw, careerApps, jobApps, analytics, revenue, emailListRaw, resumes] = await Promise.all([
+    const [jobsRaw, users, employersRaw, careerApps, jobApps, analytics, revenue, emailListRaw, resumes] = await Promise.all([
             readJSONFile('jobs.json'),
             readJSONFile('users.json'),
             readJSONFile('employers.json'),
@@ -311,7 +303,12 @@ router.get('/stats', async (req, res) => {
         const newJobsThisMonth = activeJobs.filter(job => job._date && job._date >= thisMonth).length;
         
         // User statistics
-    const newUsersThisWeek = (users || []).filter(user => user.createdAt && new Date(user.createdAt) >= thisWeek).length;
+    const mergedUsers = Array.isArray(users) ? users.slice() : [];
+    // Include legacy employers.json entries that might not exist in users.json
+    const legacyOnly = (employersRaw || []).filter(e => !mergedUsers.some(u => String(u.id) === String(e.id)));
+    legacyOnly.forEach(e => mergedUsers.push({ id: String(e.id), email: e.email || e.contactEmail || '', username: e.username || (e.email ? e.email.split('@')[0] : ''), user_type: 'employer', createdAt: e.createdAt || e.joinedAt || e.registrationDate || new Date().toISOString(), status: e.status || 'active' }));
+    const createdDate = (u) => new Date(u.createdAt || u.created_at || u.registrationDate || u.joinedAt || u.created || 0);
+    const newUsersThisWeek = mergedUsers.filter(u => { const d = createdDate(u); return d && !isNaN(d) && d >= thisWeek; }).length;
         
         // Application statistics (combine career and job applications)
         const applications = [...(careerApps || []), ...(jobApps || [])];
@@ -376,7 +373,7 @@ router.get('/stats', async (req, res) => {
         res.json({
             totals: {
                 jobs: activeJobsCount,
-                users: (users || []).length,
+                users: mergedUsers.length,
                 employers: (employers || []).length,
                 applications: applications.length,
                 pageViews: analytics?.pageViews?.total || 0,
@@ -768,7 +765,7 @@ router.put('/applications/status', async (req, res) => {
     }
 });
 
-// Add new job manually (Mongo-backed; admin action)
+// Add new job manually (Mongo-backed with JSON fallback)
 router.post('/jobs', async (req, res) => {
     try {
     const Job = require('../models/Job');
@@ -788,25 +785,57 @@ router.post('/jobs', async (req, res) => {
         // Compute apply URL fallback
         const computedUrl = applicationUrl || (applicationEmail ? `mailto:${applicationEmail}` : undefined);
 
-        // Create new job in MongoDB
-        const newJob = new Job({
-            title: req.body.title,
-            company: req.body.company,
-            location: req.body.location,
-            description: req.body.description,
-            salary: req.body.salary || 'Not specified',
-            job_type: jobType,
-            url: computedUrl,
-            posted_date: new Date(),
-            // Add more fields to the Job model/schema if needed
-        });
-        await newJob.save();
+        // Try to create new job in MongoDB; fallback to JSON if error
+        let newJob;
+        try {
+            newJob = new Job({
+                title: req.body.title,
+                company: req.body.company,
+                location: req.body.location,
+                description: req.body.description,
+                salary: req.body.salary || 'Not specified',
+                job_type: jobType,
+                url: computedUrl,
+                posted_date: new Date(),
+            });
+            await newJob.save();
+        } catch (dbErr) {
+            console.warn('Mongo create failed; falling back to JSON. Reason:', dbErr?.message || dbErr);
+            const jobs = await readJSONFile('jobs.json');
+            const id = `manual_${Date.now()}_${Math.random().toString(36).slice(2,10)}`;
+            newJob = {
+                id,
+                title: req.body.title,
+                company: req.body.company,
+                location: req.body.location,
+                description: req.body.description,
+                salary: req.body.salary || 'Not specified',
+                job_type: jobType,
+                url: computedUrl || '',
+                posted_date: new Date().toISOString(),
+                status: 'active',
+                postedBy: 'admin'
+            };
+            jobs.unshift(newJob);
+            await writeJSONFile('jobs.json', jobs);
+        }
 
         // 🚀 AUTO-SEND EMAIL MARKETING CAMPAIGN FOR NEW JOB
         let emailResult = null;
         let emailErrorMsg = null;
         try {
-            emailResult = await sendNewJobEmailCampaign(newJob);
+            // Normalize shape for campaign function
+            const campaignJob = newJob.title ? {
+                id: newJob.id || newJob._id?.toString() || '',
+                title: newJob.title,
+                company: newJob.company,
+                location: newJob.location,
+                description: newJob.description || '',
+                salary: newJob.salary || '',
+                job_type: newJob.job_type || 'Full-time',
+                url: newJob.url || ''
+            } : newJob;
+            emailResult = await sendNewJobEmailCampaign(campaignJob);
             console.log(`✅ Auto email campaign sent for job: ${newJob.title}`);
         } catch (emailError) {
             emailErrorMsg = emailError && emailError.message ? emailError.message : String(emailError);

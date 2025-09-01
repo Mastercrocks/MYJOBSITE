@@ -1,5 +1,29 @@
 [
   {
+    "id": 1756750989024,
+    "type": "auto_job_alert",
+    "jobId": "test_1756750980659",
+    "jobTitle": "Test Job Position",
+    "company": "Test Company",
+    "subject": "🚀 New Job Alert: Test Job Position at Test Company",
+    "sentTo": 6,
+    "failed": 1,
+    "sentAt": "2025-09-01T18:23:09.024Z",
+    "status": "completed"
+  },
+  {
+    "id": 1756748593320,
+    "type": "auto_job_alert",
+    "jobId": "test_1756748584297",
+    "jobTitle": "Test Job Position",
+    "company": "Test Company",
+    "subject": "🚀 New Job Alert: Test Job Position at Test Company",
+    "sentTo": 0,
+    "failed": 7,
+    "sentAt": "2025-09-01T17:43:13.320Z",
+    "status": "completed"
+  },
+  {
     "id": 1756168638824,
     "type": "auto_job_alert",
     "jobId": "68ad01babe0a06e7bf17a569",
