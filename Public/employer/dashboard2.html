@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TalentSync Employer Dashboard</title>
+  <link rel="icon" href="/favicon.ico" />
+  <style>
+    :root { --bg:#0b1220; --panel:#0f172a; --muted:#94a3b8; --text:#e5e7eb; --border:#1f2937; --accent:#3b82f6; }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Arial}
+    a{color:inherit;text-decoration:none}
+    .wrap{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+    .side{background:#0a0f1d;border-right:1px solid var(--border);padding:16px;position:sticky;top:0;height:100vh}
+    .brand{font-weight:700;margin:4px 0 16px}
+    .nav a{display:block;padding:10px 12px;border-radius:8px;color:#cbd5e1}
+    .nav a:hover,.nav a.active{background:#0f172a;color:#fff}
+    .main{padding:18px}
+    .head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+    .title{font-size:20px;font-weight:700}
+    .sub{color:var(--muted);font-size:13px}
+    .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px}
+    .kpi .lbl{color:#94a3b8;font-size:12px}
+    .kpi .val{font-weight:800;font-size:22px}
+    .tbl{width:100%;border-collapse:collapse}
+    .tbl th,.tbl td{padding:10px;border-bottom:1px solid var(--border);font-size:14px;text-align:left}
+    .muted{color:#94a3b8}
+    .row{display:flex;gap:10px}
+    .row>*{flex:1}
+    .field{display:flex;flex-direction:column;gap:6px}
+    .field input,.field textarea{background:#0a0f1d;border:1px solid var(--border);color:#e5e7eb;border-radius:8px;padding:10px}
+    .btn{background:#0c1426;border:1px solid var(--border);color:#e5e7eb;border-radius:8px;padding:10px 12px;cursor:pointer}
+    .btn.primary{background:var(--accent);border-color:#2563eb}
+    .toolbar{display:flex;gap:8px;align-items:center}
+    .section{display:none}
+    .section.active{display:block}
+    .pill{display:inline-block;border:1px solid var(--border);border-radius:999px;padding:4px 8px;color:#cbd5e1}
+    .empty{border:1px dashed var(--border);border-radius:10px;padding:16px;text-align:center;color:#94a3b8}
+  </style>
+  <script>
+    // Ensure user is authenticated employer
+    (async () => {
+      try {
+        const r = await fetch('/api/auth/status', { credentials: 'include' });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok || !d || !d.user || (d.user.userType||d.user.user_type) !== 'employer') location.href = '/login.html';
+      } catch { location.href = '/login.html'; }
+    })();
+  </script>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-P5ETS8QMP7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'G-P5ETS8QMP7');
+  </script>
+  <meta name="robots" content="noindex,nofollow" />
+  <meta name="referrer" content="same-origin" />
+  <meta http-equiv="Cache-Control" content="no-store" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  </head>
+<body>
+  <div class="wrap">
+    <aside class="side">
+      <div class="brand">TalentSync Employer</div>
+      <nav class="nav" id="nav">
+        <a href="#overview" data-s="overview" class="active">Overview</a>
+        <a href="#jobs" data-s="jobs">My Jobs</a>
+        <a href="#applications" data-s="applications">Applications</a>
+        <a href="#billing" data-s="billing">Billing</a>
+        <a href="#profile" data-s="profile">Profile</a>
+      </nav>
+    </aside>
+    <main class="main">
+      <div class="head">
+        <div>
+          <div class="title" id="pageTitle">Overview</div>
+          <div class="sub" id="pageSub">Your hiring performance</div>
+        </div>
+        <div class="toolbar">
+          <button class="btn" onclick="refresh()">Refresh</button>
+          <a class="btn" href="/employers.html">Employers</a>
+          <button class="btn" onclick="logout()">Logout</button>
+        </div>
+      </div>
+
+      <section id="s-overview" class="section active">
+        <div class="grid4">
+          <div class="card kpi"><div class="lbl">Active Jobs</div><div class="val" id="kActive">0</div></div>
+          <div class="card kpi"><div class="lbl">Applications</div><div class="val" id="kApps">0</div></div>
+          <div class="card kpi"><div class="lbl">Pending Reviews</div><div class="val" id="kPending">0</div></div>
+          <div class="card kpi"><div class="lbl">Profile Views</div><div class="val" id="kViews">0</div></div>
+        </div>
+        <div class="row" style="margin-top:12px">
+          <div class="card" style="flex:1">
+            <div class="row" style="justify-content:space-between;align-items:center"><div style="font-weight:600">Recent Jobs</div><a class="pill" href="#jobs" onclick="show('jobs')">Manage</a></div>
+            <div id="recentJobs" class="muted" style="margin-top:8px">Loading...</div>
+          </div>
+          <div class="card" style="flex:1">
+            <div class="row" style="justify-content:space-between;align-items:center"><div style="font-weight:600">Recent Applications</div><a class="pill" href="#applications" onclick="show('applications')">Review</a></div>
+            <div id="recentApps" class="muted" style="margin-top:8px">Loading...</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="s-jobs" class="section">
+        <div class="card">
+          <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px">
+            <div style="font-weight:600">My Jobs</div>
+          </div>
+          <div style="overflow:auto">
+            <table class="tbl">
+              <thead><tr><th>Title</th><th>Company</th><th>Location</th><th>Posted</th><th>Actions</th></tr></thead>
+              <tbody id="tJobs"><tr><td colspan="5" class="muted">Loading...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card" style="margin-top:12px">
+          <div style="font-weight:600;margin-bottom:6px">Post a Job</div>
+          <form id="jobForm" onsubmit="return addJob(event)">
+            <div class="row">
+              <div class="field"><label>Title</label><input id="fTitle" required></div>
+              <div class="field"><label>Company</label><input id="fCompany" required></div>
+            </div>
+            <div class="row">
+              <div class="field"><label>Location</label><input id="fLocation" required></div>
+              <div class="field"><label>Apply URL (optional)</label><input id="fUrl" placeholder="https://..."></div>
+            </div>
+            <div class="field"><label>Description</label><textarea id="fDesc" rows="5" required></textarea></div>
+            <div class="row" style="align-items:center"><button id="btnAdd" class="btn primary" type="submit">Publish Job</button><div id="jobMsg" class="muted"></div></div>
+          </form>
+        </div>
+      </section>
+
+      <section id="s-applications" class="section">
+        <div class="card">
+          <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px"><div style="font-weight:600">Applications</div></div>
+          <div style="overflow:auto">
+            <table class="tbl">
+              <thead><tr><th>Applicant</th><th>Email</th><th>Job</th><th>Date</th><th>Resume</th></tr></thead>
+              <tbody id="tApps"><tr><td colspan="5" class="muted">Loading...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="s-billing" class="section">
+        <div class="card">
+          <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px">
+            <div style="font-weight:600">Billing & Plan</div>
+            <div class="pill" id="planBadge">Plan: —</div>
+          </div>
+          <div class="row" style="gap:8px;align-items:center">
+            <button class="btn" id="btnBasic" onclick="upgrade('basic')">Upgrade to Basic ($25/mo)</button>
+            <button class="btn primary" id="btnPro" onclick="upgrade('pro')">Upgrade to Pro ($50/mo)</button>
+            <div id="billMsg" class="muted"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="s-profile" class="section">
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:6px">Profile</div>
+          <form id="profileForm" onsubmit="return saveProfile(event)">
+            <div class="row">
+              <div class="field"><label>Company Name</label><input id="pCompany"></div>
+              <div class="field"><label>Username</label><input id="pUsername"></div>
+            </div>
+            <div class="row" style="align-items:center"><button class="btn primary" type="submit">Save</button><div id="profileMsg" class="muted"></div></div>
+          </form>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    // Nav switching
+    const nav = document.getElementById('nav');
+    nav.addEventListener('click', (e) => {
+      const a = e.target.closest('a');
+      if (!a) return;
+      e.preventDefault();
+      const s = a.dataset.s;
+      show(s);
+    });
+    function show(s){
+      document.querySelectorAll('.nav a').forEach(x=>x.classList.toggle('active', x.dataset.s===s));
+      document.querySelectorAll('.section').forEach(x=>x.classList.toggle('active', x.id===`s-${s}`));
+      pageTitle.textContent = s==='jobs'?'My Jobs': s==='applications'?'Applications': s==='billing'?'Billing & Plan': s==='profile'?'Profile':'Overview';
+      pageSub.textContent = s==='jobs'?'Manage and post jobs': s==='applications'?'Review applicants': s==='billing'?'Manage subscription': s==='profile'?'Update account':'Your hiring performance';
+      if (s==='jobs') loadJobs();
+      if (s==='applications') loadApps();
+      if (s==='billing') loadBilling();
+      if (s==='profile') loadProfile();
+    }
+
+    // Helpers
+    async function j(url, opts={}){ const r=await fetch(url, { credentials:'include', headers:{'Content-Type':'application/json'}, ...opts}); if(!r.ok) throw new Error((await r.json().catch(()=>({}))).error||'Request failed'); return r.json(); }
+    const esc = s => (s??'').toString().replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;", ">":"&gt;","\"":"&quot;"}[c]));
+    const fdate = v => { const d=v?new Date(v):null; return d?d.toLocaleDateString():''; };
+
+    async function refresh(){ await Promise.all([loadStats(),loadJobs(),loadApps(),loadBilling(),loadProfile()]).catch(()=>{}); }
+
+    // Loaders
+    async function loadStats(){
+      try { const d=await j('/api/employer/stats'); kActive.textContent=d.activeJobs||0; kApps.textContent=d.totalApplications||0; kPending.textContent=d.pendingReviews||0; kViews.textContent=d.profileViews||0;} catch(_) {}
+      try { const jobs=await j('/api/employer/jobs'); const list=jobs.jobs||jobs||[]; recentJobs.innerHTML=list.slice(0,5).map(x=>`<div class="muted">${esc(x.title)} • ${esc(x.location||'')}</div>`).join('')||'<div class="muted">No jobs</div>'; } catch{ recentJobs.textContent='Unable to load jobs'; }
+      try { const apps=await j('/api/employer/applications'); const list=apps.applications||apps||[]; recentApps.innerHTML=list.slice(0,5).map(a=>`<div class="muted">${esc(a.name||a.applicantName||'')} → ${esc(a.jobTitle||a.job?.title||'')}</div>`).join('')||'<div class="muted">No applications</div>'; } catch{ recentApps.textContent='Unable to load applications'; }
+    }
+
+    async function loadJobs(){
+      const tb=tJobs; try{const d=await j('/api/employer/jobs'); const list=d.jobs||d||[]; tb.innerHTML=list.length?list.map(x=>{
+        const id=esc(x.id||x._id||'');
+        return `<tr>
+          <td>${esc(x.title)}</td>
+          <td>${esc(x.company||'')}</td>
+          <td>${esc(x.location||'')}</td>
+          <td>${fdate(x.postedAt||x.createdAt||x.posted_date)}</td>
+          <td><button class="btn" onclick="deleteMyJob('${id}')">Delete</button></td>
+        </tr>`}).join(''):`<tr><td colspan="5" class="muted">No jobs yet</td></tr>`}catch{tb.innerHTML=`<tr><td colspan="5" class="muted">Failed to load jobs</td></tr>`}
+    }
+
+    async function addJob(e){ e.preventDefault(); btnAdd.disabled=true; jobMsg.textContent='Publishing...';
+      try{
+        const body={ title:fTitle.value.trim(), company:fCompany.value.trim(), location:fLocation.value.trim(), url:fUrl.value.trim(), description:fDesc.value.trim() };
+        const r=await fetch('/api/employer/jobs',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+        const d=await r.json().catch(()=>({})); if(!r.ok||d.success===false) throw new Error(d.message||d.error||'Failed to add job');
+        jobMsg.textContent='Job published'; jobForm.reset(); loadJobs(); location.hash='#jobs'; show('jobs');
+      }catch(err){ jobMsg.textContent=err.message }
+      finally{ btnAdd.disabled=false }
+      return false;
+    }
+
+  async function deleteMyJob(id){ if(!id) return; if(!confirm('Delete this job?')) return; try{ const r=await fetch(`/api/employer/jobs/${encodeURIComponent(id)}`,{ method:'DELETE', credentials:'include' }); const d=await r.json().catch(()=>({})); if(!r.ok||d.success===false) throw new Error(d.error||d.message||'Failed to delete'); await loadJobs(); alert('Job deleted'); }catch(e){ alert(e.message) } }
+
+    async function loadApps(){
+      const tb=tApps; try{const d=await j('/api/employer/applications'); const list=d.applications||d||[]; tb.innerHTML=list.length?list.map(a=>{ const r=a.resumeUrl||a.resume||a.resumePath; const link=r?`<a href="${r.startsWith('http')?r:'/'+r.replace(/^\//,'')}" target="_blank">Download</a>`:''; return `<tr><td>${esc(a.name||a.applicantName||'')}</td><td>${esc(a.email||'')}</td><td>${esc(a.jobTitle||a.job?.title||'')}</td><td>${fdate(a.date||a.appliedAt||a.createdAt)}</td><td>${link}</td></tr>` }).join(''):`<tr><td colspan="5" class="muted">No applications</td></tr>` }catch{ tb.innerHTML=`<tr><td colspan="5" class="muted">Failed to load applications</td></tr>` }
+    }
+
+    async function loadBilling(){
+      billMsg.textContent='';
+      try{ const plan=await j('/api/employer/plan'); const name=(plan?.plan||plan?.current||plan?.name||'Free').toString(); planBadge.textContent='Plan: '+name; if(/pro|basic/i.test(name)){ btnBasic.style.display='none'; btnPro.style.display='none'; }}catch{ planBadge.textContent='Plan: Free'; }
+      try{ const s=await j('/api/employer/billing/config-status'); if(!s?.stripeConfigured){ billMsg.textContent='Billing not configured'; } }catch{}
+    }
+
+    async function upgrade(plan){
+      try{
+        billMsg.textContent='Creating checkout...';
+        const r=await fetch('/api/employer/billing/checkout',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan})});
+        const d=await r.json().catch(()=>({})); if(!r.ok||!d.url) throw new Error(d.message||d.error||'Failed to start checkout');
+        location.href = d.url;
+      }catch(e){ billMsg.textContent=e.message }
+    }
+
+    async function loadProfile(){
+      try{ const p=await j('/api/employer/profile'); pCompany.value=p.companyName||''; pUsername.value=p.username||''; }catch{ profileMsg.textContent='Failed to load profile'; }
+    }
+    async function saveProfile(e){ e.preventDefault(); try{ profileMsg.textContent='Saving...'; await j('/api/employer/profile',{method:'PUT',body:JSON.stringify({companyName:pCompany.value.trim(), username:pUsername.value.trim()})}); profileMsg.textContent='Saved'; }catch(err){ profileMsg.textContent=err.message } return false; }
+
+    async function logout(){ try{ await fetch('/auth/logout',{method:'POST',credentials:'include'}); }catch(_){} localStorage.clear(); location.href='/login.html'; }
+
+    // Initial load
+    refresh();
+  </script>
+</body>
+</html>

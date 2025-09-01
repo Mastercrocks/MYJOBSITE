@@ -493,7 +493,7 @@
                     const data = await response.json();
                     if (data.authenticated) {
                         // User is already logged in, redirect to dashboard
-                        const redirectUrl = data.user.user_type === 'employer' ? '/employer/dashboard.html' : '/jobseeker/dashboard.html';
+                        const redirectUrl = data.user.user_type === 'employer' ? '/employer/dashboard2.html' : '/jobseeker/dashboard.html';
                         window.location.href = redirectUrl;
                         return;
                     }
@@ -608,9 +608,9 @@
 
                     // Redirect based on user type
                     if (result.user.userType === 'employer') {
-                        window.location.href = '/employer/dashboard.html';
+                        window.location.href = '/employer/dashboard2.html';
                     } else if (result.user.userType === 'admin') {
-                        window.location.href = '/admin/dashboard.html';
+                        window.location.href = '/admin/dashboard2.html';
                     } else {
                         window.location.href = '/jobseeker/dashboard.html';
                     }

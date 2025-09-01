@@ -63,7 +63,7 @@ router.get('/google/callback',
       );
 
       // Redirect based on user type
-      const redirectUrl = user.user_type === 'employer' ? '/employer/dashboard.html' : '/dashboard.html';
+  const redirectUrl = user.user_type === 'employer' ? '/employer/dashboard2.html' : '/jobseeker/dashboard.html';
       
       // Set token in cookie and redirect
       res.cookie('authToken', token, { 

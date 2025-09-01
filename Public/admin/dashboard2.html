@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TalentSync Admin Dashboard</title>
+  <link rel="icon" href="/favicon.ico" />
+  <style>
+    :root { --bg:#0b1220; --panel:#0f172a; --muted:#94a3b8; --text:#e5e7eb; --border:#1f2937; --accent:#3b82f6; }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Arial}
+    a{color:inherit;text-decoration:none}
+    .wrap{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+    .side{background:#0a0f1d;border-right:1px solid var(--border);padding:16px;position:sticky;top:0;height:100vh}
+    .brand{font-weight:700;margin:4px 0 16px}
+    .nav a{display:block;padding:10px 12px;border-radius:8px;color:#cbd5e1}
+    .nav a:hover,.nav a.active{background:#0f172a;color:#fff}
+    .main{padding:18px}
+    .head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+    .title{font-size:20px;font-weight:700}
+    .sub{color:var(--muted);font-size:13px}
+    .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px}
+    .kpi .lbl{color:#94a3b8;font-size:12px}
+    .kpi .val{font-weight:800;font-size:22px}
+    .tbl{width:100%;border-collapse:collapse}
+    .tbl th,.tbl td{padding:10px;border-bottom:1px solid var(--border);font-size:14px;text-align:left}
+    .muted{color:#94a3b8}
+    .row{display:flex;gap:10px}
+    .row>*{flex:1}
+    .field{display:flex;flex-direction:column;gap:6px}
+    .field input,.field textarea{background:#0a0f1d;border:1px solid var(--border);color:#e5e7eb;border-radius:8px;padding:10px}
+    .btn{background:#0c1426;border:1px solid var(--border);color:#e5e7eb;border-radius:8px;padding:10px 12px;cursor:pointer}
+    .btn.primary{background:var(--accent);border-color:#2563eb}
+    .toolbar{display:flex;gap:8px;align-items:center}
+    .section{display:none}
+    .section.active{display:block}
+    .pill{display:inline-block;border:1px solid var(--border);border-radius:999px;padding:4px 8px;color:#cbd5e1}
+    .empty{border:1px dashed var(--border);border-radius:10px;padding:16px;text-align:center;color:#94a3b8}
+  </style>
+  <script>
+    // Allow access if PIN session exists (client-only admin) for up to 8 hours.
+    // Otherwise, fall back to server role check.
+    (() => {
+      try {
+        const session = localStorage.getItem('adminSession');
+        const loginTime = Number(localStorage.getItem('adminLoginTime') || 0);
+        const ageHours = (Date.now() - loginTime) / (1000 * 60 * 60);
+        if (session === 'authenticated' && ageHours < 8) {
+          return; // PIN session valid; proceed without server check
+        }
+      } catch (_) {}
+      (async () => {
+        try {
+          const r = await fetch('/api/auth/me');
+          const me = await r.json().catch(() => ({}));
+          if (!r.ok || !me || me.role !== 'admin') location.href = '/admin/login.html';
+        } catch { location.href = '/admin/login.html'; }
+      })();
+    })();
+  </script>
+</head>
+<body>
+  <div class="wrap">
+    <aside class="side">
+      <div class="brand">TalentSync Admin</div>
+      <nav class="nav" id="nav">
+        <a href="#overview" data-s="overview" class="active">Overview</a>
+        <a href="#users" data-s="users">User Management</a>
+        <a href="#jobs" data-s="jobs">Jobs Listing</a>
+        <a href="#applications" data-s="applications">Applications</a>
+        <a href="#resumes" data-s="resumes">Resumes</a>
+        <a href="#billing" data-s="billing">Billing</a>
+        <a href="#add-job" data-s="add-job">Add Job</a>
+        <a href="#email" data-s="email">Email Marketing</a>
+        <a href="#pricing" data-s="pricing">Pricing</a>
+      </nav>
+    </aside>
+    <main class="main">
+      <div class="head">
+        <div>
+          <div class="title" id="pageTitle">Overview</div>
+          <div class="sub" id="pageSub">Quick stats and recent activity</div>
+        </div>
+        <div class="toolbar">
+          <button class="btn" onclick="refresh()">Refresh</button>
+          <a class="btn" href="/" target="_blank">Open site</a>
+        </div>
+      </div>
+
+      <section id="s-overview" class="section active">
+        <div class="grid4">
+          <div class="card kpi"><div class="lbl">Users</div><div class="val" id="kUsers">0</div></div>
+          <div class="card kpi"><div class="lbl">Jobs</div><div class="val" id="kJobs">0</div></div>
+          <div class="card kpi"><div class="lbl">Applications</div><div class="val" id="kApps">0</div></div>
+          <div class="card kpi"><div class="lbl">Resumes</div><div class="val" id="kResumes">0</div></div>
+        </div>
+        <div class="row" style="margin-top:12px">
+          <div class="card" style="flex:1">
+            <div class="row" style="justify-content:space-between;align-items:center">
+              <div style="font-weight:600">Recent Jobs</div>
+              <a class="pill" href="#jobs" onclick="show('jobs')">View all</a>
+            </div>
+            <div id="recentJobs" class="muted" style="margin-top:8px">Loading...</div>
+          </div>
+          <div class="card" style="flex:1">
+            <div class="row" style="justify-content:space-between;align-items:center">
+              <div style="font-weight:600">Recent Applications</div>
+              <a class="pill" href="#applications" onclick="show('applications')">View all</a>
+            </div>
+            <div id="recentApps" class="muted" style="margin-top:8px">Loading...</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="s-users" class="section">
+        <div class="card">
+          <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px">
+            <div style="font-weight:600">Users</div>
+            <div class="toolbar"><button class="btn" onclick="exportUsers()">Export CSV</button></div>
+          </div>
+          <div style="overflow:auto">
+            <table class="tbl">
+              <thead><tr><th>Name</th><th>Email</th><th>Type</th><th>Created</th></tr></thead>
+              <tbody id="tUsers"><tr><td colspan="4" class="muted">Loading...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+  <section id="s-jobs" class="section">
+        <div class="card">
+          <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px">
+            <div style="font-weight:600">Jobs Listing</div>
+            <div class="toolbar"><a class="btn" href="#add-job" onclick="show('add-job')">Add Job</a></div>
+          </div>
+          <div style="overflow:auto">
+            <table class="tbl">
+      <thead><tr><th>Title</th><th>Company</th><th>Location</th><th>Posted</th><th>Actions</th></tr></thead>
+      <tbody id="tJobs"><tr><td colspan="5" class="muted">Loading...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="s-applications" class="section">
+        <div class="card">
+          <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px">
+            <div style="font-weight:600">Applications</div>
+          </div>
+          <div style="overflow:auto">
+            <table class="tbl">
+              <thead><tr><th>Applicant</th><th>Email</th><th>Job</th><th>Date</th><th>Resume</th></tr></thead>
+              <tbody id="tApps"><tr><td colspan="5" class="muted">Loading...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="s-resumes" class="section">
+        <div class="card">
+          <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px">
+            <div style="font-weight:600">Resumes</div>
+          </div>
+          <div style="overflow:auto">
+            <table class="tbl">
+              <thead><tr><th>Name</th><th>Position</th><th>Uploaded</th><th>File</th></tr></thead>
+              <tbody id="tResumes"><tr><td colspan="4" class="muted">Loading...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="s-billing" class="section">
+        <div class="grid4">
+          <div class="card kpi"><div class="lbl">Total Revenue</div><div class="val" id="kRev">$0</div></div>
+          <div class="card kpi"><div class="lbl">Monthly</div><div class="val" id="kRevM">$0</div></div>
+          <div class="card kpi"><div class="lbl">Weekly</div><div class="val" id="kRevW">$0</div></div>
+          <div class="card kpi"><div class="lbl">Active Subs</div><div class="val" id="kSubs">0</div></div>
+        </div>
+        <div class="card" style="margin-top:12px">
+          <div style="font-weight:600">Recent Payments</div>
+          <div id="billingList" class="muted" style="margin-top:8px">No data</div>
+        </div>
+      </section>
+
+      <section id="s-add-job" class="section">
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:8px">Add Job</div>
+          <form id="jobForm" onsubmit="return addJob(event)">
+            <div class="row">
+              <div class="field"><label>Title</label><input id="fTitle" required /></div>
+              <div class="field"><label>Company</label><input id="fCompany" required /></div>
+            </div>
+            <div class="row">
+              <div class="field"><label>Location</label><input id="fLocation" placeholder="Remote or City, ST" /></div>
+              <div class="field"><label>External Apply URL (optional)</label><input id="fUrl" placeholder="https://..." /></div>
+            </div>
+            <div class="field"><label>Description</label><textarea id="fDesc" rows="5" placeholder="Short description"></textarea></div>
+            <div class="toolbar" style="margin-top:8px"><button class="btn primary" id="btnAdd">Publish Job</button><div id="jobMsg" class="muted"></div></div>
+          </form>
+        </div>
+      </section>
+
+      <section id="s-email" class="section">
+        <div class="card">
+          <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px">
+            <div style="font-weight:600">Email Marketing</div>
+            <div class="toolbar"><button class="btn" id="btnTest" onclick="testEmail()">Send Test Email</button></div>
+          </div>
+          <div class="row">
+            <div class="card" style="flex:1"><div class="kpi"><div class="lbl">Student Subscribers</div><div class="val" id="kStudents">0</div></div></div>
+            <div class="card" style="flex:1"><div class="kpi"><div class="lbl">Employer Subscribers</div><div class="val" id="kEmployers">0</div></div></div>
+          </div>
+          <div id="emailMsg" class="muted" style="margin-top:8px">Use Send Test Email to verify setup.</div>
+        </div>
+
+        <div class="card" style="margin-top:12px">
+          <div style="font-weight:600;margin-bottom:8px">Add to Email List</div>
+          <form id="emailAddForm" onsubmit="return addEmailEntry(event)">
+            <div class="row">
+              <div class="field"><label>Email</label><input id="eEmail" type="email" required placeholder="user@example.com" /></div>
+              <div class="field"><label>Name (optional)</label><input id="eName" placeholder="Full name" /></div>
+            </div>
+            <div class="row" style="align-items:center">
+              <div class="field"><label>List</label>
+                <select id="eType">
+                  <option value="student">Students</option>
+                  <option value="employer">Employers</option>
+                </select>
+              </div>
+              <div class="toolbar" style="margin-top:22px"><button class="btn primary" id="btnAddEmail">Add Email</button><div id="emailAddMsg" class="muted"></div></div>
+            </div>
+          </form>
+        </div>
+
+        <div class="card" style="margin-top:12px">
+          <div style="font-weight:600;margin-bottom:8px">Send Job Campaign</div>
+          <div class="row">
+            <div class="field" style="flex:2"><label>Select Job(s)</label>
+              <select id="campJobs" multiple size="6" style="min-height:140px"></select>
+            </div>
+            <div class="field" style="flex:1"><label>Send To</label>
+              <select id="campSegment">
+                <option value="student">Students</option>
+                <option value="employer">Employers</option>
+                <option value="all">All Subscribers</option>
+              </select>
+              <label style="margin-top:10px">Subject (optional)</label>
+              <input id="campSubject" placeholder="New Job Opportunity" />
+            </div>
+          </div>
+          <div class="field" style="margin-top:6px"><label>Custom Message (optional)</label><textarea id="campMsg" rows="4" placeholder="Add a short intro..."></textarea></div>
+          <div class="toolbar" style="margin-top:8px"><button class="btn primary" id="btnSendCamp" onclick="sendCampaign()">Send Campaign</button><div id="campStatus" class="muted"></div></div>
+        </div>
+      </section>
+
+      <section id="s-pricing" class="section">
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:6px">Pricing</div>
+          <div class="muted">Manage plans and price IDs in your environment. Stripe live diagnostics are in the employer area.</div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const sections=['overview','users','jobs','applications','resumes','billing','add-job','email','pricing'];
+    function show(key){
+      sections.forEach(s=>{
+        document.getElementById('s-'+s).classList.toggle('active',s===key);
+        const a=document.querySelector(`[data-s="${s}"]`); if(a) a.classList.toggle('active',s===key);
+      });
+      const titles={
+        'overview':['Overview','Quick stats and recent activity'],
+        'users':['User Management','Manage users and roles'],
+        'jobs':['Jobs Listing','All jobs across sources'],
+        'applications':['Applications','Track on-site applications'],
+        'resumes':['Resumes','Uploaded resume database'],
+        'billing':['Billing','Revenue and payments'],
+        'add-job':['Add Job','Create a manual job posting'],
+        'email':['Email Marketing','Subscribers and campaigns'],
+        'pricing':['Pricing','Plans & configuration']
+      };
+      pageTitle.textContent=titles[key][0];
+      pageSub.textContent=titles[key][1];
+      if(key==='overview') loadOverview();
+      if(key==='users') loadUsers();
+      if(key==='jobs') loadJobs();
+      if(key==='applications') loadApps();
+      if(key==='resumes') loadResumes();
+      if(key==='billing') loadBilling();
+      if(key==='email') loadEmail();
+    }
+    function showFromHash(){const h=(location.hash||'#overview').slice(1);show(sections.includes(h)?h:'overview')}
+    addEventListener('hashchange',showFromHash);
+
+    async function j(url,opts){const r=await fetch(url,opts);const d=await r.json().catch(()=>({}));if(!r.ok) throw new Error(d.message||`Request failed ${r.status}`);return d}
+    const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+    const fdate=d=>{try{return new Date(d).toLocaleDateString()}catch{return ''}};
+
+    async function loadOverview(){
+      try{
+        const d=await j('/api/admin/stats');
+        kUsers.textContent=Number(d.totals?.users||0).toLocaleString();
+        kJobs.textContent=Number(d.totals?.jobs||0).toLocaleString();
+        kApps.textContent=Number(d.totals?.applications||0).toLocaleString();
+        kResumes.textContent=Number(d.totals?.resumes||0).toLocaleString();
+        const jobs=(d.jobs||[]).slice(0,5);
+        recentJobs.innerHTML=jobs.length?jobs.map(jb=>`<div class="row" style="justify-content:space-between"><div>${esc(jb.title)} <span class="muted">@ ${esc(jb.company||'')}</span></div><div class="muted">${fdate(jb.postedAt||jb.createdAt)}</div></div>`).join(''):'<div class="empty">No recent jobs</div>';
+        const apps=(d.applications||[]).slice(0,5);
+        recentApps.innerHTML=apps.length?apps.map(a=>`<div class="row" style="justify-content:space-between"><div>${esc(a.name||a.applicantName||'Applicant')}</div><div class="muted">${fdate(a.date||a.appliedAt||a.createdAt)}</div></div>`).join(''):'<div class="empty">No recent applications</div>';
+      }catch(e){console.error(e)}
+    }
+    async function loadUsers(){
+      const tb=tUsers; try{const d=await j('/api/admin/users');const list=d.users||d||[];tb.innerHTML=list.length?list.map(u=>`<tr><td>${esc(u.name||u.fullName||'')}</td><td>${esc(u.email||'')}</td><td>${esc(u.type||u.role||'user')}</td><td>${fdate(u.createdAt||u.created||u.signupDate)}</td></tr>`).join(''):`<tr><td colspan="4" class="muted">No users</td></tr>`}catch{tb.innerHTML=`<tr><td colspan="4" class="muted">Failed to load users</td></tr>`}
+    }
+    async function loadJobs(){
+      const tb=tJobs; try{const d=await j('/api/admin/jobs');const list=d.jobs||d||[];tb.innerHTML=list.length?list.map(x=>{
+        const id = esc(x.id||x._id||'');
+        return `<tr>
+          <td>${esc(x.title)}</td>
+          <td>${esc(x.company||'')}</td>
+          <td>${esc(x.location||'')}</td>
+          <td>${fdate(x.postedAt||x.createdAt||x.posted_date)}</td>
+          <td><button class="btn" onclick="deleteJob('${id}')">Delete</button></td>
+        </tr>`}).join(''):`<tr><td colspan="5" class="muted">No jobs</td></tr>`}catch{tb.innerHTML=`<tr><td colspan="5" class="muted">Failed to load jobs</td></tr>`}
+    }
+    async function loadApps(){
+      const tb=tApps; try{const d=await j('/api/admin/applications');const list=d.applications||d||[];tb.innerHTML=list.length?list.map(a=>{const r=a.resumeUrl||a.resume||a.resumePath;const link=r?`<a href="${r.startsWith('http')?r:'/'+r.replace(/^\//,'')}" target="_blank">Download</a>`:'';return `<tr><td>${esc(a.name||a.applicantName||'')}</td><td>${esc(a.email||'')}</td><td>${esc(a.jobTitle||a.job?.title||'')}</td><td>${fdate(a.date||a.appliedAt||a.createdAt)}</td><td>${link}</td></tr>`}).join(''):`<tr><td colspan="5" class="muted">No applications</td></tr>`}catch{tb.innerHTML=`<tr><td colspan="5" class="muted">Failed to load applications</td></tr>`}
+    }
+    async function loadResumes(){
+      const tb=tResumes; try{const d=await j('/api/resumes');const list=d.resumes||d||[];tb.innerHTML=list.length?list.map(r=>{const url=r.fileUrl||(r.file&&('/uploads/resumes/'+r.file));return `<tr><td>${esc(r.name||'Candidate')}</td><td>${esc(r.position||'')}</td><td>${fdate(r.uploadDate||r.createdAt)}</td><td>${url?`<a href="${url}" target="_blank">View</a>`:''}</td></tr>`}).join(''):`<tr><td colspan="4" class="muted">No resumes</td></tr>`}catch{tb.innerHTML=`<tr><td colspan="4" class="muted">Failed to load resumes</td></tr>`}
+    }
+    async function loadBilling(){
+      try{const d=await j('/api/admin/billing/overview');const r=d.revenue||d||{total:0,monthly:0,weekly:0,subscriptions:{active:0}};kRev.textContent=`$${Number(r.total||0).toLocaleString()}`;kRevM.textContent=`$${Number(r.monthly||0).toLocaleString()}`;kRevW.textContent=`$${Number(r.weekly||0).toLocaleString()}`;kSubs.textContent=Number(r.subscriptions?.active||0).toLocaleString();billingList.textContent=r.transactions?.length?`${r.transactions.length} payments`:'No data'}catch{billingList.textContent='Unable to load billing'}
+    }
+    async function loadEmail(){
+      const msg=emailMsg; try{const d=await j('/api/admin/email-list');const list=d.entries||d||[];const students=list.filter(e=>String(e.type||e.segment||'student').toLowerCase().includes('student')).length;const employers=list.filter(e=>String(e.type||e.segment||'').toLowerCase().includes('employer')).length;kStudents.textContent=students.toLocaleString();kEmployers.textContent=employers.toLocaleString();msg.textContent='Email list loaded.'}catch{msg.textContent='Failed to load email list'}
+    }
+    async function exportUsers(){ location.href='/api/admin/users/export' }
+    async function addJob(e){ e.preventDefault(); btnAdd.disabled=true; jobMsg.textContent='Publishing...'; try{const body={title:fTitle.value.trim(),company:fCompany.value.trim(),location:fLocation.value.trim(),url:fUrl.value.trim(),description:fDesc.value.trim()}; const r=await fetch('/api/admin/jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); const d=await r.json().catch(()=>({})); if(!r.ok||d.success===false) throw new Error(d.message||'Failed to add job'); jobMsg.textContent='Job published'; jobForm.reset(); loadJobs(); location.hash='#jobs'; show('jobs');}catch(e){jobMsg.textContent=e.message}finally{btnAdd.disabled=false} return false }
+    async function testEmail(){ btnTest.disabled=true; emailMsg.textContent='Sending...'; try{const r=await fetch('/api/admin/test-auto-campaign',{method:'POST'}); const d=await r.json().catch(()=>({})); if(!r.ok) throw new Error(d.message||'Failed'); emailMsg.textContent=d.message||'Sent'; }catch(e){ emailMsg.textContent=e.message }finally{ btnTest.disabled=false } }
+    async function deleteJob(id){ if(!id) return; if(!confirm('Delete this job?')) return; try{ const r=await fetch(`/api/admin/jobs/${encodeURIComponent(id)}`,{method:'DELETE'}); const d=await r.json().catch(()=>({})); if(!r.ok||d.success===false) throw new Error(d.error||d.message||'Failed to delete'); loadJobs(); alert('Job deleted'); }catch(e){ alert(e.message) } }
+
+    // Email list: add entry
+    async function addEmailEntry(e){ e.preventDefault(); btnAddEmail.disabled=true; emailAddMsg.textContent='Adding...';
+      try{ const body={ email:eEmail.value.trim(), name:eName.value.trim(), type:eType.value };
+        const r=await fetch('/api/admin/email-list',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+        const d=await r.json().catch(()=>({})); if(!r.ok||d.success===false) throw new Error(d.error||d.message||'Failed to add'); emailAddMsg.textContent='Added'; eEmail.value=''; eName.value=''; loadEmail();
+      }catch(err){ emailAddMsg.textContent=err.message }
+      finally{ btnAddEmail.disabled=false } return false;
+    }
+
+    // Campaign: load select options when opening Email tab
+    async function populateCampaignInputs(){
+      try{ // jobs
+        const jd=await j('/api/admin/jobs'); const jobs=(jd.jobs||jd||[]); campJobs.innerHTML=jobs.map(j=>`<option value="${esc(j.id||j._id||'')}">${esc(j.title)} — ${esc(j.company||'')}</option>`).join('');
+      }catch{ campJobs.innerHTML=''; }
+    }
+    // override loadEmail to also populate selects
+    const _loadEmail=loadEmail; loadEmail=async function(){ await _loadEmail(); await populateCampaignInputs(); }
+
+    async function sendCampaign(){
+      const btn=btnSendCamp; const out=campStatus; btn.disabled=true; out.textContent='Sending...';
+      try{
+        const selectedJobs=Array.from(campJobs.selectedOptions).map(o=>o.value).filter(Boolean);
+        if(selectedJobs.length===0) throw new Error('Select at least one job');
+        // fetch email list and map by segment
+        const seg=campSegment.value; const lists=[];
+        if(seg==='all') lists.push('student','employer'); else lists.push(seg);
+        const res=await Promise.all(lists.map(t=>fetch(`/api/admin/email-list?type=${encodeURIComponent(t)}`)));
+        const arrays=await Promise.all(res.map(r=>r.json().catch(()=>({emails:[]}))));
+        const ids = arrays.flatMap(d=> (d.emails||[]).filter(e=> (e.status||'active')==='active').map(e=>e.id)).filter(Boolean);
+        if(ids.length===0) throw new Error('No active recipients in selected list');
+        const payload={ jobIds:selectedJobs, emailIds:ids, subject:campSubject.value.trim(), customMessage:campMsg.value.trim() };
+        const r=await fetch('/api/admin/send-job-emails',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+        const d=await r.json().catch(()=>({})); if(!r.ok||d.success===false) throw new Error(d.error||d.message||'Failed to send'); out.textContent=d.message||'Campaign sent';
+      }catch(err){ out.textContent=err.message }
+      finally{ btn.disabled=false }
+    }
+    function refresh(){ const active=sections.find(s=>document.getElementById('s-'+s).classList.contains('active'))||'overview'; show(active) }
+    showFromHash(); loadOverview();
+  </script>
+</body>
+</html>

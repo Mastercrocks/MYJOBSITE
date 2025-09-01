@@ -1,5 +1,6 @@
 [
   {
+    "type": "student",
     "id": "1756706566700",
     "email": "hhaha@gmail.com",
     "name": "Second TEST",
@@ -151,6 +152,17 @@
     ],
     "status": "active",
     "addedDate": "2025-09-01T05:18:31.459Z",
+    "lastEmailSent": null,
+    "totalEmailsSent": 0
+  },
+  {
+    "id": "1756757686962",
+    "email": "lil@gmail.com",
+    "name": "",
+    "tags": [],
+    "status": "active",
+    "type": "student",
+    "addedDate": "2025-09-01T20:14:46.962Z",
     "lastEmailSent": null,
     "totalEmailsSent": 0
   }

@@ -9,544 +9,297 @@
     <style>
         .section { display: none; }
         .section.active { display: block; }
-        .nav-item.active { background-color: #1f2937; border-left: 4px solid #3b82f6; }
-        .stats-card { transition: all 0.3s ease; }
-        .stats-card:hover { transform: translateY(-4px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        .metric-trend { font-size: 0.8rem; }
-        .trend-up { color: #10b981; }
-        .trend-down { color: #ef4444; }
-        .sidebar-nav { max-height: calc(100vh - 100px); overflow-y: auto; }
-        .data-table { font-size: 0.9rem; }
-        .badge { padding: 0.25rem 0.5rem; border-radius: 0.375rem; font-size: 0.75rem; font-weight: 500; }
-        .badge-success { background-color: #d1fae5; color: #065f46; }
-        .badge-warning { background-color: #fef3c7; color: #92400e; }
-        .badge-danger { background-color: #fee2e2; color: #991b1b; }
-        .badge-info { background-color: #dbeafe; color: #1e40af; }
-    </style>
-</head>
-<body class="bg-gray-50">
-    <div class="min-h-screen flex">
-        <!-- Enhanced Sidebar -->
-        <div class="bg-gray-900 text-white w-72 shadow-xl">
-            <div class="p-6 border-b border-gray-700">
-                <h1 class="text-2xl font-bold text-white">TalentSync Admin</h1>
-                <p class="text-gray-400 text-sm mt-1">Complete Site Management</p>
-            </div>
-            
-            <nav class="sidebar-nav p-4 space-y-1">
-                <a href="#" onclick="showSection('overview')" class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors bg-gray-800">
-                    <span class="w-5 h-5 mr-3">📊</span>
-                    Dashboard Overview
-                </a>
-                <a href="#" onclick="showSection('analytics')" class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
-                    <span class="w-5 h-5 mr-3">📈</span>
-                    Advanced Analytics
-                </a>
-                <a href="#" onclick="showSection('users')" class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
-                    <span class="w-5 h-5 mr-3">👥</span>
-                    User Management
-                </a>
-                <a href="#" onclick="showSection('employers')" class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
-                    <span class="w-5 h-5 mr-3">🏢</span>
-                    Employer Management
-                </a>
-                <a href="#" onclick="showSection('jobs')" class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
-                    <span class="w-5 h-5 mr-3">💼</span>
-                    Job Listings
-                </a>
-                <a href="#" onclick="showSection('applications')" class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
-                    <span class="w-5 h-5 mr-3">📄</span>
-                    Applications
-                </a>
-                <a href="/admin/resume-management.html" class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
-                    <span class="w-5 h-5 mr-3">📄</span>
-                    Resume Management
-                </a>
-                <a href="#" onclick="showSection('traffic')" class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
-                    <span class="w-5 h-5 mr-3">🌐</span>
-                    Traffic & Views
-                </a>
-                <a href="#" onclick="showSection('content')" class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
-                    <span class="w-5 h-5 mr-3">📰</span>
-                    Content Management
-                </a>
-                <a href="#" onclick="showSection('system')" class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
-                    <span class="w-5 h-5 mr-3">⚙️</span>
-                    System Status
-                </a>
-                <a href="#" onclick="showSection('security')" class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
-                    <span class="w-5 h-5 mr-3">�</span>
-                    Security & Logs
-                </a>
-            </nav>
-            
-            <!-- Additional Navigation Items -->
-            <div class="mt-4 pt-4 border-t border-gray-700">
-                <a href="#" onclick="showSection('billing')" class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
-                    <span class="w-5 h-5 mr-3">💰</span>
-                    Billing & Revenue
-                </a>
-                <a href="#" onclick="showSection('jobmanual')" class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
-                    <span class="w-5 h-5 mr-3">➕</span>
-                    Add Jobs
-                </a>
-                <a href="#" onclick="showSection('email-marketing')" class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
-                    <span class="w-5 h-5 mr-3">📧</span>
-                    Email Marketing
-                </a>
-                <a href="#" onclick="showSection('pricing')" class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
-                    <span class="w-5 h-5 mr-3">💳</span>
-                    Pricing & Plans
-                </a>
-            </div>
-        </div>
-
-        <!-- Main Content Area -->
-        <div class="flex-1 flex flex-col min-h-screen">
-            <!-- Top Navigation Bar -->
-            <header class="bg-white shadow-lg border-b border-gray-200">
-                <div class="flex justify-between items-center px-8 py-4">
-                    <div>
-                        <h1 id="pageTitle" class="text-2xl font-bold text-gray-900">Dashboard Overview</h1>
-                        <p id="pageSubtitle" class="text-sm text-gray-600 mt-1">Complete analytics and management overview</p>
-                    </div>
-                    <div class="flex items-center space-x-4">
-                        <div class="text-right">
-                            <p class="text-sm text-gray-600">Last updated</p>
-                            <p id="lastUpdated" class="text-xs text-gray-500">Loading...</p>
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+            <title>TalentSync Admin Dashboard</title>
+            <link rel="icon" href="/favicon.ico" />
+            <style>
+                :root { --bg:#0b1220; --panel:#0f172a; --muted:#94a3b8; --text:#e5e7eb; --border:#1f2937; --accent:#3b82f6; }
+                *{box-sizing:border-box}
+                body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Arial}
+                a{color:inherit;text-decoration:none}
+                .wrap{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+                .side{background:#0a0f1d;border-right:1px solid var(--border);padding:16px;position:sticky;top:0;height:100vh}
+                .brand{font-weight:700;margin:4px 0 16px}
+                .nav a{display:block;padding:10px 12px;border-radius:8px;color:#cbd5e1}
+                .nav a:hover,.nav a.active{background:#0f172a;color:#fff}
+                .main{padding:18px}
+                .head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+                .title{font-size:20px;font-weight:700}
+                .sub{color:var(--muted);font-size:13px}
+                .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+                .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px}
+                .kpi .lbl{color:#94a3b8;font-size:12px}
+                .kpi .val{font-weight:800;font-size:22px}
+                .tbl{width:100%;border-collapse:collapse}
+                .tbl th,.tbl td{padding:10px;border-bottom:1px solid var(--border);font-size:14px;text-align:left}
+                .muted{color:#94a3b8}
+                .row{display:flex;gap:10px}
+                .row>*{flex:1}
+                .field{display:flex;flex-direction:column;gap:6px}
+                .field input,.field textarea{background:#0a0f1d;border:1px solid var(--border);color:#e5e7eb;border-radius:8px;padding:10px}
+                .btn{background:#0c1426;border:1px solid var(--border);color:#e5e7eb;border-radius:8px;padding:10px 12px;cursor:pointer}
+                .btn.primary{background:var(--accent);border-color:#2563eb}
+                .toolbar{display:flex;gap:8px;align-items:center}
+                .section{display:none}
+                .section.active{display:block}
+                .pill{display:inline-block;border:1px solid var(--border);border-radius:999px;padding:4px 8px;color:#cbd5e1}
+                .empty{border:1px dashed var(--border);border-radius:10px;padding:16px;text-align:center;color:#94a3b8}
+            </style>
+            <script>
+                (async () => {
+                    try {
+                        const r = await fetch('/api/auth/me');
+                        const me = await r.json().catch(() => ({}));
+                        if (!r.ok || !me || me.role !== 'admin') location.href = '/admin/login.html';
+                    } catch { location.href = '/admin/login.html'; }
+                })();
+            </script>
+        </head>
+        <body>
+            <div class="wrap">
+                <aside class="side">
+                    <div class="brand">TalentSync Admin</div>
+                    <nav class="nav" id="nav">
+                        <a href="#overview" data-s="overview" class="active">Overview</a>
+                        <a href="#users" data-s="users">User Management</a>
+                        <a href="#jobs" data-s="jobs">Jobs Listing</a>
+                        <a href="#applications" data-s="applications">Applications</a>
+                        <a href="#resumes" data-s="resumes">Resumes</a>
+                        <a href="#billing" data-s="billing">Billing</a>
+                        <a href="#add-job" data-s="add-job">Add Job</a>
+                        <a href="#email" data-s="email">Email Marketing</a>
+                        <a href="#pricing" data-s="pricing">Pricing</a>
+                    </nav>
+                </aside>
+                <main class="main">
+                    <div class="head">
+                        <div>
+                            <div class="title" id="pageTitle">Overview</div>
+                            <div class="sub" id="pageSub">Quick stats and recent activity</div>
                         </div>
-                        <div class="flex space-x-2">
-                            <button onclick="refreshAllData()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm">
-                                Refresh Data
-                            </button>
-                            <a href="/" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition text-sm">
-                                View Site
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </header>
-
-            <!-- Main Content Area -->
-            <main class="flex-1 overflow-auto bg-gray-50 p-8">
-                
-                <!-- Dashboard Overview Section -->
-                <div id="overview-section" class="section active space-y-8">
-                    <!-- Real-time Stats Grid -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <div class="bg-white p-6 rounded-xl shadow-sm stats-card border border-gray-100">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm font-medium text-gray-600">Total Users</p>
-                                    <p id="totalUsers" class="text-3xl font-bold text-gray-900">0</p>
-                                    <p class="text-xs text-gray-500 mt-1">Growing steadily</p>
-                                </div>
-                                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="bg-white p-6 rounded-xl shadow-sm stats-card border border-gray-100">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm font-medium text-gray-600">Active Jobs</p>
-                                    <p id="activeJobs" class="text-3xl font-bold text-gray-900">0</p>
-                                    <p class="text-xs text-gray-500 mt-1">Ready for growth</p>
-                                </div>
-                                <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0V6a2 2 0 012 2v6a2 2 0 01-2 2H8a2 2 0 01-2-2V8a2 2 0 012-2h8z"></path>
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="bg-white p-6 rounded-xl shadow-sm stats-card border border-gray-100">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm font-medium text-gray-600">Applications</p>
-                                    <p id="totalApplications" class="text-3xl font-bold text-gray-900">0</p>
-                                    <p class="text-xs text-gray-500 mt-1">New site launch</p>
-                                </div>
-                                <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                                    <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="bg-white p-6 rounded-xl shadow-sm stats-card border border-gray-100">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm font-medium text-gray-600">Page Views</p>
-                                    <p id="pageViews" class="text-3xl font-bold text-gray-900">0</p>
-                                    <p class="text-xs text-gray-500 mt-1">Building audience</p>
-                                </div>
-                                <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                                    <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                    </svg>
-                                </div>
-                            </div>
+                        <div class="toolbar">
+                            <button class="btn" onclick="refresh()">Refresh</button>
+                            <a class="btn" href="/" target="_blank">Open site</a>
                         </div>
                     </div>
 
-                    <!-- Revenue Overview Cards -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                        <div class="bg-gradient-to-r from-green-500 to-green-600 p-6 rounded-xl shadow-sm stats-card text-white">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm font-medium text-green-100">Total Revenue</p>
-                                    <p id="totalRevenue" class="text-3xl font-bold text-white">$0</p>
-                                    <p class="text-xs text-green-100 mt-1">All time</p>
+                    <section id="s-overview" class="section active">
+                        <div class="grid4">
+                            <div class="card kpi"><div class="lbl">Users</div><div class="val" id="kUsers">0</div></div>
+                            <div class="card kpi"><div class="lbl">Jobs</div><div class="val" id="kJobs">0</div></div>
+                            <div class="card kpi"><div class="lbl">Applications</div><div class="val" id="kApps">0</div></div>
+                            <div class="card kpi"><div class="lbl">Resumes</div><div class="val" id="kResumes">0</div></div>
+                        </div>
+                        <div class="row" style="margin-top:12px">
+                            <div class="card" style="flex:1">
+                                <div class="row" style="justify-content:space-between;align-items:center">
+                                    <div style="font-weight:600">Recent Jobs</div>
+                                    <a class="pill" href="#jobs" onclick="show('jobs')">View all</a>
                                 </div>
-                                <div class="w-12 h-12 bg-green-400 rounded-lg flex items-center justify-center">
-                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-                                    </svg>
+                                <div id="recentJobs" class="muted" style="margin-top:8px">Loading...</div>
+                            </div>
+                            <div class="card" style="flex:1">
+                                <div class="row" style="justify-content:space-between;align-items:center">
+                                    <div style="font-weight:600">Recent Applications</div>
+                                    <a class="pill" href="#applications" onclick="show('applications')">View all</a>
                                 </div>
+                                <div id="recentApps" class="muted" style="margin-top:8px">Loading...</div>
                             </div>
                         </div>
+                    </section>
 
-                        <div class="bg-white p-6 rounded-xl shadow-sm stats-card border border-gray-100">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm font-medium text-gray-600">Monthly Revenue</p>
-                                    <p id="monthlyRevenue" class="text-3xl font-bold text-gray-900">$0</p>
-                                    <p id="monthlyRevenueChange" class="text-xs text-gray-500 mt-1">This month</p>
-                                </div>
-                                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                                    </svg>
-                                </div>
+                    <section id="s-users" class="section">
+                        <div class="card">
+                            <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px">
+                                <div style="font-weight:600">Users</div>
+                                <div class="toolbar"><button class="btn" onclick="exportUsers()">Export CSV</button></div>
                             </div>
-                        </div>
-
-                        <div class="bg-white p-6 rounded-xl shadow-sm stats-card border border-gray-100">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm font-medium text-gray-600">Weekly Revenue</p>
-                                    <p id="weeklyRevenue" class="text-3xl font-bold text-gray-900">$0</p>
-                                    <p id="weeklyRevenueChange" class="text-xs text-gray-500 mt-1">Last 7 days</p>
-                                </div>
-                                <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                                    <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="bg-white p-6 rounded-xl shadow-sm stats-card border border-gray-100">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm font-medium text-gray-600">Active Subscriptions</p>
-                                    <p id="activeSubscriptions" class="text-3xl font-bold text-gray-900">0</p>
-                                    <p id="subscriptionChange" class="text-xs text-gray-500 mt-1">Current active</p>
-                                </div>
-                                <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                                    <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Recent Activity & Quick Stats -->
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <!-- Recent Activity -->
-                        <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100">
-                            <div class="p-6 border-b border-gray-100">
-                                <h3 class="text-lg font-semibold text-gray-900">Recent Activity</h3>
-                                <p class="text-sm text-gray-600">Latest actions across your platform</p>
-                            </div>
-                            <div class="p-6">
-                                <div id="recentActivity" class="space-y-4">
-                                    <div class="flex items-start space-x-4">
-                                        <div class="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-                                        <div class="flex-1">
-                                            <p class="text-sm text-gray-900">New job posted: "Senior Developer"</p>
-                                            <p class="text-xs text-gray-500">2 minutes ago</p>
-                                        </div>
-                                    </div>
-                                    <div class="flex items-start space-x-4">
-                                        <div class="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
-                                        <div class="flex-1">
-                                            <p class="text-sm text-gray-900">User "john.doe@example.com" registered</p>
-                                            <p class="text-xs text-gray-500">5 minutes ago</p>
-                                        </div>
-                                    </div>
-                                    <div class="flex items-start space-x-4">
-                                        <div class="w-2 h-2 bg-purple-500 rounded-full mt-2"></div>
-                                        <div class="flex-1">
-                                            <p class="text-sm text-gray-900">Application submitted for "Marketing Manager"</p>
-                                            <p class="text-xs text-gray-500">8 minutes ago</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Quick Stats -->
-                        <div class="space-y-6">
-                            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                                <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Stats</h3>
-                                <div class="space-y-4">
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-sm text-gray-600">Active Employers</span>
-                                        <span id="quickActiveEmployers" class="font-semibold text-gray-900">0</span>
-                                    </div>
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-sm text-gray-600">Pending Applications</span>
-                                        <span id="quickPendingApplications" class="font-semibold text-gray-900">0</span>
-                                    </div>
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-sm text-gray-600">Resumes Uploaded</span>
-                                        <span id="quickResumesUploaded" class="font-semibold text-gray-900">0</span>
-                                    </div>
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-sm text-gray-600">Featured Jobs</span>
-                                        <span id="quickFeaturedJobs" class="font-semibold text-gray-900">0</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                                <h3 class="text-lg font-semibold text-gray-900 mb-4">System Health</h3>
-                                <div class="space-y-3">
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-sm text-gray-600">Server Status</span>
-                                        <span class="badge badge-success">Online</span>
-                                    </div>
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-sm text-gray-600">Database</span>
-                                        <span class="badge badge-success">Connected</span>
-                                    </div>
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-sm text-gray-600">Email Service</span>
-                                        <span class="badge badge-success">Active</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Advanced Analytics Section -->
-                <div id="analytics-section" class="section space-y-8">
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                            <h3 class="text-lg font-semibold text-gray-900 mb-4">User Registration Trends</h3>
-                            <canvas id="userChart" width="400" height="200"></canvas>
-                        </div>
-                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Job Application Trends</h3>
-                            <canvas id="applicationChart" width="400" height="200"></canvas>
-                        </div>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Traffic Sources</h3>
-                            <div id="trafficSources" class="space-y-3">
-                                <div class="flex justify-between items-center">
-                                    <span class="text-sm text-gray-600">Direct Traffic</span>
-                                    <span class="font-semibold text-gray-500">New site</span>
-                                </div>
-                                <div class="flex justify-between items-center">
-                                    <span class="text-sm text-gray-600">Search Engines</span>
-                                    <span class="font-semibold text-gray-500">Set up SEO</span>
-                                </div>
-                                <div class="flex justify-between items-center">
-                                    <span class="text-sm text-gray-600">Social Media</span>
-                                    <span class="font-semibold text-gray-500">Start marketing</span>
-                                </div>
-                                <div class="flex justify-between items-center">
-                                    <span class="text-sm text-gray-600">Referrals</span>
-                                    <span class="font-semibold text-gray-500">Build network</span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Popular Job Categories</h3>
-                            <div class="space-y-3">
-                                <div class="flex justify-between items-center">
-                                    <span class="text-sm text-gray-600">Technology</span>
-                                    <span class="font-semibold">156 jobs</span>
-                                </div>
-                                <div class="flex justify-between items-center">
-                                    <span class="text-sm text-gray-600">Marketing</span>
-                                    <span class="font-semibold">89 jobs</span>
-                                </div>
-                                <div class="flex justify-between items-center">
-                                    <span class="text-sm text-gray-600">Sales</span>
-                                    <span class="font-semibold">67 jobs</span>
-                                </div>
-                                <div class="flex justify-between items-center">
-                                    <span class="text-sm text-gray-600">Finance</span>
-                                    <span class="font-semibold">45 jobs</span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Performance Metrics</h3>
-                            <div class="space-y-3">
-                                <div class="flex justify-between items-center">
-                                    <span class="text-sm text-gray-600">Avg. Session Duration</span>
-                                    <span class="font-semibold">4m 32s</span>
-                                </div>
-                                <div class="flex justify-between items-center">
-                                    <span class="text-sm text-gray-600">Bounce Rate</span>
-                                    <span class="font-semibold">23.4%</span>
-                                </div>
-                                <div class="flex justify-between items-center">
-                                    <span class="text-sm text-gray-600">Page Load Time</span>
-                                    <span class="font-semibold">1.2s</span>
-                                </div>
-                                <div class="flex justify-between items-center">
-                                    <span class="text-sm text-gray-600">Conversion Rate</span>
-                                    <span class="font-semibold">12.8%</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- User Management Section -->
-                <div id="users-section" class="section space-y-6">
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-                        <div class="p-6 border-b border-gray-100 flex justify-between items-center">
-                            <div>
-                                <h2 class="text-xl font-semibold text-gray-900">User Management</h2>
-                                <p class="text-sm text-gray-600">Manage all registered users and their activities</p>
-                            </div>
-                            <div class="flex space-x-2">
-                                <button onclick="exportUsers()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">Export Users</button>
-                                <button onclick="showAddUserModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm">Add User</button>
-                            </div>
-                        </div>
-                        <div class="p-6">
-                            <div class="mb-4 flex space-x-4">
-                                <input type="text" placeholder="Search users..." class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                <select class="px-4 py-2 border border-gray-300 rounded-lg">
-                                    <option>All Users</option>
-                                    <option>Active</option>
-                                    <option>Inactive</option>
-                                    <option>Suspended</option>
-                                </select>
-                            </div>
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full data-table">
-                                    <thead class="bg-gray-50">
-                                        <tr>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Plan</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Billing</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Last Login</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="usersTable" class="bg-white divide-y divide-gray-200">
-                                        <tr>
-                                            <td colspan="6" class="px-6 py-8 text-center text-gray-500">Loading users...</td>
-                                        </tr>
-                                    </tbody>
+                            <div style="overflow:auto">
+                                <table class="tbl">
+                                    <thead><tr><th>Name</th><th>Email</th><th>Type</th><th>Created</th></tr></thead>
+                                    <tbody id="tUsers"><tr><td colspan="4" class="muted">Loading...</td></tr></tbody>
                                 </table>
                             </div>
                         </div>
-                    </div>
-                </div>
+                    </section>
 
-                <!-- Employer Management Section -->
-                <div id="employers-section" class="section space-y-6">
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-                        <div class="p-6 border-b border-gray-100 flex justify-between items-center">
-                            <div>
-                                <h2 class="text-xl font-semibold text-gray-900">Employer Management</h2>
-                                <p class="text-sm text-gray-600">Manage companies and employer accounts</p>
+                    <section id="s-jobs" class="section">
+                        <div class="card">
+                            <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px">
+                                <div style="font-weight:600">Jobs Listing</div>
+                                <div class="toolbar"><a class="btn" href="#add-job" onclick="show('add-job')">Add Job</a></div>
                             </div>
-                            <div class="flex space-x-2">
-                                <button onclick="exportEmployers()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">Export Employers</button>
-                                <button onclick="showVerifyCompanyModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm">Verify Company</button>
-                            </div>
-                        </div>
-                        <div class="p-6">
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full data-table">
-                                    <thead class="bg-gray-50">
-                                        <tr>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Company</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Contact</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Jobs Posted</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Plan</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Billing</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Joined</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="employersTable" class="bg-white divide-y divide-gray-200">
-                                        <tr>
-                                            <td colspan="8" class="px-6 py-8 text-center text-gray-500">Loading employers...</td>
-                                        </tr>
-                                    </tbody>
+                            <div style="overflow:auto">
+                                <table class="tbl">
+                                    <thead><tr><th>Title</th><th>Company</th><th>Location</th><th>Posted</th></tr></thead>
+                                    <tbody id="tJobs"><tr><td colspan="4" class="muted">Loading...</td></tr></tbody>
                                 </table>
                             </div>
                         </div>
-                    </div>
-                </div>
+                    </section>
 
-                <!-- Job Management Section -->
-                <div id="jobs-section" class="section space-y-6">
-                    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
-                        <div class="bg-white p-4 rounded-lg shadow-sm border">
-                            <p class="text-sm text-gray-600">Active Jobs</p>
-                            <p class="text-2xl font-bold text-green-600">4</p>
-                        </div>
-                        <div class="bg-white p-4 rounded-lg shadow-sm border">
-                            <p class="text-sm text-gray-600">Pending Review</p>
-                            <p class="text-2xl font-bold text-yellow-600">0</p>
-                        </div>
-                        <div class="bg-white p-4 rounded-lg shadow-sm border">
-                            <p class="text-sm text-gray-600">Expired</p>
-                            <p class="text-2xl font-bold text-red-600">0</p>
-                        </div>
-                        <div class="bg-white p-4 rounded-lg shadow-sm border">
-                            <p class="text-sm text-gray-600">Draft</p>
-                            <p class="text-2xl font-bold text-gray-600">0</p>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-                        <div class="p-6 border-b border-gray-100 flex justify-between items-center">
-                            <div>
-                                <h2 class="text-xl font-semibold text-gray-900">Job Listings</h2>
-                                <p class="text-sm text-gray-600">Manage all job postings and their status</p>
+                    <section id="s-applications" class="section">
+                        <div class="card">
+                            <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px">
+                                <div style="font-weight:600">Applications</div>
                             </div>
-                            <div class="flex space-x-2">
-                                <button onclick="showBulkActionsModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">Bulk Actions</button>
-                                <button onclick="sendSelectedJobsEmail()" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 text-sm">📧 Email Selected</button>
-                                <button onclick="toggleFeaturedJobs()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm">Featured Jobs</button>
+                            <div style="overflow:auto">
+                                <table class="tbl">
+                                    <thead><tr><th>Applicant</th><th>Email</th><th>Job</th><th>Date</th><th>Resume</th></tr></thead>
+                                    <tbody id="tApps"><tr><td colspan="5" class="muted">Loading...</td></tr></tbody>
+                                </table>
                             </div>
                         </div>
-                        <div class="p-6">
-                            <div class="mb-4 flex space-x-4">
-                                <input type="text" placeholder="Search jobs..." class="flex-1 px-4 py-2 border border-gray-300 rounded-lg">
-                                <select class="px-4 py-2 border border-gray-300 rounded-lg">
-                                    <option>All Status</option>
-                                    <option>Active</option>
+                    </section>
+
+                    <section id="s-resumes" class="section">
+                        <div class="card">
+                            <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px">
+                                <div style="font-weight:600">Resumes</div>
+                            </div>
+                            <div style="overflow:auto">
+                                <table class="tbl">
+                                    <thead><tr><th>Name</th><th>Position</th><th>Uploaded</th><th>File</th></tr></thead>
+                                    <tbody id="tResumes"><tr><td colspan="4" class="muted">Loading...</td></tr></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section id="s-billing" class="section">
+                        <div class="grid4">
+                            <div class="card kpi"><div class="lbl">Total Revenue</div><div class="val" id="kRev">$0</div></div>
+                            <div class="card kpi"><div class="lbl">Monthly</div><div class="val" id="kRevM">$0</div></div>
+                            <div class="card kpi"><div class="lbl">Weekly</div><div class="val" id="kRevW">$0</div></div>
+                            <div class="card kpi"><div class="lbl">Active Subs</div><div class="val" id="kSubs">0</div></div>
+                        </div>
+                        <div class="card" style="margin-top:12px">
+                            <div style="font-weight:600">Recent Payments</div>
+                            <div id="billingList" class="muted" style="margin-top:8px">No data</div>
+                        </div>
+                    </section>
+
+                    <section id="s-add-job" class="section">
+                        <div class="card">
+                            <div style="font-weight:600;margin-bottom:8px">Add Job</div>
+                            <form id="jobForm" onsubmit="return addJob(event)">
+                                <div class="row">
+                                    <div class="field"><label>Title</label><input id="fTitle" required /></div>
+                                    <div class="field"><label>Company</label><input id="fCompany" required /></div>
+                                </div>
+                                <div class="row">
+                                    <div class="field"><label>Location</label><input id="fLocation" placeholder="Remote or City, ST" /></div>
+                                    <div class="field"><label>External Apply URL (optional)</label><input id="fUrl" placeholder="https://..." /></div>
+                                </div>
+                                <div class="field"><label>Description</label><textarea id="fDesc" rows="5" placeholder="Short description"></textarea></div>
+                                <div class="toolbar" style="margin-top:8px"><button class="btn primary" id="btnAdd">Publish Job</button><div id="jobMsg" class="muted"></div></div>
+                            </form>
+                        </div>
+                    </section>
+
+                    <section id="s-email" class="section">
+                        <div class="card">
+                            <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px">
+                                <div style="font-weight:600">Email Marketing</div>
+                                <div class="toolbar"><button class="btn" id="btnTest" onclick="testEmail()">Send Test Email</button></div>
+                            </div>
+                            <div class="row">
+                                <div class="card" style="flex:1"><div class="kpi"><div class="lbl">Student Subscribers</div><div class="val" id="kStudents">0</div></div></div>
+                                <div class="card" style="flex:1"><div class="kpi"><div class="lbl">Employer Subscribers</div><div class="val" id="kEmployers">0</div></div></div>
+                            </div>
+                            <div id="emailMsg" class="muted" style="margin-top:8px">Use Send Test Email to verify setup.</div>
+                        </div>
+                    </section>
+
+                    <section id="s-pricing" class="section">
+                        <div class="card">
+                            <div style="font-weight:600;margin-bottom:6px">Pricing</div>
+                            <div class="muted">Manage plans and price IDs in your environment. Stripe live diagnostics are in the employer area.</div>
+                        </div>
+                    </section>
+                </main>
+            </div>
+
+            <script>
+                const sections=['overview','users','jobs','applications','resumes','billing','add-job','email','pricing'];
+                function show(key){
+                    sections.forEach(s=>{
+                        document.getElementById('s-'+s).classList.toggle('active',s===key);
+                        const a=document.querySelector(`[data-s="${s}"]`); if(a) a.classList.toggle('active',s===key);
+                    });
+                    const titles={
+                        'overview':['Overview','Quick stats and recent activity'],
+                        'users':['User Management','Manage users and roles'],
+                        'jobs':['Jobs Listing','All jobs across sources'],
+                        'applications':['Applications','Track on-site applications'],
+                        'resumes':['Resumes','Uploaded resume database'],
+                        'billing':['Billing','Revenue and payments'],
+                        'add-job':['Add Job','Create a manual job posting'],
+                        'email':['Email Marketing','Subscribers and campaigns'],
+                        'pricing':['Pricing','Plans & configuration']
+                    };
+                    pageTitle.textContent=titles[key][0];
+                    pageSub.textContent=titles[key][1];
+                    if(key==='overview') loadOverview();
+                    if(key==='users') loadUsers();
+                    if(key==='jobs') loadJobs();
+                    if(key==='applications') loadApps();
+                    if(key==='resumes') loadResumes();
+                    if(key==='billing') loadBilling();
+                    if(key==='email') loadEmail();
+                }
+                function showFromHash(){const h=(location.hash||'#overview').slice(1);show(sections.includes(h)?h:'overview')}
+                addEventListener('hashchange',showFromHash);
+
+                async function j(url,opts){const r=await fetch(url,opts);const d=await r.json().catch(()=>({}));if(!r.ok) throw new Error(d.message||`Request failed ${r.status}`);return d}
+                const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+                const fdate=d=>{try{return new Date(d).toLocaleDateString()}catch{return ''}};
+
+                async function loadOverview(){
+                    try{
+                        const d=await j('/api/admin/stats');
+                        kUsers.textContent=Number(d.totals?.users||0).toLocaleString();
+                        kJobs.textContent=Number(d.totals?.jobs||0).toLocaleString();
+                        kApps.textContent=Number(d.totals?.applications||0).toLocaleString();
+                        kResumes.textContent=Number(d.totals?.resumes||0).toLocaleString();
+                        const jobs=(d.jobs||[]).slice(0,5);
+                        recentJobs.innerHTML=jobs.length?jobs.map(jb=>`<div class="row" style="justify-content:space-between"><div>${esc(jb.title)} <span class="muted">@ ${esc(jb.company||'')}</span></div><div class="muted">${fdate(jb.postedAt||jb.createdAt)}</div></div>`).join(''):'<div class="empty">No recent jobs</div>';
+                        const apps=(d.applications||[]).slice(0,5);
+                        recentApps.innerHTML=apps.length?apps.map(a=>`<div class="row" style="justify-content:space-between"><div>${esc(a.name||a.applicantName||'Applicant')}</div><div class="muted">${fdate(a.date||a.appliedAt||a.createdAt)}</div></div>`).join(''):'<div class="empty">No recent applications</div>';
+                    }catch(e){console.error(e)}
+                }
+                async function loadUsers(){
+                    const tb=tUsers; try{const d=await j('/api/admin/users');const list=d.users||d||[];tb.innerHTML=list.length?list.map(u=>`<tr><td>${esc(u.name||u.fullName||'')}</td><td>${esc(u.email||'')}</td><td>${esc(u.type||u.role||'user')}</td><td>${fdate(u.createdAt||u.created||u.signupDate)}</td></tr>`).join(''):`<tr><td colspan="4" class="muted">No users</td></tr>`}catch{tb.innerHTML=`<tr><td colspan="4" class="muted">Failed to load users</td></tr>`}
+                }
+                async function loadJobs(){
+                    const tb=tJobs; try{const d=await j('/api/admin/jobs');const list=d.jobs||d||[];tb.innerHTML=list.length?list.map(x=>`<tr><td>${esc(x.title)}</td><td>${esc(x.company||'')}</td><td>${esc(x.location||'')}</td><td>${fdate(x.postedAt||x.createdAt)}</td></tr>`).join(''):`<tr><td colspan="4" class="muted">No jobs</td></tr>`}catch{tb.innerHTML=`<tr><td colspan="4" class="muted">Failed to load jobs</td></tr>`}
+                }
+                async function loadApps(){
+                    const tb=tApps; try{const d=await j('/api/admin/applications');const list=d.applications||d||[];tb.innerHTML=list.length?list.map(a=>{const r=a.resumeUrl||a.resume||a.resumePath;const link=r?`<a href="${r.startsWith('http')?r:'/'+r.replace(/^\//,'')}" target="_blank">Download</a>`:'';return `<tr><td>${esc(a.name||a.applicantName||'')}</td><td>${esc(a.email||'')}</td><td>${esc(a.jobTitle||a.job?.title||'')}</td><td>${fdate(a.date||a.appliedAt||a.createdAt)}</td><td>${link}</td></tr>`}).join(''):`<tr><td colspan="5" class="muted">No applications</td></tr>`}catch{tb.innerHTML=`<tr><td colspan="5" class="muted">Failed to load applications</td></tr>`}
+                }
+                async function loadResumes(){
+                    const tb=tResumes; try{const d=await j('/api/resumes');const list=d.resumes||d||[];tb.innerHTML=list.length?list.map(r=>{const url=r.fileUrl||(r.file&&('/uploads/resumes/'+r.file));return `<tr><td>${esc(r.name||'Candidate')}</td><td>${esc(r.position||'')}</td><td>${fdate(r.uploadDate||r.createdAt)}</td><td>${url?`<a href="${url}" target="_blank">View</a>`:''}</td></tr>`}).join(''):`<tr><td colspan="4" class="muted">No resumes</td></tr>`}catch{tb.innerHTML=`<tr><td colspan="4" class="muted">Failed to load resumes</td></tr>`}
+                }
+                async function loadBilling(){
+                    try{const d=await j('/api/admin/billing/overview');const r=d.revenue||d||{total:0,monthly:0,weekly:0,subscriptions:{active:0}};kRev.textContent=`$${Number(r.total||0).toLocaleString()}`;kRevM.textContent=`$${Number(r.monthly||0).toLocaleString()}`;kRevW.textContent=`$${Number(r.weekly||0).toLocaleString()}`;kSubs.textContent=Number(r.subscriptions?.active||0).toLocaleString();billingList.textContent=r.transactions?.length?`${r.transactions.length} payments`:'No data'}catch{billingList.textContent='Unable to load billing'}
+                }
+                async function loadEmail(){
+                    const msg=emailMsg; try{const d=await j('/api/admin/email-list');const list=d.entries||d||[];const students=list.filter(e=>String(e.type||e.segment||'student').toLowerCase().includes('student')).length;const employers=list.filter(e=>String(e.type||e.segment||'').toLowerCase().includes('employer')).length;kStudents.textContent=students.toLocaleString();kEmployers.textContent=employers.toLocaleString();msg.textContent='Email list loaded.'}catch{msg.textContent='Failed to load email list'}
+                }
+                async function exportUsers(){ location.href='/api/admin/users/export' }
+                async function addJob(e){ e.preventDefault(); btnAdd.disabled=true; jobMsg.textContent='Publishing...'; try{const body={title:fTitle.value.trim(),company:fCompany.value.trim(),location:fLocation.value.trim(),url:fUrl.value.trim(),description:fDesc.value.trim()}; const r=await fetch('/api/admin/jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); const d=await r.json().catch(()=>({})); if(!r.ok||d.success===false) throw new Error(d.message||'Failed to add job'); jobMsg.textContent='Job published'; jobForm.reset(); loadJobs(); location.hash='#jobs'; show('jobs');}catch(e){jobMsg.textContent=e.message}finally{btnAdd.disabled=false} return false }
+                async function testEmail(){ btnTest.disabled=true; emailMsg.textContent='Sending...'; try{const r=await fetch('/api/admin/test-auto-campaign',{method:'POST'}); const d=await r.json().catch(()=>({})); if(!r.ok) throw new Error(d.message||'Failed'); emailMsg.textContent=d.message||'Sent'; }catch(e){ emailMsg.textContent=e.message }finally{ btnTest.disabled=false } }
+                function refresh(){ const active=sections.find(s=>document.getElementById('s-'+s).classList.contains('active'))||'overview'; show(active) }
+                showFromHash(); loadOverview();
+            </script>
+        </body>
+        </html>
+        </body>
+        </html>
                                     <option>Pending</option>
                                     <option>Expired</option>
                                 </select>

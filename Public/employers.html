@@ -635,9 +635,9 @@
             const heroBtn = document.querySelector('.hero-cta .btn-primary');
             if (heroBtn) {
                 const userType = localStorage.getItem('userType');
-                if (userType === 'employer') {
-                    heroBtn.textContent = 'Go to Dashboard';
-                    heroBtn.href = '/employer/dashboard.html';
+                    if (userType === 'employer') {
+                        heroBtn.textContent = 'Go to Dashboard';
+                        heroBtn.href = '/employer/dashboard2.html';
                 } else {
                     heroBtn.textContent = 'View Jobs';
                     heroBtn.href = '/jobs.html';
@@ -660,7 +660,7 @@
                                 </p>
                                 <div style="margin-top: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;">
                                     ${userType === 'employer' ? `
-                                        <a href="/employer/dashboard.html" class="btn btn-primary">Go to Dashboard</a>
+                                            <a href="/employer/dashboard2.html" class="btn btn-primary">Go to Dashboard</a>
                                         <a href="/jobs.html" class="btn btn-secondary" style="background: #6b7280; border-color: #6b7280;">Browse Jobs</a>
                                     ` : `
                                         <a href="/jobseeker/dashboard.html" class="btn btn-primary">Go to Dashboard</a>
@@ -750,11 +750,11 @@
                     // Redirect based on user type
                     setTimeout(() => {
                         if (data.user.userType === 'employer') {
-                            window.location.href = '/employer/dashboard.html';
+                            window.location.href = '/employer/dashboard2.html';
                         } else if (data.user.userType === 'job_seeker') {
-                            window.location.href = '/dashboard.html';
+                            window.location.href = '/jobseeker/dashboard.html';
                         } else {
-                            window.location.href = '/dashboard.html';
+                            window.location.href = '/jobseeker/dashboard.html';
                         }
                     }, 1500);
                 } else {
@@ -814,7 +814,7 @@
                     
                     // Redirect to employer dashboard
                     setTimeout(() => {
-                        window.location.href = '/employer/dashboard.html';
+                        window.location.href = '/employer/dashboard2.html';
                     }, 1500);
                 } else {
                     errorDiv.textContent = data.error || 'Registration failed';

@@ -57,7 +57,7 @@ const redirectIfAuthenticated = async (req, res, next) => {
 
       if (users.length > 0) {
         // User is authenticated, redirect to dashboard
-        const redirectUrl = users[0].user_type === 'employer' ? '/employer/dashboard.html' : '/dashboard.html';
+  const redirectUrl = users[0].user_type === 'employer' ? '/employer/dashboard2.html' : '/jobseeker/dashboard.html';
         return res.redirect(redirectUrl);
       }
     } catch (error) {
