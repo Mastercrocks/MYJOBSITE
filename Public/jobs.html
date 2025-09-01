@@ -846,12 +846,15 @@
                     }
                 } while (page <= totalPages);
 
-                if (!parseFailed && aggregated.length > 0) {
+                // If Mongo returned a healthy count (>=100), use it; otherwise, fallback
+                if (!parseFailed && aggregated.length >= 100) {
                     console.log(`✅ Loaded ${aggregated.length} jobs from Mongo API (${totalPages} pages)`);
                     allJobs = aggregated;
                     window.totalJobs = aggregated.length;
                     filterAndDisplayJobs();
                     return;
+                } else if (!parseFailed && aggregated.length > 0) {
+                    console.warn(`⚠️ Mongo API returned only ${aggregated.length} jobs; will try legacy fallback for completeness`);
                 }
 
                 // Fallback to legacy combined feed (includes JSON/scraped if present)
