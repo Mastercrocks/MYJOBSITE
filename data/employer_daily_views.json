@@ -2,6 +2,8 @@
   {
     "employerId": "68b502fc07ac61db77a335b8",
     "lastDate": "2025-09-01",
-    "totalAdded": 10
+    "totalAdded": 10,
+    "lastHour": 19,
+    "baselineToday": 21
   }
 ]

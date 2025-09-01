@@ -111,8 +111,8 @@
           </div>
           <div style="overflow:auto">
             <table class="tbl">
-              <thead><tr><th>Title</th><th>Company</th><th>Location</th><th>Posted</th><th>Actions</th></tr></thead>
-              <tbody id="tJobs"><tr><td colspan="5" class="muted">Loading...</td></tr></tbody>
+              <thead><tr><th>Title</th><th>Company</th><th>Location</th><th>Posted</th><th>Views</th><th>Actions</th></tr></thead>
+              <tbody id="tJobs"><tr><td colspan="6" class="muted">Loading...</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -218,8 +218,9 @@
           <td>${esc(x.company||'')}</td>
           <td>${esc(x.location||'')}</td>
           <td>${fdate(x.postedAt||x.createdAt||x.posted_date)}</td>
+          <td>${Number(x.views||0).toLocaleString()}</td>
           <td><button class="btn" onclick="deleteMyJob('${id}')">Delete</button></td>
-        </tr>`}).join(''):`<tr><td colspan="5" class="muted">No jobs yet</td></tr>`}catch{tb.innerHTML=`<tr><td colspan="5" class="muted">Failed to load jobs</td></tr>`}
+        </tr>`}).join(''):`<tr><td colspan="6" class="muted">No jobs yet</td></tr>`}catch{tb.innerHTML=`<tr><td colspan="6" class="muted">Failed to load jobs</td></tr>`}
     }
 
     async function addJob(e){ e.preventDefault(); btnAdd.disabled=true; jobMsg.textContent='Publishing...';

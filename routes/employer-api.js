@@ -646,14 +646,33 @@ router.post('/jobs', authenticateToken, async (req, res) => {
 // List my jobs
 router.get('/jobs', authenticateToken, async (req, res) => {
   try {
+    // Helper to compute synthetic views per job: start at 0, +2 views per hour since posted
+    const computeViews = (job) => {
+      try {
+        const raw = job.postedAt || job.createdAt || job.posted_date;
+        const d = raw ? new Date(raw) : null;
+        if (!d || isNaN(d.getTime())) return 0;
+        const diffMs = Date.now() - d.getTime();
+        if (diffMs <= 0) return 0;
+        const hours = Math.floor(diffMs / (1000 * 60 * 60));
+        return Math.max(0, hours * 2);
+      } catch (_) { return 0; }
+    };
+
     const employer = await Employer.findById(req.user.id).catch(() => null);
     if (employer) {
-      const jobs = await Job.find({ employer: employer._id });
+      const docs = await Job.find({ employer: employer._id });
+      const jobs = docs.map(doc => {
+        const j = doc.toObject ? doc.toObject() : doc;
+        return { ...j, views: computeViews(j) };
+      });
       return res.json({ jobs });
     }
     // Fallback to JSON store
-    const jobs = await readJsonSafe(dataPath('jobs.json'), []);
-    const mine = jobs.filter(j => (j.postedBy || j.employerId) === req.user.id);
+    const jobsAll = await readJsonSafe(dataPath('jobs.json'), []);
+    const mine = jobsAll
+      .filter(j => (j.postedBy || j.employerId) === req.user.id)
+      .map(j => ({ ...j, views: computeViews(j) }));
     return res.json({ jobs: mine });
   } catch (e) {
     res.status(500).json({ error: 'Failed to load jobs' });
