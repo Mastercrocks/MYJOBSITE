@@ -9,7 +9,8 @@ function buildTransport() {
       secure: String(process.env.SMTP_SECURE || 'false').toLowerCase() === 'true',
       auth: {
         user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS?.replace(/\s/g, '')
+        // Strip spaces and hyphens to accommodate copied app passwords
+        pass: process.env.EMAIL_PASS?.replace(/[\s-]/g, '')
       }
     });
   }
@@ -17,7 +18,8 @@ function buildTransport() {
     service: 'gmail',
     auth: {
       user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS?.replace(/\s/g, '') // Remove any spaces from the password
+      // Remove spaces and hyphens from the app password
+      pass: process.env.EMAIL_PASS?.replace(/[\s-]/g, '')
     }
   });
 }
