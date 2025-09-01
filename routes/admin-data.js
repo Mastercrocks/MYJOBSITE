@@ -42,10 +42,10 @@ async function sendNewJobEmailCampaign(newJob) {
     try {
         console.log(`📧 Starting auto email campaign for: ${newJob.title}`);
         
-        // Get email list (students only)
-        let emailList = await readJSONFile('email_list.json');
-        emailList = (emailList || []).map(e => ({ type: e.type || 'student', status: e.status || 'active', ...e }));
-        emailList = emailList.filter(e => e.status === 'active' && e.type === 'student' && e.email);
+    // Get email list: all active subscribers (do not restrict to a specific type)
+    let emailList = await readJSONFile('email_list.json');
+    emailList = (emailList || []).map(e => ({ type: e.type || 'student', status: e.status || 'active', ...e }));
+    emailList = emailList.filter(e => e.status === 'active' && !!e.email);
         
         if (!emailList || emailList.length === 0) {
             console.log('📭 No email subscribers found - skipping auto campaign');
