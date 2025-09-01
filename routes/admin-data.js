@@ -28,6 +28,10 @@ async function readJSONFile(filename) {
         const data = await fs.readFile(filePath, 'utf8');
         return JSON.parse(data);
     } catch (error) {
+        // Suppress noisy logs for missing optional files; return empty structure instead
+        if (error && (error.code === 'ENOENT' || error.code === 'MODULE_NOT_FOUND')) {
+            return [];
+        }
         console.error(`Error reading ${filename}:`, error);
         return [];
     }
@@ -50,8 +54,12 @@ async function sendNewJobEmailCampaign(newJob) {
     try {
         console.log(`📧 Starting auto email campaign for: ${newJob.title}`);
         
-        // Get email list
-        const emailList = await readJSONFile('email_list.json');
+    // Get email list (students only)
+    let emailList = await readJSONFile('email_list.json');
+    // Default any missing types to 'student' for backward compatibility
+    emailList = (emailList || []).map(e => ({ type: 'student', ...e, type: e.type || 'student' }));
+    // Only active student subscribers
+    emailList = emailList.filter(e => (e.status || 'active') === 'active' && (e.type || 'student') === 'student');
         
         if (!emailList || emailList.length === 0) {
             console.log('📭 No email subscribers found - skipping auto campaign');
@@ -189,7 +197,7 @@ async function sendNewJobEmailCampaign(newJob) {
         console.log(`   ❌ Failed: ${failCount}`);
         console.log(`   📧 Total subscribers: ${emailList.length}`);
         
-        // Log the campaign
+    // Log the campaign
         const campaigns = await readJSONFile('email_campaigns.json');
         campaigns.unshift({
             id: Date.now(),
@@ -217,7 +225,7 @@ async function sendNewJobEmailCampaign(newJob) {
 // Get dashboard statistics
 router.get('/stats', async (req, res) => {
     try {
-        const [jobsRaw, users, employersRaw, careerApps, jobApps, analytics, revenue, emailList, resumes] = await Promise.all([
+        const [jobsRaw, users, employersRaw, careerApps, jobApps, analytics, revenue, emailListRaw, resumes] = await Promise.all([
             readJSONFile('jobs.json'),
             readJSONFile('users.json'),
             readJSONFile('employers.json'),
@@ -228,6 +236,24 @@ router.get('/stats', async (req, res) => {
             readJSONFile('email_list.json'),
             readJSONFile('resumes.json')
         ]);
+        // Merge jobs with Mongo for parity with public site
+        let mongoJobs = [];
+        try {
+            const Job = require('../models/Job');
+            const docs = await Job.find({}).lean();
+            mongoJobs = (docs || []).map(j => ({
+                id: j._id?.toString(),
+                title: j.title,
+                company: j.company,
+                location: j.location,
+                description: j.description,
+                url: j.url || '',
+                salary: j.salary || '',
+                job_type: j.job_type || 'Full-time',
+                status: j.status || 'active',
+                posted_date: j.posted_date || j.created_at || j.createdAt || new Date().toISOString(),
+            }));
+        } catch (_) { /* ignore mongo errors; fallback to JSON-only */ }
         // Build employers view by merging users.json (source of truth) with employers.json (legacy/company meta)
         const employersFromUsers = (users || []).filter(u => (u.user_type || u.userType) === 'employer').map(u => ({
             id: String(u.id || u.userId || ''),
@@ -266,7 +292,12 @@ router.get('/stats', async (req, res) => {
             const dt = d ? new Date(d) : null;
             return (dt && !isNaN(dt)) ? dt : null;
         };
-        const jobs = (jobsRaw || []).map(j => ({ ...j, _date: normalizeJobDate(j) }));
+    const combinedJobs = Array.isArray(jobsRaw) ? mongoJobs.concat(jobsRaw) : mongoJobs;
+    // de-dupe by title+company+location+type
+    const key = (j) => `${(j.title||'').toLowerCase()}|${(j.company||'').toLowerCase()}|${(j.location||'').toLowerCase()}|${(j.job_type||'').toLowerCase()}`;
+    const dedupMap = new Map();
+    for (const j of combinedJobs) { const k = key(j); if (!dedupMap.has(k)) dedupMap.set(k, j); }
+    const jobs = Array.from(dedupMap.values()).map(j => ({ ...j, _date: normalizeJobDate(j) }));
         const activeJobs = jobs.filter(j => (j.status || 'active') === 'active');
         const activeJobsCount = activeJobs.length;
 
@@ -350,7 +381,7 @@ router.get('/stats', async (req, res) => {
                 applications: applications.length,
                 pageViews: analytics?.pageViews?.total || 0,
                 revenue: revenue?.revenue?.total || 0,
-                subscribers: (emailList || []).length,
+                subscribers: ((emailListRaw || []).length) || 0,
                 resumes: (resumes || []).length
             },
             weekly: {
@@ -765,6 +796,7 @@ router.post('/jobs', async (req, res) => {
             description: req.body.description,
             salary: req.body.salary || 'Not specified',
             job_type: jobType,
+            url: computedUrl,
             posted_date: new Date(),
             // Add more fields to the Job model/schema if needed
         });
@@ -1245,11 +1277,15 @@ router.get('/content/blog', async (req, res) => {
 // EMAIL MARKETING ENDPOINTS
 // ===============================
 
-// Get email list
+// Get email list (supports segmentation by type=student|employer|all)
 router.get('/email-list', async (req, res) => {
     try {
-        const emailList = await readJSONFile('email_list.json');
-        res.json({ success: true, emails: emailList });
+    const { type } = req.query;
+    let emailList = await readJSONFile('email_list.json');
+    // Backward-compat: default missing type to 'student'
+    emailList = (emailList || []).map(e => ({ type: 'student', ...e, type: e.type || 'student' }));
+    const filtered = (!type || type === 'all') ? emailList : emailList.filter(e => (e.type || 'student') === type);
+    res.json({ success: true, emails: filtered });
     } catch (error) {
         console.error('Error getting email list:', error);
         res.json({ success: true, emails: [] });
@@ -1259,16 +1295,18 @@ router.get('/email-list', async (req, res) => {
 // Add email to list
 router.post('/email-list', async (req, res) => {
     try {
-        const { email, name, tags, status } = req.body;
+        const { email, name, tags, status, type } = req.body;
         
         if (!email) {
             return res.status(400).json({ error: 'Email is required' });
         }
 
-        const emailList = await readJSONFile('email_list.json');
+        let emailList = await readJSONFile('email_list.json');
+        emailList = (emailList || []).map(e => ({ type: 'student', ...e, type: e.type || 'student' }));
         
         // Check if email already exists
-        const existingEmail = emailList.find(item => item.email.toLowerCase() === email.toLowerCase());
+        const listType = (type || 'student').toLowerCase();
+        const existingEmail = emailList.find(item => item.email.toLowerCase() === email.toLowerCase() && (item.type || 'student') === listType);
         if (existingEmail) {
             return res.status(400).json({ error: 'Email already exists in the list' });
         }
@@ -1279,6 +1317,7 @@ router.post('/email-list', async (req, res) => {
             name: name || '',
             tags: tags || [],
             status: status || 'active',
+            type: listType,
             addedDate: new Date().toISOString(),
             lastEmailSent: null,
             totalEmailsSent: 0
@@ -1301,14 +1340,16 @@ router.post('/email-list', async (req, res) => {
 // Import emails from CSV/file
 router.post('/email-list/import', async (req, res) => {
     try {
-        const { emails } = req.body; // Array of email objects
+    const { emails, type } = req.body; // Array of email objects + target type
         
         if (!Array.isArray(emails) || emails.length === 0) {
             return res.status(400).json({ error: 'No emails provided for import' });
         }
 
-        const emailList = await readJSONFile('email_list.json');
-        const existingEmails = new Set(emailList.map(item => item.email.toLowerCase()));
+    let emailList = await readJSONFile('email_list.json');
+    emailList = (emailList || []).map(e => ({ type: 'student', ...e, type: e.type || 'student' }));
+    const listType = (type || 'student').toLowerCase();
+    const existingEmails = new Set(emailList.filter(e => (e.type || 'student') === listType).map(item => item.email.toLowerCase()));
         
         let addedCount = 0;
         let skippedCount = 0;
@@ -1326,6 +1367,7 @@ router.post('/email-list/import', async (req, res) => {
                 name: emailData.name || '',
                 tags: emailData.tags || [],
                 status: 'active',
+        type: listType,
                 addedDate: new Date().toISOString(),
                 lastEmailSent: null,
                 totalEmailsSent: 0
@@ -1359,7 +1401,8 @@ router.put('/email-list/:id', async (req, res) => {
         const { id } = req.params;
         const { status, name, tags } = req.body;
         
-        const emailList = await readJSONFile('email_list.json');
+    let emailList = await readJSONFile('email_list.json');
+    emailList = (emailList || []).map(e => ({ type: 'student', ...e, type: e.type || 'student' }));
         const emailIndex = emailList.findIndex(item => item.id === id);
         
         if (emailIndex === -1) {
@@ -1391,7 +1434,8 @@ router.post('/email-list/update', async (req, res) => {
             return res.status(400).json({ error: 'Email ID is required' });
         }
         
-        const emailList = await readJSONFile('email_list.json');
+    let emailList = await readJSONFile('email_list.json');
+    emailList = (emailList || []).map(e => ({ type: 'student', ...e, type: e.type || 'student' }));
         const emailIndex = emailList.findIndex(item => item.id === id);
         
         if (emailIndex === -1) {
@@ -1424,7 +1468,8 @@ router.delete('/email-list/:id', async (req, res) => {
     try {
         const { id } = req.params;
         
-        const emailList = await readJSONFile('email_list.json');
+    let emailList = await readJSONFile('email_list.json');
+    emailList = (emailList || []).map(e => ({ type: 'student', ...e, type: e.type || 'student' }));
         const emailIndex = emailList.findIndex(item => item.id === id);
         
         if (emailIndex === -1) {
@@ -1455,12 +1500,13 @@ router.post('/send-job-emails', async (req, res) => {
         }
 
         // Get jobs data
-        const jobs = await readJSONFile('jobs.json');
+    const jobs = await readJSONFile('jobs.json');
         const selectedJobs = jobs.filter(job => jobIds.includes(job.id));
 
         // Get email list
-        const emailList = await readJSONFile('email_list.json');
-        const selectedEmails = emailList.filter(email => emailIds.includes(email.id) && email.status === 'active');
+    let emailList = await readJSONFile('email_list.json');
+    emailList = (emailList || []).map(e => ({ type: 'student', ...e, type: e.type || 'student' }));
+    const selectedEmails = emailList.filter(email => emailIds.includes(email.id) && email.status === 'active');
 
         if (selectedJobs.length === 0) {
             return res.status(400).json({ error: 'No valid jobs found' });
@@ -1932,10 +1978,12 @@ function cleanText(text) {
 // Get auto campaign statistics
 router.get('/auto-campaign-stats', async (req, res) => {
     try {
-        const [emailList, campaigns] = await Promise.all([
+        const [emailListRaw, campaigns] = await Promise.all([
             readJSONFile('email_list.json'),
             readJSONFile('email_campaigns.json')
         ]);
+        const emailList = (emailListRaw || []).map(e => ({ type: 'student', ...e, type: e.type || 'student' }));
+        const studentList = emailList.filter(e => (e.type || 'student') === 'student');
         
         // Filter auto campaigns
         const autoCampaigns = campaigns.filter(c => c.type === 'auto_job_alert');
@@ -1944,7 +1992,7 @@ router.get('/auto-campaign-stats', async (req, res) => {
         const stats = {
             totalCampaigns: autoCampaigns.length,
             totalJobs: autoCampaigns.length, // Each campaign = 1 job
-            subscribers: emailList.length,
+            subscribers: studentList.length,
             totalEmailsSent: autoCampaigns.reduce((sum, c) => sum + (c.sentTo || 0), 0),
             recentCampaigns: autoCampaigns.slice(0, 10) // Last 10 campaigns
         };

@@ -1,7 +1,7 @@
 [build]
 
 [deploy]
-startCommand = "node init-data.js && node server.js"
+startCommand = "node init-data.js; node scripts/import-all-jobs.js || echo '⏭️ import skipped'; node scripts/post-deploy-check.js; node server.js"
 
 [service]
 env = { 
@@ -9,6 +9,8 @@ env = {
 	PORT = "3000",
 	PUBLIC_BASE_URL = "https://talentsync.shop",
 	SITE_URL = "https://talentsync.shop",
+	MONGODB_URI = "set-in-railway",
+	MONGODB_DB = "talentsync",
 	SESSION_SECRET = "set-in-railway",
 	JWT_SECRET = "set-in-railway",
 	EMAIL_USER = "set-in-railway",

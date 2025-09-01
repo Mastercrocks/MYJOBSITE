@@ -1563,8 +1563,15 @@
 
                         <!-- Email List Tab -->
                         <div id="email-list-content" class="email-tab-content p-6">
-                            <div class="flex justify-between items-center mb-6">
-                                <h3 class="text-lg font-medium text-gray-900">Email Subscribers</h3>
+                            <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-3">
+                                <div>
+                                    <h3 class="text-lg font-medium text-gray-900">Email Subscribers</h3>
+                                    <p class="text-sm text-gray-500">Manage separate lists for students and employers</p>
+                                </div>
+                                <div class="inline-flex rounded-lg overflow-hidden border border-gray-200 w-max">
+                                    <button id="studentsSegmentBtn" onclick="setEmailSegment('student')" class="px-4 py-2 text-sm font-medium bg-blue-600 text-white">Students</button>
+                                    <button id="employersSegmentBtn" onclick="setEmailSegment('employer')" class="px-4 py-2 text-sm font-medium bg-white text-gray-700">Employers</button>
+                                </div>
                                 <button onclick="showAddEmailForm()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
                                     + Add Email
                                 </button>
@@ -2823,10 +2830,11 @@
 
         async function loadEmailRecipientsForJob() {
             try {
-                const response = await fetch('/api/admin/email-list');
-                const emailList = await response.json();
+                const response = await fetch('/api/admin/email-list?type=student');
+                const data = await response.json();
                 
                 const container = document.getElementById('emailRecipientsContainer');
+                const emailList = (data && data.success) ? (data.emails || []) : [];
                 if (emailList.length === 0) {
                     container.innerHTML = '<div class="text-gray-500">No email subscribers found. <a href="#" onclick="showSection(\'email-marketing\'); closeJobEmailModal();" class="text-blue-600 hover:underline">Add subscribers here</a></div>';
                     return;
@@ -4010,10 +4018,31 @@
             document.getElementById('emailForm').reset();
         }
 
+        // Current email list segment (student | employer)
+        let currentEmailSegment = 'student';
+
+        function setEmailSegment(type) {
+            currentEmailSegment = type === 'employer' ? 'employer' : 'student';
+            // Toggle button styles
+            const studentBtn = document.getElementById('studentsSegmentBtn');
+            const employerBtn = document.getElementById('employersSegmentBtn');
+            if (studentBtn && employerBtn) {
+                if (currentEmailSegment === 'student') {
+                    studentBtn.className = 'px-4 py-2 text-sm font-medium bg-blue-600 text-white';
+                    employerBtn.className = 'px-4 py-2 text-sm font-medium bg-white text-gray-700';
+                } else {
+                    studentBtn.className = 'px-4 py-2 text-sm font-medium bg-white text-gray-700';
+                    employerBtn.className = 'px-4 py-2 text-sm font-medium bg-blue-600 text-white';
+                }
+            }
+            // Reload list for selected segment
+            loadEmailList();
+        }
+
         // Load email list
         async function loadEmailList() {
             try {
-                const response = await fetch('/api/admin/email-list');
+                const response = await fetch('/api/admin/email-list?type=' + encodeURIComponent(currentEmailSegment));
                 const data = await response.json();
                 
                 if (data.success) {
@@ -4066,7 +4095,7 @@
             const tags = document.getElementById('newTags').value.split(',').map(t => t.trim()).filter(t => t);
             
             try {
-                const response = await fetch('/api/admin/email-list', {
+        const response = await fetch('/api/admin/email-list', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -4074,7 +4103,8 @@
                     body: JSON.stringify({
                         email: email,
                         name: name,
-                        tags: tags
+            tags: tags,
+            type: currentEmailSegment
                     })
                 });
                 
@@ -4254,9 +4284,9 @@
         }
 
         // Load recipients for campaign
-        async function loadRecipientsForCampaign() {
+    async function loadRecipientsForCampaign() {
             try {
-                const response = await fetch('/api/admin/email-list');
+        const response = await fetch('/api/admin/email-list?type=student');
                 const data = await response.json();
                 
                 if (data.success) {
@@ -4438,14 +4468,14 @@
         }
 
         // Import emails
-        async function importEmails(emails) {
+    async function importEmails(emails) {
             try {
                 const response = await fetch('/api/admin/email-list/import', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ emails })
+            body: JSON.stringify({ emails, type: currentEmailSegment })
                 });
 
                 const result = await response.json();
@@ -4621,9 +4651,10 @@ ${app.coverLetter || 'No cover letter provided'}
         });
 
         // Initialize email marketing when section loads
-        function initializeEmailMarketing() {
+    function initializeEmailMarketing() {
             if (typeof loadEmailList === 'function') {
                 showEmailTab('email-list');
+        setEmailSegment('student');
             }
         }
 
