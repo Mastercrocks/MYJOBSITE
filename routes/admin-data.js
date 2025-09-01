@@ -1643,6 +1643,18 @@ router.post('/send-job-emails', async (req, res) => {
             return res.status(400).json({ error: 'Job IDs and email IDs are required' });
         }
 
+        // Ensure email is configured and transport is valid before attempting bulk send
+        try {
+            const { isEmailConfigured, verifyEmailTransport } = require('../services/emailService');
+            if (!isEmailConfigured()) {
+                return res.status(500).json({ error: 'Email not configured. Set EMAIL_USER/EMAIL_PASS (or SMTP_HOST/SMTP creds).' });
+            }
+            const ok = await verifyEmailTransport();
+            if (!ok) {
+                return res.status(500).json({ error: 'Email login failed. Check EMAIL_USER/EMAIL_PASS or SMTP settings.' });
+            }
+        } catch (_) { /* continue; route-level send will still throw if misconfigured */ }
+
         // Resolve jobs across all sources (JSON, Mongo, Indeed, scraped)
         const fs = require('fs');
         const path = require('path');
@@ -1707,12 +1719,24 @@ router.post('/send-job-emails', async (req, res) => {
             ...indeedJobs,
             ...scrapedJobs
         ];
-        const selectedJobs = allJobs.filter(job => jobIds.includes(String(job.id)));
+        // Select jobs by id, allowing string/number and guarding for missing id
+        const jobIdSet = new Set(jobIds.map(x => String(x)));
+        const selectedJobs = allJobs.filter(job => job && (job.id != null) && jobIdSet.has(String(job.id)));
 
         // Get email list
     let emailList = await readJSONFile('email_list.json');
     emailList = (emailList || []).map(e => ({ type: 'student', ...e, type: e.type || 'student' }));
-    const selectedEmails = emailList.filter(email => emailIds.includes(email.id) && email.status === 'active');
+    // Select by provided ids then dedupe by lowercase email
+    const emailIdSet = new Set(emailIds.map(String));
+    const dedupe = new Set();
+    const selectedEmails = emailList.filter(email => {
+        const match = emailIdSet.has(String(email.id)) && (email.status || 'active') === 'active' && !!email.email;
+        if (!match) return false;
+        const key = String(email.email).toLowerCase();
+        if (dedupe.has(key)) return false;
+        dedupe.add(key);
+        return true;
+    });
 
         if (selectedJobs.length === 0) {
             return res.status(400).json({ error: 'No valid jobs found' });
@@ -1723,8 +1747,8 @@ router.post('/send-job-emails', async (req, res) => {
         }
 
         // Generate email HTML
-        const emailHTML = generateJobEmailHTML(selectedJobs, customMessage);
-        const emailSubject = subject || `New Job Opportunities - ${selectedJobs.length} Positions Available`;
+    const emailHTML = generateJobEmailHTML(selectedJobs, customMessage);
+    const emailSubject = subject || `New Job Opportunities - ${selectedJobs.length} Position${selectedJobs.length>1?'s':''} Available`;
 
         // Import email service
         const { sendJobMarketingEmail } = require('../services/emailService');
@@ -1741,9 +1765,12 @@ router.post('/send-job-emails', async (req, res) => {
                     to: email.email,
                     subject: emailSubject,
                     html: emailHTML,
-                    text: `New Job Opportunities from TalentSync\n\n${selectedJobs.map(job => 
-                        `${job.title} at ${job.company}\nLocation: ${job.location}\nApply: https://talentsync.shop/jobs`
-                    ).join('\n\n')}`
+                    text: `New Job Opportunities from TalentSync\n\n${selectedJobs.map(job => {
+                        const base = (process.env.PUBLIC_BASE_URL || 'https://talentsync.shop').replace(/\/$/, '');
+                        const jid = String(job.id || '').trim();
+                        const apply = job.url || (jid ? `${base}/jobs?jobId=${encodeURIComponent(jid)}` : `${base}/jobs`);
+                        return `${job.title} at ${job.company}\nLocation: ${job.location}\nApply: ${apply}`;
+                    }).join('\n\n')}`
                 });
 
                 // Update email tracking on successful send
@@ -1782,7 +1809,7 @@ router.post('/send-job-emails', async (req, res) => {
             success: sentCount > 0, 
             message: sentCount > 0 
                 ? `Email campaign sent successfully to ${sentCount} recipients${errorCount > 0 ? ` (${errorCount} failed)` : ''}`
-                : 'Failed to send emails to any recipients',
+                : 'Failed to send emails to any recipients (check email configuration or recipient selection).',
             sentCount: sentCount,
             errorCount: errorCount,
             errors: errors.length > 0 ? errors : undefined,
