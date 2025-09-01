@@ -3974,23 +3974,18 @@
         async function testAutoCampaign() {
             try {
                 showNotification('Sending test campaign...', 'info');
-                
-                const response = await fetch('/api/admin/test-auto-campaign', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    showNotification(`Test campaign sent successfully! 📧 Sent to ${data.result?.sent || 0} subscribers`, 'success');
-                    loadAutoCampaignStats(); // Refresh stats
+                const res = await fetch('/api/admin/test-auto-campaign', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+                const data = await res.json().catch(() => ({}));
+                if (res.ok && data && data.success) {
+                    showNotification(data.message || `Test campaign sent successfully! 📧 Sent to ${data.result?.sent || 0} subscribers`, 'success');
+                    loadAutoCampaignStats?.();
                 } else {
-                    showNotification('Failed to send test campaign', 'error');
+                    const msg = data && (data.message || data.error) || 'Failed to send test campaign';
+                    showNotification(msg, 'error');
                 }
             } catch (error) {
                 console.error('Error sending test campaign:', error);
-                showNotification('Error sending test campaign', 'error');
+                showNotification(error?.message || 'Error sending test campaign', 'error');
             }
         }
 

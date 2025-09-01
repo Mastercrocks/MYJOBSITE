@@ -1,5 +1,17 @@
 [
   {
+    "id": 1756751187772,
+    "type": "auto_job_alert",
+    "jobId": "68b5e54930d8a02f81d1ded1",
+    "jobTitle": "Entry Level Customer Service Representative | (Work from Home)r",
+    "company": "Live",
+    "subject": "🚀 New Job Alert: Entry Level Customer Service Representative | (Work from Home)r at Live",
+    "sentTo": 7,
+    "failed": 0,
+    "sentAt": "2025-09-01T18:26:27.772Z",
+    "status": "completed"
+  },
+  {
     "id": 1756750989024,
     "type": "auto_job_alert",
     "jobId": "test_1756750980659",

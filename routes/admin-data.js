@@ -2065,11 +2065,20 @@ router.post('/test-auto-campaign', async (req, res) => {
             remote: true
         };
         const result = await sendNewJobEmailCampaign(testJob);
-        res.json({ 
-            success: true, 
-            message: 'Test campaign sent successfully!', 
-            result 
-        });
+
+        // Determine success based on result
+        const sent = Number(result?.sent || 0);
+        const failed = Number(result?.failed || 0);
+        const reason = result?.reason || '';
+        const ok = !!result && result.success !== false && sent > 0;
+
+        let message = ok
+            ? `Test campaign sent to ${sent} subscriber(s)`
+            : (reason === 'not_configured' ? 'Email not configured. Set EMAIL_USER/EMAIL_PASS and EMAIL_FROM.'
+               : reason === 'verify_failed' ? 'Email login failed. Check SMTP/Gmail App Password.'
+               : 'No emails sent (no active student subscribers or configuration issue).');
+
+        res.json({ success: ok, message, result: { sent, failed, reason } });
     } catch (error) {
         console.error('Error sending test campaign:', error);
         res.status(500).json({ error: 'Failed to send test campaign' });
