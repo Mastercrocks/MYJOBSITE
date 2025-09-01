@@ -235,6 +235,29 @@
         </div>
 
         <div class="card" style="margin-top:12px">
+          <div style="font-weight:600;margin-bottom:8px">Bulk Import Emails</div>
+          <div class="row">
+            <div class="field" style="flex:2">
+              <label>Paste emails (one per line, optional name after comma)</label>
+              <textarea id="bulkEmails" rows="6" placeholder="user1@example.com\nuser2@example.com, Jane Doe\nuser3@example.com"></textarea>
+            </div>
+            <div class="field" style="flex:1">
+              <label>Or upload CSV/TXT</label>
+              <input id="bulkFile" type="file" accept=".csv,.txt" />
+              <label style="margin-top:10px">List</label>
+              <select id="bulkType">
+                <option value="student">Students</option>
+                <option value="employer">Employers</option>
+              </select>
+              <div class="toolbar" style="margin-top:12px">
+                <button class="btn primary" id="btnBulkImport" onclick="importBulk()">Import</button>
+                <div id="bulkMsg" class="muted"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:12px">
           <div style="font-weight:600;margin-bottom:8px">Send Job Campaign</div>
           <div class="row">
             <div class="field" style="flex:2"><label>Select Job(s)</label>
@@ -336,7 +359,16 @@
       try{const d=await j('/api/admin/billing/overview');const r=d.revenue||d||{total:0,monthly:0,weekly:0,subscriptions:{active:0}};kRev.textContent=`$${Number(r.total||0).toLocaleString()}`;kRevM.textContent=`$${Number(r.monthly||0).toLocaleString()}`;kRevW.textContent=`$${Number(r.weekly||0).toLocaleString()}`;kSubs.textContent=Number(r.subscriptions?.active||0).toLocaleString();billingList.textContent=r.transactions?.length?`${r.transactions.length} payments`:'No data'}catch{billingList.textContent='Unable to load billing'}
     }
     async function loadEmail(){
-      const msg=emailMsg; try{const d=await j('/api/admin/email-list');const list=d.entries||d||[];const students=list.filter(e=>String(e.type||e.segment||'student').toLowerCase().includes('student')).length;const employers=list.filter(e=>String(e.type||e.segment||'').toLowerCase().includes('employer')).length;kStudents.textContent=students.toLocaleString();kEmployers.textContent=employers.toLocaleString();msg.textContent='Email list loaded.'}catch{msg.textContent='Failed to load email list'}
+      const msg=emailMsg;
+      try{
+        const d=await j('/api/admin/email-list');
+        const list=Array.isArray(d) ? d : (Array.isArray(d.entries) ? d.entries : (Array.isArray(d.emails) ? d.emails : []));
+        const students=list.filter(e=>String(e.type||e.segment||'student').toLowerCase().includes('student')).length;
+        const employers=list.filter(e=>String(e.type||e.segment||'').toLowerCase().includes('employer')).length;
+        kStudents.textContent=students.toLocaleString();
+        kEmployers.textContent=employers.toLocaleString();
+        msg.textContent='Email list loaded.'
+      }catch{msg.textContent='Failed to load email list'}
     }
     async function exportUsers(){ location.href='/api/admin/users/export' }
     async function addJob(e){ e.preventDefault(); btnAdd.disabled=true; jobMsg.textContent='Publishing...'; try{const body={title:fTitle.value.trim(),company:fCompany.value.trim(),location:fLocation.value.trim(),url:fUrl.value.trim(),description:fDesc.value.trim()}; const r=await fetch('/api/admin/jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); const d=await r.json().catch(()=>({})); if(!r.ok||d.success===false) throw new Error(d.message||'Failed to add job'); jobMsg.textContent='Job published'; jobForm.reset(); loadJobs(); location.hash='#jobs'; show('jobs');}catch(e){jobMsg.textContent=e.message}finally{btnAdd.disabled=false} return false }
@@ -350,6 +382,37 @@
         const d=await r.json().catch(()=>({})); if(!r.ok||d.success===false) throw new Error(d.error||d.message||'Failed to add'); emailAddMsg.textContent='Added'; eEmail.value=''; eName.value=''; loadEmail();
       }catch(err){ emailAddMsg.textContent=err.message }
       finally{ btnAddEmail.disabled=false } return false;
+    }
+
+    // Bulk import emails
+    async function importBulk(){
+      const btn=btnBulkImport; const out=bulkMsg; btn.disabled=true; out.textContent='Processing...';
+      try{
+        // If file selected, read it; else use textarea
+        const file = document.getElementById('bulkFile').files[0];
+        let text = document.getElementById('bulkEmails').value || '';
+        if(file){ text = await file.text(); }
+        const lines = (text||'').split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+        if(lines.length===0) throw new Error('Provide emails via paste or file');
+        // Parse lines: email[, name]
+        const emails = [];
+        for(const line of lines){
+          const parts = line.split(',');
+          const email = (parts[0]||'').trim();
+          const name = (parts.slice(1).join(',')||'').trim();
+          if(!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) continue;
+          emails.push({ email, name });
+        }
+        if(emails.length===0) throw new Error('No valid emails found');
+        const type = document.getElementById('bulkType').value || 'student';
+        const r = await fetch('/api/admin/email-list/import',{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ emails, type }) });
+        const d = await r.json().catch(()=>({}));
+        if(!r.ok||d.success===false) throw new Error(d.error||d.message||'Import failed');
+        out.textContent = d.message || `Imported ${d.added||emails.length} emails`;
+        document.getElementById('bulkEmails').value=''; document.getElementById('bulkFile').value='';
+        await loadEmail();
+      }catch(err){ out.textContent = err.message }
+      finally{ btn.disabled=false }
     }
 
     // Campaign: load select options when opening Email tab

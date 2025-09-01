@@ -156,13 +156,35 @@
     "totalEmailsSent": 0
   },
   {
+    "type": "student",
     "id": "1756757686962",
     "email": "lil@gmail.com",
     "name": "",
     "tags": [],
     "status": "active",
-    "type": "student",
     "addedDate": "2025-09-01T20:14:46.962Z",
+    "lastEmailSent": null,
+    "totalEmailsSent": 0
+  },
+  {
+    "type": "student",
+    "id": "1756760121746",
+    "email": "salil@gmail.com",
+    "name": "ht",
+    "tags": [],
+    "status": "active",
+    "addedDate": "2025-09-01T20:55:21.746Z",
+    "lastEmailSent": null,
+    "totalEmailsSent": 0
+  },
+  {
+    "id": "1756760210953",
+    "email": "lil@gmail.com",
+    "name": "",
+    "tags": [],
+    "status": "active",
+    "type": "employer",
+    "addedDate": "2025-09-01T20:56:50.953Z",
     "lastEmailSent": null,
     "totalEmailsSent": 0
   }

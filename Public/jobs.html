@@ -6,6 +6,21 @@
     <title>Browse Jobs - College Student & Entry-Level Positions | TalentSync</title>
     <meta name="description" content="Browse thousands of entry-level jobs and internships perfect for college students and recent graduates. Find your first job with TalentSync.">
     <meta name="keywords" content="college jobs, student jobs, entry level jobs, internships, recent graduate jobs, first job, college career">
+    <meta name="robots" content="index,follow">
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://talentsync.shop/jobs">
+
+    <!-- Open Graph / Twitter for better sharing and SEO -->
+    <meta property="og:title" content="Browse Jobs - College Student & Entry-Level Positions | TalentSync">
+    <meta property="og:description" content="Browse thousands of entry-level jobs and internships perfect for college students and recent graduates. Find your first job with TalentSync.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://talentsync.shop/jobs">
+    <meta property="og:image" content="https://talentsync.shop/img/og-image.jpg">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Browse Jobs - College Student & Entry-Level Positions | TalentSync">
+    <meta name="twitter:description" content="Browse thousands of entry-level jobs and internships perfect for college students and recent graduates. Find your first job with TalentSync.">
+    <meta name="twitter:image" content="https://talentsync.shop/img/twitter-image.jpg">
     
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-P5ETS8QMP7"></script>
@@ -689,6 +704,12 @@
                     <option value="sales">Sales</option>
                 </select>
 
+                <label for="sortOrder" style="font-weight: 500;">Sort:</label>
+                <select id="sortOrder" class="filter-select">
+                    <option value="recent">Recent → Oldest</option>
+                    <option value="oldest">Oldest → Recent</option>
+                </select>
+
                 <button type="button" id="clearFilters" style="background: none; border: 1px solid #d1d5db; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer;">Clear Filters</button>
             </div>
         </div>
@@ -770,37 +791,40 @@
                     <h3><span class="info-icon">📋</span> Job Description</h3>
                     <div id="modalJobDescription">Job description will appear here...</div>
                 </div>
-                <div id="onSiteApplySection" class="job-description-section" style="display:none;">
-                    <h3><span class="info-icon">📝</span> Apply On-Site</h3>
-                    <p class="text-sm" style="color:#4b5563;margin-bottom:0.75rem;">No external link provided. Apply directly here and we'll send your application to the employer.</p>
-                    <form id="onSiteApplyForm" class="space-y-3">
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
-                            <div>
-                                <label class="block text-sm text-gray-600">Full Name</label>
-                                <input type="text" name="name" id="applyName" class="search-input" placeholder="Your name" required />
-                            </div>
-                            <div>
-                                <label class="block text-sm text-gray-600">Email</label>
-                                <input type="email" name="email" id="applyEmail" class="search-input" placeholder="you@example.com" required />
-                            </div>
+                <div id="onSiteApplySection" class="job-description-section" style="display:none; padding: 0; border: none; background: transparent;">
+                    <div style="border:1px solid #e5e7eb; background:#ffffff; border-radius:12px; overflow:hidden;">
+                        <div style="padding:1rem 1.25rem; background:linear-gradient(135deg, #2563eb, #3b82f6); color:white; display:flex; align-items:center; gap:0.5rem;">
+                            <span>📝</span>
+                            <div style="font-weight:600;">Quick Apply (No external link)</div>
                         </div>
-                        <div>
-                            <label class="block text-sm text-gray-600">Phone (optional)</label>
-                            <input type="text" name="phone" id="applyPhone" class="search-input" placeholder="(555) 555-5555" />
+                        <div style="padding:1.25rem;">
+                            <p class="text-sm" style="color:#4b5563;margin-bottom:0.75rem;">We'll send your application to the employer. Resume is optional.</p>
+                            <form id="onSiteApplyForm" class="space-y-3">
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+                                    <div>
+                                        <label class="block text-sm" style="color:#6b7280;margin-bottom:0.25rem;">Full Name</label>
+                                        <input type="text" name="name" id="applyName" class="search-input" placeholder="Your name" required />
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm" style="color:#6b7280;margin-bottom:0.25rem;">Email</label>
+                                        <input type="email" name="email" id="applyEmail" class="search-input" placeholder="you@example.com" required />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm" style="color:#6b7280;margin-bottom:0.25rem;">Resume (optional, PDF/DOC/DOCX, max 5MB)</label>
+                                    <input type="file" name="resume" id="applyResume" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm" style="color:#6b7280;margin-bottom:0.25rem;">Message (optional)</label>
+                                    <textarea name="coverLetter" id="applyCover" rows="4" class="search-input" placeholder="Short note to the employer"></textarea>
+                                </div>
+                                <div style="display:flex;gap:0.75rem;justify-content:flex-end;align-items:center;">
+                                    <button type="submit" id="submitOnSiteApply" class="apply-btn">Send Application</button>
+                                </div>
+                                <div id="applyStatus" class="text-sm" style="display:none;margin-top:0.5rem;"></div>
+                            </form>
                         </div>
-                        <div>
-                            <label class="block text-sm text-gray-600">Resume (PDF/DOC/DOCX)</label>
-                            <input type="file" name="resume" id="applyResume" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
-                        </div>
-                        <div>
-                            <label class="block text-sm text-gray-600">Cover Letter</label>
-                            <textarea name="coverLetter" id="applyCover" rows="5" class="search-input" placeholder="Briefly explain why you're a good fit" required></textarea>
-                        </div>
-                        <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
-                            <button type="submit" id="submitOnSiteApply" class="apply-btn">Submit Application</button>
-                        </div>
-                        <div id="applyStatus" class="text-sm" style="display:none;margin-top:0.5rem;"></div>
-                    </form>
+                    </div>
                 </div>
                 <div class="job-modal-actions">
                     <button id="applyJobBtn" class="apply-btn">Apply Now</button>
@@ -815,6 +839,17 @@
         let displayedJobs = [];
         let currentPage = 1;
         const jobsPerPage = 50; // Increased to show more jobs per page
+
+        // Helper: generate a safe job id for API routes
+        function makeSafeJobId(job, fallbackIdx) {
+            const raw = String(job.id || job._id || (job.title && job.company ? `${job.title}-${job.company}` : (job.title || job.company || `job-${fallbackIdx}`)));
+            return raw
+                .toLowerCase()
+                .replace(/[^a-z0-9\-\s_]/g, '-')
+                .replace(/[\s_]+/g, '-')
+                .replace(/-+/g, '-')
+                .substring(0, 120);
+        }
 
         // Mobile menu functionality
         const menuToggle = document.getElementById('menuToggle');
@@ -932,11 +967,13 @@
             if (idx2 >= 0) openJobModal(idx2);
         }
 
-        function filterAndDisplayJobs() {
+    function filterAndDisplayJobs() {
             const keyword = document.getElementById('searchKeyword').value.toLowerCase();
             const location = document.getElementById('searchLocation').value.toLowerCase();
             const jobType = document.getElementById('jobType').value.toLowerCase();
             const category = document.getElementById('category').value.toLowerCase();
+            const sortOrderEl = document.getElementById('sortOrder');
+            const sortOrder = sortOrderEl ? sortOrderEl.value : 'recent';
 
             displayedJobs = allJobs.filter(job => {
                 const matchesKeyword = !keyword || 
@@ -958,12 +995,60 @@
                 return matchesKeyword && matchesLocation && matchesType && matchesCategory;
             });
 
-            // Reduce noisy source breakdown logs; keep a simple count
+            // Sort by posted date (fallback fields) based on sort order
+            const toTime = (d) => { try { return new Date(d||0).getTime()||0; } catch { return 0; } };
+            displayedJobs.sort((a,b) => {
+                const ta = toTime(a.posted_date || a.datePosted || a.created_at || a.createdAt || 0);
+                const tb = toTime(b.posted_date || b.datePosted || b.created_at || b.createdAt || 0);
+                return sortOrder === 'oldest' ? (ta - tb) : (tb - ta);
+            });
+
             console.log(`✅ Jobs after filters: ${displayedJobs.length} / ${allJobs.length}`);
 
             currentPage = 1;
             displayJobs();
             updateJobCount();
+
+            // Inject JSON-LD ItemList for SEO (top 25 results)
+            try {
+                const maxItems = 25;
+                const items = displayedJobs.slice(0, maxItems).map((job, idx) => {
+                    const id = makeSafeJobId(job, idx);
+                    return {
+                        "@type": "ListItem",
+                        position: idx + 1,
+                        item: {
+                            "@type": "JobPosting",
+                            title: job.title || "Job",
+                            description: (job.description || "").slice(0, 500),
+                            url: `https://talentsync.shop/jobs?jobId=${encodeURIComponent(String(job.id || job._id || id))}`,
+                            hiringOrganization: {
+                                "@type": "Organization",
+                                name: job.company || ""
+                            },
+                            jobLocation: {
+                                "@type": "Place",
+                                address: job.location || ""
+                            }
+                        }
+                    };
+                });
+                const schema = {
+                    "@context": "https://schema.org",
+                    "@type": "ItemList",
+                    name: "Job Listings",
+                    description: "Latest job opportunities available on TalentSync",
+                    numberOfItems: items.length,
+                    itemListElement: items
+                };
+                const existing = document.querySelector('script[data-schema="job-list"]');
+                if (existing) existing.remove();
+                const s = document.createElement('script');
+                s.type = 'application/ld+json';
+                s.setAttribute('data-schema', 'job-list');
+                s.textContent = JSON.stringify(schema);
+                document.head.appendChild(s);
+            } catch (_) {}
         }
 
         function displayJobs() {
@@ -1037,12 +1122,15 @@
 
         document.getElementById('jobType').addEventListener('change', filterAndDisplayJobs);
         document.getElementById('category').addEventListener('change', filterAndDisplayJobs);
+        const sortOrderEl = document.getElementById('sortOrder');
+        if (sortOrderEl) sortOrderEl.addEventListener('change', filterAndDisplayJobs);
 
         document.getElementById('clearFilters').addEventListener('click', function() {
             document.getElementById('searchKeyword').value = '';
             document.getElementById('searchLocation').value = '';
             document.getElementById('jobType').value = '';
             document.getElementById('category').value = '';
+            const sortEl = document.getElementById('sortOrder'); if (sortEl) sortEl.value = 'recent';
             filterAndDisplayJobs();
         });
 
@@ -1079,7 +1167,7 @@
 
                         // Record a profile view (job detail view) for employer analytics
                         try {
-                            const jobId = String(job.id || job._id || job.url || job.title);
+                            const jobId = makeSafeJobId(job, jobIndex);
                             const employerId = String(job.employerId || job.postedBy || '');
                             if (employerId) {
                                 fetch(`/api/jobs/${encodeURIComponent(jobId)}/view`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ employerId }) }).catch(()=>{});
@@ -1115,12 +1203,15 @@
                         applyStatusEl.style.display = 'none';
                         const file = document.getElementById('applyResume').files[0];
                         if (file) {
-                            const allowed = [
+                            const allowed = new Set([
                                 'application/pdf',
                                 'application/msword',
                                 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-                            ];
-                            if (!allowed.includes(file.type)) {
+                            ]);
+                            // Some browsers may not set a reliable type; fallback to extension check
+                            const nameLower = (file.name || '').toLowerCase();
+                            const okByExt = nameLower.endsWith('.pdf') || nameLower.endsWith('.doc') || nameLower.endsWith('.docx');
+                            if (!(allowed.has(file.type) || okByExt)) {
                                 applyStatusEl.style.display = 'block';
                                 applyStatusEl.style.color = '#b91c1c';
                                 applyStatusEl.textContent = 'Only PDF, DOC, and DOCX files are allowed.';
@@ -1143,7 +1234,7 @@
                         const userId = (user && user.id) ? String(user.id) : '';
                         const fd = new FormData(onSiteForm);
                         fd.append('userId', userId);
-                        const jobId = String(job.id || job._id || job.url || job.title);
+                        const jobId = makeSafeJobId(job, jobIndex);
                         const resp = await fetch(`/api/jobs/${encodeURIComponent(jobId)}/apply-on-site`, {
                             method: 'POST',
                             body: fd
@@ -1154,10 +1245,21 @@
                         applyStatus.style.display = 'block';
                         if (resp.ok && data && data.success) {
                             applyStatus.style.color = '#166534';
-                            applyStatus.textContent = 'Application submitted. We notified the employer.';
+                            applyStatus.style.background = '#ecfdf5';
+                            applyStatus.style.border = '1px solid #86efac';
+                            applyStatus.style.padding = '0.5rem 0.75rem';
+                            applyStatus.style.borderRadius = '8px';
+                            applyStatus.textContent = 'Thanks! Your application was sent to the employer.';
                             onSiteForm.reset();
+                            // Keep button disabled briefly to prevent duplicates
+                            setTimeout(() => { submitBtn.disabled = false; submitBtn.textContent = originalText; }, 1500);
+                            return;
                         } else {
                             applyStatus.style.color = '#b91c1c';
+                            applyStatus.style.background = '#fef2f2';
+                            applyStatus.style.border = '1px solid #fecaca';
+                            applyStatus.style.padding = '0.5rem 0.75rem';
+                            applyStatus.style.borderRadius = '8px';
                             applyStatus.textContent = (data && data.message) ? data.message : 'Failed to submit application.';
                         }
                         submitBtn.disabled = false;
@@ -1165,6 +1267,10 @@
                     } catch (err) {
                         applyStatus.style.display = 'block';
                         applyStatus.style.color = '#b91c1c';
+                        applyStatus.style.background = '#fef2f2';
+                        applyStatus.style.border = '1px solid #fecaca';
+                        applyStatus.style.padding = '0.5rem 0.75rem';
+                        applyStatus.style.borderRadius = '8px';
                         applyStatus.textContent = 'Network error. Please try again.';
                         const submitBtn = document.getElementById('submitOnSiteApply');
                         submitBtn.disabled = false;
@@ -1184,7 +1290,7 @@
         }
 
         // Modal event listeners
-        document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', () => {
             // Close modal when clicking the X
             document.querySelector('.job-modal-close').onclick = closeJobModal;
 
@@ -1218,7 +1324,7 @@
                 if (!job) { alert('Unable to identify job.'); return; }
 
                 try {
-                    const jobId = String(job.id || job._id || job.url || job.title);
+                    const jobId = makeSafeJobId(job, 0);
                     const resp = await fetch(`/api/jobs/${encodeURIComponent(jobId)}/save`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -1236,9 +1342,30 @@
                 }
             };
 
+            // Add breadcrumb schema
+            try {
+                const breadcrumb = {
+                    "@context": "https://schema.org",
+                    "@type": "BreadcrumbList",
+                    "itemListElement": [
+                        { "@type": "ListItem", position: 1, name: "Home", item: "https://talentsync.shop/" },
+                        { "@type": "ListItem", position: 2, name: "Jobs", item: "https://talentsync.shop/jobs" }
+                    ]
+                };
+                const existingBc = document.querySelector('script[data-schema="breadcrumb"]');
+                if (existingBc) existingBc.remove();
+                const s2 = document.createElement('script');
+                s2.type = 'application/ld+json';
+                s2.setAttribute('data-schema', 'breadcrumb');
+                s2.textContent = JSON.stringify(breadcrumb);
+                document.head.appendChild(s2);
+            } catch (_) {}
+
             loadJobs();
             updateNavigation();
         });
     </script>
+    <!-- Optional SEO utilities (web vitals/lazyload). Safe to omit if not needed elsewhere. -->
+    <script src="/js/seo-utils.js" defer></script>
 </body>
 </html>

@@ -7,7 +7,7 @@
     "description": "test",
     "salary": "20K–55K",
     "job_type": "part-time",
-    "status": "active",
+  "status": "inactive",
     "posted_date": "2025-08-26T00:34:36.595Z",
     "url": ""
   },
@@ -19,7 +19,7 @@
     "description": "test 2",
     "salary": "Not specified",
     "job_type": "remote",
-    "status": "active",
+  "status": "inactive",
     "posted_date": "2025-08-26T00:37:14.125Z",
     "url": ""
   },

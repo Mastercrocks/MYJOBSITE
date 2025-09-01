@@ -42,6 +42,43 @@ async function writeJsonSafe(file, data) {
   await fsp.writeFile(file, JSON.stringify(data, null, 2));
 }
 
+// Ensure we add a baseline of +10 profile views per day for each employer
+async function ensureDailyViewsBaseline(employerId) {
+  try {
+    const file = dataPath('employer_daily_views.json');
+    const today = new Date();
+    const dstr = today.toISOString().slice(0, 10); // YYYY-MM-DD
+    let arr = await readJsonSafe(file, []);
+    if (!Array.isArray(arr)) arr = [];
+    let idx = arr.findIndex(r => r && (r.employerId || r.employer_id) && String(r.employerId || r.employer_id) === String(employerId));
+    if (idx === -1) {
+      const rec = { employerId: String(employerId), lastDate: dstr, totalAdded: 10 };
+      arr.push(rec);
+      await writeJsonSafe(file, arr);
+      return rec.totalAdded;
+    }
+    const rec = arr[idx];
+    const last = (rec.lastDate || '').toString().slice(0, 10);
+    if (last === dstr) {
+      // Already added for today
+      return Number(rec.totalAdded || 0);
+    }
+    // Compute days between lastDate (exclusive) and today (inclusive)
+    const lastDateObj = last ? new Date(last + 'T00:00:00Z') : today;
+    const todayObj = new Date(dstr + 'T00:00:00Z');
+    let days = Math.max(1, Math.round((todayObj - lastDateObj) / (1000 * 60 * 60 * 24))); // at least 1 day
+    // If last was today, days would be 0; handled above.
+    const add = 10 * days;
+    rec.totalAdded = Number(rec.totalAdded || 0) + add;
+    rec.lastDate = dstr;
+    arr[idx] = rec;
+    await writeJsonSafe(file, arr);
+    return rec.totalAdded;
+  } catch (_) {
+    return 0;
+  }
+}
+
 // Ensure a minimal user record exists in users.json for the authenticated user
 async function ensureJsonUserRecord(authUser) {
   const users = await readJsonSafe(dataPath('users.json'), []);
@@ -687,6 +724,9 @@ router.put('/profile', authenticateToken, async (req, res) => {
 // Employer stats
 router.get('/stats', authenticateToken, async (req, res) => {
   try {
+  // Add baseline daily views for employer (idempotent per day)
+  const baselineTotal = await ensureDailyViewsBaseline(req.user.id);
+
     // Gather my jobs from Mongo and JSON
     let mongoJobs = [];
     try {
@@ -729,7 +769,7 @@ router.get('/stats', authenticateToken, async (req, res) => {
       activeJobs: activeJson + activeMongo,
       totalApplications: myApps.length,
       pendingReviews: pending,
-      profileViews: myViews
+  profileViews: Number(myViews) + Number(baselineTotal || 0)
     });
   } catch (e) { res.status(500).json({ error: 'Failed to load stats' }); }
 });

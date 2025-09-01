@@ -233,8 +233,49 @@ router.get('/stats', async (req, res) => {
             readJSONFile('email_list.json'),
             readJSONFile('resumes.json')
         ]);
-        // Merge jobs with Mongo for parity with public site
+        // Merge jobs with Mongo and external feeds for parity with public site
         let mongoJobs = [];
+        // Load external feeds (Indeed and scraped)
+        let indeedJobs = [];
+        let scrapedJobs = [];
+        try {
+            const fs = require('fs');
+            const path = require('path');
+            const indeedPath = path.join(__dirname, '..', 'data', 'indeed_jobs.json');
+            const scrapedPath = path.join(__dirname, '..', 'data', 'scraped_jobs.json');
+            if (fs.existsSync(indeedPath)) {
+                const indeed = JSON.parse(fs.readFileSync(indeedPath, 'utf8')) || [];
+                indeedJobs = indeed.map((j, idx) => ({
+                    id: `indeed_${idx}`,
+                    title: j.positionName || j.title || '',
+                    company: j.company || '',
+                    location: j.location || '',
+                    description: j.description || '',
+                    salary: j.salary || '',
+                    job_type: j.job_type || j.type || 'Full-time',
+                    status: 'active',
+                    url: j.url || '',
+                    posted_date: new Date().toISOString(),
+                    source: 'Indeed'
+                })).filter(j => j.title && j.company && j.location);
+            }
+            if (fs.existsSync(scrapedPath)) {
+                const scraped = JSON.parse(fs.readFileSync(scrapedPath, 'utf8')) || [];
+                scrapedJobs = scraped.map((j, idx) => ({
+                    id: j.id || `scraped_${idx}`,
+                    title: j.title || '',
+                    company: j.company || '',
+                    location: j.location || '',
+                    description: j.description || '',
+                    salary: j.salary || '',
+                    job_type: j.job_type || j.type || 'Full-time',
+                    status: j.status || 'active',
+                    url: j.url || j.apply_url || j.link || '',
+                    posted_date: j.posted_date || j.datePosted || j.scraped_at || new Date().toISOString(),
+                    source: j.source || 'scraped'
+                })).filter(j => j.title && j.company && j.location);
+            }
+        } catch (_) {}
         try {
             const Job = require('../models/Job');
             const docs = await Job.find({}).lean();
@@ -289,7 +330,12 @@ router.get('/stats', async (req, res) => {
             const dt = d ? new Date(d) : null;
             return (dt && !isNaN(dt)) ? dt : null;
         };
-    const combinedJobs = Array.isArray(jobsRaw) ? mongoJobs.concat(jobsRaw) : mongoJobs;
+    const combinedJobs = [
+            ...(mongoJobs||[]),
+            ...(Array.isArray(jobsRaw)?jobsRaw:[]),
+            ...indeedJobs,
+            ...scrapedJobs
+        ];
     // de-dupe by title+company+location+type
     const key = (j) => `${(j.title||'').toLowerCase()}|${(j.company||'').toLowerCase()}|${(j.location||'').toLowerCase()}|${(j.job_type||'').toLowerCase()}`;
     const dedupMap = new Map();
@@ -457,6 +503,49 @@ router.get('/stats', async (req, res) => {
 router.get('/jobs', async (req, res) => {
     try {
         const jobs = await readJSONFile('jobs.json');
+        // Load external feeds for parity with public site
+        const fs = require('fs');
+        const path = require('path');
+        const indeedPath = path.join(__dirname, '..', 'data', 'indeed_jobs.json');
+        const scrapedPath = path.join(__dirname, '..', 'data', 'scraped_jobs.json');
+        let indeedJobs = [];
+        let scrapedJobs = [];
+        try {
+            if (fs.existsSync(indeedPath)) {
+                const indeed = JSON.parse(fs.readFileSync(indeedPath, 'utf8')) || [];
+                indeedJobs = indeed.map((j, idx) => ({
+                    id: `indeed_${idx}`,
+                    title: j.positionName || j.title || '',
+                    company: j.company || '',
+                    location: j.location || '',
+                    description: j.description || '',
+                    salary: j.salary || '',
+                    job_type: j.job_type || j.type || 'Full-time',
+                    posted_date: new Date().toISOString(),
+                    url: j.url || '',
+                    status: 'active',
+                    source: 'Indeed'
+                })).filter(j => j.title && j.company && j.location);
+            }
+        } catch (_) {}
+        try {
+            if (fs.existsSync(scrapedPath)) {
+                const scraped = JSON.parse(fs.readFileSync(scrapedPath, 'utf8')) || [];
+                scrapedJobs = scraped.map((j, idx) => ({
+                    id: j.id || `scraped_${idx}`,
+                    title: j.title || '',
+                    company: j.company || '',
+                    location: j.location || '',
+                    description: j.description || '',
+                    salary: j.salary || '',
+                    job_type: j.job_type || j.type || 'Full-time',
+                    posted_date: j.posted_date || j.datePosted || j.scraped_at || new Date().toISOString(),
+                    url: j.url || j.apply_url || j.link || '',
+                    status: j.status || 'active',
+                    source: j.source || 'scraped'
+                })).filter(j => j.title && j.company && j.location);
+            }
+        } catch (_) {}
         // Load Mongo jobs and merge with JSON so admin sees full inventory
         let mongoJobs = [];
         try {
@@ -472,12 +561,13 @@ router.get('/jobs', async (req, res) => {
                 salary: j.salary || '',
                 job_type: j.job_type || 'Full-time',
                 status: j.status || 'active',
-                posted_date: j.posted_date || j.created_at || new Date().toISOString(),
+                posted_date: j.posted_date || j.created_at || j.createdAt || new Date().toISOString(),
+                source: 'mongo'
             }));
         } catch (_) { /* ignore mongo errors; fallback to JSON-only */ }
 
         // Combine and de-dup by title+company+location+job_type
-        const combined = Array.isArray(jobs) ? mongoJobs.concat(jobs) : mongoJobs;
+        const combined = [...(mongoJobs||[]), ...(Array.isArray(jobs)?jobs:[]), ...indeedJobs, ...scrapedJobs];
         const key = (j) => `${(j.title||'').toLowerCase()}|${(j.company||'').toLowerCase()}|${(j.location||'').toLowerCase()}|${(j.job_type||'').toLowerCase()}`;
         const dedupMap = new Map();
         for (const j of combined) { const k = key(j); if (!dedupMap.has(k)) dedupMap.set(k, j); }
@@ -1533,9 +1623,71 @@ router.post('/send-job-emails', async (req, res) => {
             return res.status(400).json({ error: 'Job IDs and email IDs are required' });
         }
 
-        // Get jobs data
-    const jobs = await readJSONFile('jobs.json');
-        const selectedJobs = jobs.filter(job => jobIds.includes(job.id));
+        // Resolve jobs across all sources (JSON, Mongo, Indeed, scraped)
+        const fs = require('fs');
+        const path = require('path');
+        const jobsJson = await readJSONFile('jobs.json');
+        let mongoJobs = [];
+        try {
+            const Job = require('../models/Job');
+            const docs = await Job.find({}).lean();
+            mongoJobs = (docs || []).map(j => ({
+                id: j._id?.toString(),
+                title: j.title,
+                company: j.company,
+                location: j.location,
+                description: j.description,
+                url: j.url || '',
+                salary: j.salary || '',
+                job_type: j.job_type || 'Full-time',
+                status: j.status || 'active',
+                posted_date: j.posted_date || j.created_at || j.createdAt || new Date().toISOString(),
+            }));
+        } catch (_) {}
+        let indeedJobs = [];
+        let scrapedJobs = [];
+        try {
+            const indeedPath = path.join(__dirname, '..', 'data', 'indeed_jobs.json');
+            const scrapedPath = path.join(__dirname, '..', 'data', 'scraped_jobs.json');
+            if (fs.existsSync(indeedPath)) {
+                const indeed = JSON.parse(fs.readFileSync(indeedPath, 'utf8')) || [];
+                indeedJobs = indeed.map((j, idx) => ({
+                    id: `indeed_${idx}`,
+                    title: j.positionName || j.title || '',
+                    company: j.company || '',
+                    location: j.location || '',
+                    description: j.description || '',
+                    salary: j.salary || '',
+                    job_type: j.job_type || j.type || 'Full-time',
+                    posted_date: new Date().toISOString(),
+                    url: j.url || '',
+                    status: 'active'
+                })).filter(j => j.title && j.company && j.location);
+            }
+            if (fs.existsSync(scrapedPath)) {
+                const scraped = JSON.parse(fs.readFileSync(scrapedPath, 'utf8')) || [];
+                scrapedJobs = scraped.map((j, idx) => ({
+                    id: j.id || `scraped_${idx}`,
+                    title: j.title || '',
+                    company: j.company || '',
+                    location: j.location || '',
+                    description: j.description || '',
+                    salary: j.salary || '',
+                    job_type: j.job_type || j.type || 'Full-time',
+                    posted_date: j.posted_date || j.datePosted || j.scraped_at || new Date().toISOString(),
+                    url: j.url || j.apply_url || j.link || '',
+                    status: j.status || 'active'
+                })).filter(j => j.title && j.company && j.location);
+            }
+        } catch (_) {}
+
+        const allJobs = [
+            ...(Array.isArray(jobsJson)?jobsJson:[]),
+            ...mongoJobs,
+            ...indeedJobs,
+            ...scrapedJobs
+        ];
+        const selectedJobs = allJobs.filter(job => jobIds.includes(String(job.id)));
 
         // Get email list
     let emailList = await readJSONFile('email_list.json');
