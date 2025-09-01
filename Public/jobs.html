@@ -864,6 +864,7 @@
                         allJobs = data2.jobs;
                         window.totalJobs = data2.jobs.length;
                         filterAndDisplayJobs();
+                        try { maybeOpenDeepLinkedJob(); } catch (_) {}
                         return;
                     }
                 } catch (_) { /* fall through to Mongo API */ }
@@ -902,6 +903,7 @@
                     allJobs = aggregated;
                     window.totalJobs = aggregated.length;
                     filterAndDisplayJobs();
+                    try { maybeOpenDeepLinkedJob(); } catch (_) {}
                     return;
                 }
 
@@ -911,6 +913,23 @@
                 console.error('Error loading jobs:', error);
                 showErrorMessage();
             }
+        }
+
+        // If URL contains ?jobId=, auto-open that job in the modal
+        function maybeOpenDeepLinkedJob() {
+            const params = new URLSearchParams(window.location.search);
+            const jobId = params.get('jobId');
+            if (!jobId) return;
+            const idx = displayedJobs.findIndex(j => String(j.id || j._id || '').toString() === jobId);
+            if (idx >= 0) {
+                openJobModal(idx);
+                return;
+            }
+            // If not in filtered, try in allJobs and then map to displayed index by identity
+            const job = allJobs.find(j => String(j.id || j._id || '').toString() === jobId);
+            if (!job) return;
+            const idx2 = displayedJobs.findIndex(j => (j === job) || (String(j.id||j._id||'')===String(job.id||job._id||'')));
+            if (idx2 >= 0) openJobModal(idx2);
         }
 
         function filterAndDisplayJobs() {

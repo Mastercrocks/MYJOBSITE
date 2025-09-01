@@ -62,7 +62,12 @@ async function sendNewJobEmailCampaign(newJob) {
             return { success: false, sent: 0, failed: 0, reason: 'verify_failed' };
         }
 
-        // Create professional email template
+    // Base URL for deep-links to job modal
+    const baseUrl = (process.env.PUBLIC_BASE_URL || process.env.SITE_URL || 'https://talentsync.shop').replace(/\/$/, '');
+    const jobId = String(newJob.id || newJob._id || '').trim();
+    const deepLink = jobId ? `${baseUrl}/jobs?jobId=${encodeURIComponent(jobId)}` : `${baseUrl}/jobs`;
+
+    // Create professional email template
         const emailSubject = `🚀 New Job Alert: ${newJob.title} at ${newJob.company}`;
         
         const emailTemplate = `
@@ -124,7 +129,7 @@ async function sendNewJobEmailCampaign(newJob) {
                 </div>
                 
                 <div style="text-align: center;">
-                    <a href="${newJob.url || 'https://talentsync.shop/jobs.html'}" class="apply-btn" style="color: white;">
+                    <a href="${newJob.url || deepLink}" class="apply-btn" style="color: white;">
                         🚀 Apply Now
                     </a>
                 </div>
@@ -170,7 +175,7 @@ async function sendNewJobEmailCampaign(newJob) {
                     to: subscriber.email,
                     subject: emailSubject,
                     html: emailTemplate,
-                    text: `New Job Alert: ${newJob.title} at ${newJob.company}\n\nLocation: ${newJob.location}\nType: ${newJob.job_type}\nSalary: ${newJob.salary}\n\nApply now: ${newJob.url || 'https://talentsync.shop/jobs.html'}\n\nVisit TalentSync: https://talentsync.shop`
+                    text: `New Job Alert: ${newJob.title} at ${newJob.company}\n\nLocation: ${newJob.location}\nType: ${newJob.job_type}\nSalary: ${newJob.salary}\n\nApply now: ${newJob.url || deepLink}\n\nVisit TalentSync: ${baseUrl}`
                 });
                 successCount++;
                 console.log(`📧 Sent to: ${subscriber.email}`);

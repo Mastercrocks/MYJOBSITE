@@ -73,8 +73,10 @@ async function sendCampaignForJob(job) {
       return { sent: 0, failed: 0 };
     }
 
-    const subject = `New Job: ${job.title} at ${job.company}`;
-    const applyUrl = job.url || 'https://talentsync.shop/jobs.html';
+  const subject = `New Job: ${job.title} at ${job.company}`;
+  const baseUrl = (process.env.PUBLIC_BASE_URL || process.env.SITE_URL || 'https://talentsync.shop').replace(/\/$/, '');
+  const jobId = String(job.id || job._id || '').trim();
+  const applyUrl = job.url || (jobId ? `${baseUrl}/jobs?jobId=${encodeURIComponent(jobId)}` : `${baseUrl}/jobs`);
     const text = `New Job Alert\n\n${job.title} at ${job.company}\nLocation: ${job.location}\nType: ${job.job_type || 'Full-time'}\n\nApply: ${applyUrl}`;
     const html = generateSimpleJobHTML(job, applyUrl);
 
