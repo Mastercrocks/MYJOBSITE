@@ -115,8 +115,19 @@ async function sendCampaignForJob(job) {
       console.warn('Skipping job campaign due to invalid email credentials.');
       return { sent: 0, failed: 0 };
     }
-    const emails = await readJsonSafe(dataPath('email_list.json'), []);
-    if (!Array.isArray(emails) || emails.length === 0) {
+    let emails = await readJsonSafe(dataPath('email_list.json'), []);
+    if (!Array.isArray(emails)) emails = [];
+    // Only active subscribers with an email; de-duplicate by email address
+    const seen = new Set();
+    const recipients = emails.filter(e => {
+      const ok = e && e.email && (e.status || 'active') === 'active';
+      if (!ok) return false;
+      const key = String(e.email).toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    if (recipients.length === 0) {
       console.log('No subscribers found; skipping job campaign');
       return { sent: 0, failed: 0 };
     }
@@ -129,10 +140,19 @@ async function sendCampaignForJob(job) {
     const html = generateSimpleJobHTML(job, applyUrl);
 
     let sent = 0, failed = 0;
-    for (const rec of emails) {
+    const nowIso = new Date().toISOString();
+    for (const rec of recipients) {
       try {
         await sendJobMarketingEmail({ to: rec.email, subject, text, html });
         sent++;
+        // Mark recipient stats in memory for later write-back
+        try {
+          const idx = emails.findIndex(x => x && (x.id === rec.id || (x.email && x.email.toLowerCase() === rec.email.toLowerCase())));
+          if (idx !== -1) {
+            emails[idx].lastEmailSent = nowIso;
+            emails[idx].totalEmailsSent = Number(emails[idx].totalEmailsSent || 0) + 1;
+          }
+        } catch (_) {}
         await new Promise(r => setTimeout(r, 100)); // small delay to avoid throttling
       } catch (e) {
         console.error('Failed to send job email to', rec?.email, e?.message || e);
@@ -140,6 +160,8 @@ async function sendCampaignForJob(job) {
       }
     }
     console.log(`Job campaign completed. Sent=${sent}, Failed=${failed}`);
+    // Persist updated email_list.json counters
+    try { await writeJsonSafe(dataPath('email_list.json'), emails); } catch (_) {}
     return { sent, failed };
   } catch (e) {
     console.error('Campaign send error:', e);

@@ -166,10 +166,20 @@ async function sendNewJobEmailCampaign(newJob) {
 </html>`;
 
         // Send to all subscribers
-    let successCount = 0;
-    let failCount = 0;
+        let successCount = 0;
+        let failCount = 0;
         
-        for (const subscriber of emailList) {
+                // Deduplicate recipients by email
+                const seen = new Set();
+                const recipients = emailList.filter(r => {
+                    const key = String(r.email || '').toLowerCase();
+                    if (!key || seen.has(key)) return false;
+                    seen.add(key);
+                    return true;
+                });
+
+                const nowIso = new Date().toISOString();
+                for (const subscriber of recipients) {
             try {
                 await sendJobMarketingEmail({
                     to: subscriber.email,
@@ -179,7 +189,15 @@ async function sendNewJobEmailCampaign(newJob) {
                 });
                 successCount++;
                 console.log(`📧 Sent to: ${subscriber.email}`);
-                
+                                // Update recipient counters
+                                try {
+                                    const idx = emailList.findIndex(x => x && (x.id === subscriber.id || (x.email && x.email.toLowerCase() === subscriber.email.toLowerCase())));
+                                    if (idx !== -1) {
+                                        emailList[idx].lastEmailSent = nowIso;
+                                        emailList[idx].totalEmailsSent = Number(emailList[idx].totalEmailsSent || 0) + 1;
+                                    }
+                                } catch (_) {}
+
                 // Small delay to avoid rate limiting
                 await new Promise(resolve => setTimeout(resolve, 100));
                 
@@ -195,7 +213,7 @@ async function sendNewJobEmailCampaign(newJob) {
         console.log(`   📧 Total subscribers: ${emailList.length}`);
         
     // Log the campaign
-        const campaigns = await readJSONFile('email_campaigns.json');
+    const campaigns = await readJSONFile('email_campaigns.json');
         campaigns.unshift({
             id: Date.now(),
             type: 'auto_job_alert',
@@ -209,7 +227,9 @@ async function sendNewJobEmailCampaign(newJob) {
             status: 'completed'
         });
         
-        await writeJSONFile('email_campaigns.json', campaigns);
+    await writeJSONFile('email_campaigns.json', campaigns);
+    // Persist email_list counters updates
+    try { await writeJSONFile('email_list.json', emailList); } catch (_) {}
         
     return { success: true, sent: successCount, failed: failCount };
         
