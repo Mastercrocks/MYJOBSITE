@@ -42,40 +42,42 @@ async function writeJsonSafe(file, data) {
   await fsp.writeFile(file, JSON.stringify(data, null, 2));
 }
 
-// Ensure we add a baseline of +10 profile views per day for each employer
+// Ensure a baseline that starts at 2 views and increases gradually each hour of the day
+// Logic: baselineToday = 2 + currentHour (0-23) so it starts at 2 after midnight and grows hourly
 async function ensureDailyViewsBaseline(employerId) {
   try {
     const file = dataPath('employer_daily_views.json');
-    const today = new Date();
-    const dstr = today.toISOString().slice(0, 10); // YYYY-MM-DD
+    const now = new Date();
+    const dstr = now.toISOString().slice(0, 10); // YYYY-MM-DD
+    const hour = now.getHours(); // 0..23 in server local time
+    const baseline = 2 + hour; // starts at 2 and increases by 1 each hour
+
     let arr = await readJsonSafe(file, []);
     if (!Array.isArray(arr)) arr = [];
     let idx = arr.findIndex(r => r && (r.employerId || r.employer_id) && String(r.employerId || r.employer_id) === String(employerId));
     if (idx === -1) {
-      const rec = { employerId: String(employerId), lastDate: dstr, totalAdded: 10 };
+      const rec = { employerId: String(employerId), lastDate: dstr, lastHour: hour, baselineToday: baseline };
       arr.push(rec);
       await writeJsonSafe(file, arr);
-      return rec.totalAdded;
+      return rec.baselineToday;
     }
     const rec = arr[idx];
-    const last = (rec.lastDate || '').toString().slice(0, 10);
-    if (last === dstr) {
-      // Already added for today
-      return Number(rec.totalAdded || 0);
+    const lastDate = (rec.lastDate || '').toString().slice(0, 10);
+    if (lastDate !== dstr) {
+      // New day: reset to today's baseline
+      rec.lastDate = dstr;
+      rec.lastHour = hour;
+      rec.baselineToday = baseline;
+    } else {
+      // Same day: update baseline to reflect current hour progression (monotonic per hour)
+      rec.lastHour = hour;
+      rec.baselineToday = baseline;
     }
-    // Compute days between lastDate (exclusive) and today (inclusive)
-    const lastDateObj = last ? new Date(last + 'T00:00:00Z') : today;
-    const todayObj = new Date(dstr + 'T00:00:00Z');
-    let days = Math.max(1, Math.round((todayObj - lastDateObj) / (1000 * 60 * 60 * 24))); // at least 1 day
-    // If last was today, days would be 0; handled above.
-    const add = 10 * days;
-    rec.totalAdded = Number(rec.totalAdded || 0) + add;
-    rec.lastDate = dstr;
     arr[idx] = rec;
     await writeJsonSafe(file, arr);
-    return rec.totalAdded;
+    return Number(rec.baselineToday || baseline);
   } catch (_) {
-    return 0;
+    return 2 + (new Date().getHours());
   }
 }
 
