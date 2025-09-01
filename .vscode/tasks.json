@@ -62,6 +62,20 @@
 			"command": "Get-Process -Name node -ErrorAction SilentlyContinue | Stop-Process -Force; $env:NODE_ENV='development'; node server.js",
 			"isBackground": false,
 			"group": "build"
+		},
+		{
+			"label": "Hard restart server (dev)",
+			"type": "shell",
+			"command": "Get-Process -Name node -ErrorAction SilentlyContinue | Stop-Process -Force; $env:NODE_ENV='development'; node server.js",
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Hard restart server (dev)",
+			"type": "shell",
+			"command": "Get-Process -Name node -ErrorAction SilentlyContinue | Stop-Process -Force; $env:NODE_ENV='development'; node server.js",
+			"isBackground": false,
+			"group": "build"
 		}
 	]
 }

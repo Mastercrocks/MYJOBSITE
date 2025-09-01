@@ -1,5 +1,29 @@
 [
   {
+    "id": 1756752175067,
+    "type": "auto_job_alert",
+    "jobId": "68b5e92430d8a02f81d1def5",
+    "jobTitle": " cxv",
+    "company": "vcx",
+    "subject": "🚀 New Job Alert:  cxv at vcx",
+    "sentTo": 7,
+    "failed": 0,
+    "sentAt": "2025-09-01T18:42:55.067Z",
+    "status": "completed"
+  },
+  {
+    "id": 1756751861121,
+    "type": "auto_job_alert",
+    "jobId": "68b5e7eb30d8a02f81d1dee6",
+    "jobTitle": "fghg",
+    "company": "h",
+    "subject": "🚀 New Job Alert: fghg at h",
+    "sentTo": 7,
+    "failed": 0,
+    "sentAt": "2025-09-01T18:37:41.121Z",
+    "status": "completed"
+  },
+  {
     "id": 1756751187772,
     "type": "auto_job_alert",
     "jobId": "68b5e54930d8a02f81d1ded1",

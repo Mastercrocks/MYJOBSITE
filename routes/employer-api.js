@@ -8,7 +8,16 @@ const { sendAccountEmail, sendJobMarketingEmail, isEmailConfigured, verifyEmailT
 const Job = require('../models/Job');
 const Employer = require('../models/Employer');
 // Accept both STRIPE_SECRET_KEY and STRIPE_SECRET
-const stripeSecret = process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET || '';
+const stripeSecret = sanitizeEnv(process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET || '');
+// Helper to sanitize env values (trim + remove wrapping quotes)
+function sanitizeEnv(v) {
+  if (v == null) return '';
+  let s = String(v).trim();
+  if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith('\'') && s.endsWith('\''))) {
+    s = s.slice(1, -1);
+  }
+  return s;
+}
 let stripe = null;
 try { if (stripeSecret) { stripe = require('stripe')(stripeSecret); } } catch (_) { stripe = null; }
 
@@ -169,8 +178,8 @@ const PLAN_LIMITS = {
 // BASIC: price_XXXX for $25/mo, PRO: price_YYYY for $50/mo
 // Accept STRIPE_PRICE_BASIC/PRO and also STRIPE_BASIC_PRICE_ID/STRIPE_PRO_PRICE_ID
 const PRICE_IDS = {
-  basic: process.env.STRIPE_PRICE_BASIC || process.env.STRIPE_BASIC_PRICE_ID || '',
-  pro: process.env.STRIPE_PRICE_PRO || process.env.STRIPE_PRO_PRICE_ID || ''
+  basic: sanitizeEnv(process.env.STRIPE_PRICE_BASIC || process.env.STRIPE_BASIC_PRICE_ID || ''),
+  pro: sanitizeEnv(process.env.STRIPE_PRICE_PRO || process.env.STRIPE_PRO_PRICE_ID || '')
 };
 
 async function getUserRecord(userId) {
@@ -241,7 +250,7 @@ router.get('/billing/config-status', authenticateToken, async (req, res) => {
   const base = (process.env.PUBLIC_BASE_URL || `${(req.headers['x-forwarded-proto'] || req.protocol)}://${req.get('host')}`);
   const mode = hasStripe ? getStripeMode() : 'none';
   // Detect obviously restricted keys that cannot create Checkout Sessions
-  const keyPreview = (process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET || '').toString();
+  const keyPreview = sanitizeEnv(process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET || '').toString();
   const likelyRestricted = /^(rk_|Rk_)/.test(keyPreview);
   res.json({ provider: hasStripe ? 'stripe' : 'none', mode, priceIds: ids, baseUrl: base, notes: likelyRestricted ? 'Restricted Stripe key detected; use a full secret key (sk_...).' : undefined });
   } catch (_) { res.json({ provider: 'unknown' }); }
