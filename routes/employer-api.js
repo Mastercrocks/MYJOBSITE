@@ -131,7 +131,7 @@ async function ensureStripeCustomerForUser(stripe, user, users, userIdx) {
 }
 
 const PLAN_LIMITS = {
-  free: 5,
+  free: 2,
   basic: 10, // $25 monthly
   pro: Infinity // $50 monthly
 };
@@ -167,8 +167,20 @@ router.get('/plan', authenticateToken, async (req, res) => {
   if (!user || status !== 'active' || (user.user_type || user.userType) !== 'employer') {
       return res.status(403).json({ error: 'Employer access required' });
     }
-    const jobs = await readJsonSafe(dataPath('jobs.json'), []);
-    const myJobs = jobs.filter(j => (j.postedBy || j.employerId) === user.id);
+    // Prefer Mongo count for accuracy; fallback to JSON if needed
+    let usedActive = 0;
+    try {
+      const employer = await Employer.findById(req.user.id).lean();
+      if (employer) {
+        usedActive = await Job.countDocuments({ employer: employer._id, status: 'active' });
+      } else {
+        const jobs = await readJsonSafe(dataPath('jobs.json'), []);
+        usedActive = jobs.filter(j => (j.postedBy || j.employerId) === user.id && (j.status||'active')==='active').length;
+      }
+    } catch (_) {
+      const jobs = await readJsonSafe(dataPath('jobs.json'), []);
+      usedActive = jobs.filter(j => (j.postedBy || j.employerId) === user.id && (j.status||'active')==='active').length;
+    }
     const plan = getUserPlan(user);
     const rawLimit = PLAN_LIMITS[plan];
     const unlimited = rawLimit === Infinity;
@@ -178,7 +190,7 @@ router.get('/plan', authenticateToken, async (req, res) => {
       plan, 
       limit, 
       unlimited, 
-      used: myJobs.filter(j => (j.status||'active')==='active').length,
+      used: usedActive,
       billing: {
         provider: billing.provider || (stripe ? 'stripe' : 'none'),
         customerId: billing.customerId || null,
@@ -415,6 +427,18 @@ router.post('/jobs', authenticateToken, async (req, res) => {
     if (!employer) {
       return res.status(403).json({ error: 'Employer not found' });
     }
+    // Enforce plan limits before creating a job
+    try {
+      const user = await getUserRecord(req.user.id);
+      const plan = getUserPlan(user);
+      const limit = PLAN_LIMITS[plan];
+      if (limit !== Infinity) {
+        const activeCount = await Job.countDocuments({ employer: employer._id, status: 'active' });
+        if (activeCount >= limit) {
+          return res.status(403).json({ error: `Free plan limit reached. You can post up to ${limit} active jobs. Upgrade to add more.` });
+        }
+      }
+    } catch (_) { /* soft-fail: default to allowing create if plan lookup has issues */ }
     // Save employer info to EMPLOYERS.js (for migration)
     try {
       const { saveEmployer } = require('../EMPLOYERS');
@@ -475,36 +499,25 @@ router.get('/jobs', authenticateToken, async (req, res) => {
 // Update my job
 router.put('/jobs/:id', authenticateToken, async (req, res) => {
   try {
-    const user = await getUserRecord(req.user.id);
-  const status = user ? (user.status || 'active').toString().toLowerCase() : 'inactive';
-  if (!user || status !== 'active' || (user.user_type || user.userType) !== 'employer') {
-      return res.status(403).json({ error: 'Employer access required' });
-    }
+    // Require employer
+    const employer = await Employer.findById(req.user.id);
+    if (!employer) return res.status(403).json({ error: 'Employer access required' });
     const id = req.params.id;
-    const jobs = await readJsonSafe(dataPath('jobs.json'), []);
-    const idx = jobs.findIndex(j => j && j.id && j.id.toString() === id && (j.postedBy || j.employerId) === user.id);
-    if (idx === -1) return res.status(404).json({ error: 'Job not found' });
-    const patch = req.body || {};
-    jobs[idx] = { ...jobs[idx], ...patch, id: jobs[idx].id };
-    await writeJsonSafe(dataPath('jobs.json'), jobs);
-    res.json({ success: true, job: jobs[idx] });
+    // Update job in Mongo only if it belongs to this employer
+    const job = await Job.findOneAndUpdate({ _id: id, employer: employer._id }, { $set: { ...req.body } }, { new: true });
+    if (!job) return res.status(404).json({ error: 'Job not found' });
+    res.json({ success: true, job });
   } catch (e) { res.status(500).json({ error: 'Failed to update job' }); }
 });
 
 // Delete/deactivate my job
 router.delete('/jobs/:id', authenticateToken, async (req, res) => {
   try {
-    const user = await getUserRecord(req.user.id);
-  const status = user ? (user.status || 'active').toString().toLowerCase() : 'inactive';
-  if (!user || status !== 'active' || (user.user_type || user.userType) !== 'employer') {
-      return res.status(403).json({ error: 'Employer access required' });
-    }
+    const employer = await Employer.findById(req.user.id);
+    if (!employer) return res.status(403).json({ error: 'Employer access required' });
     const id = req.params.id;
-    const jobs = await readJsonSafe(dataPath('jobs.json'), []);
-    const idx = jobs.findIndex(j => j && j.id && j.id.toString() === id && (j.postedBy || j.employerId) === user.id);
-    if (idx === -1) return res.status(404).json({ error: 'Job not found' });
-    jobs[idx].status = 'inactive';
-    await writeJsonSafe(dataPath('jobs.json'), jobs);
+    const job = await Job.findOneAndUpdate({ _id: id, employer: employer._id }, { $set: { status: 'inactive' } }, { new: true });
+    if (!job) return res.status(404).json({ error: 'Job not found' });
     res.json({ success: true });
   } catch (e) { res.status(500).json({ error: 'Failed to delete job' }); }
 });

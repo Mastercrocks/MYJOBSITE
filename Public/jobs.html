@@ -813,25 +813,43 @@
             });
         });
 
-        // Load and display jobs (now loading ALL 15,000+ jobs)
+        // Load and display jobs (fetch all pages; fallback to legacy source if empty)
         async function loadJobs() {
             try {
-                console.log('🚀 Loading ALL jobs from database...');
-                // Load ALL jobs from the main database (no limit)
-                let response = await fetch('/api/fresh'); // manual-only by default
-                let data = await response.json();
-                
-                if (data.success && data.jobs.length > 0) {
-                    console.log(`✅ Loaded ALL ${data.jobs.length} jobs from database`);
-                    allJobs = data.jobs;
-                    window.totalJobs = data.total;
+                console.log('🚀 Loading jobs from Mongo-backed API...');
+                // Collect all pages (server caps limit at 100)
+                const pageSize = 100;
+                let page = 1;
+                let aggregated = [];
+                let totalPages = 1;
+                do {
+                    const resp = await fetch(`/api/jobs-v2?limit=${pageSize}&page=${page}`);
+                    const data = await resp.json();
+                    if (!data.success) break;
+                    aggregated = aggregated.concat(Array.isArray(data.jobs) ? data.jobs : []);
+                    totalPages = data.totalPages || 1;
+                    page++;
+                } while (page <= totalPages);
+
+                if (aggregated.length > 0) {
+                    console.log(`✅ Loaded ${aggregated.length} jobs from Mongo API (${totalPages} pages)`);
+                    allJobs = aggregated;
+                    window.totalJobs = aggregated.length;
                     filterAndDisplayJobs();
-                    showJobStats(data.sources);
-                    
-                    // No public success banner
-                    
+                    return;
+                }
+
+                // Fallback to legacy combined feed (includes JSON/scraped if present)
+                console.log('↩️  Fallback: loading from /api/fresh with scraped jobs');
+                const resp2 = await fetch('/api/fresh?includeScraped=true');
+                const data2 = await resp2.json();
+                if (data2.success && Array.isArray(data2.jobs) && data2.jobs.length > 0) {
+                    console.log(`✅ Loaded ${data2.jobs.length} jobs from legacy feed`);
+                    allJobs = data2.jobs;
+                    window.totalJobs = data2.jobs.length;
+                    filterAndDisplayJobs();
                 } else {
-                    console.log('❌ No jobs found in database');
+                    console.log('❌ No jobs found in any source');
                     showNoJobsMessage();
                 }
             } catch (error) {
@@ -866,43 +884,8 @@
                 return matchesKeyword && matchesLocation && matchesType && matchesCategory;
             });
 
-            // Log filtering results with better breakdown
-            const linkedinJobs = allJobs.filter(job => {
-                const source = job.source ? job.source.toLowerCase() : '';
-                return source.includes('linkedin');
-            }).length;
-            
-            const zipRecruiterJobs = allJobs.filter(job => {
-                const source = job.source ? job.source.toLowerCase() : '';
-                return source.includes('ziprecruiter');
-            }).length;
-            
-            const indeedJobs = allJobs.filter(job => {
-                const source = job.source ? job.source.toLowerCase() : '';
-                return source.includes('indeed');
-            }).length;
-            
-            const glassdoorJobs = allJobs.filter(job => {
-                const source = job.source ? job.source.toLowerCase() : '';
-                return source.includes('glassdoor');
-            }).length;
-            
-            const manualJobs = allJobs.filter(job => {
-                const source = job.source ? job.source.toLowerCase() : '';
-                return source.includes('manual');
-            }).length;
-            
-            const otherJobs = allJobs.length - linkedinJobs - zipRecruiterJobs - indeedJobs - glassdoorJobs - manualJobs;
-            
-            console.log(`🔍 Job filtering results`);
-            console.log(`📊 Total jobs loaded: ${allJobs.length}`);
-            console.log(`📋 LinkedIn jobs: ${linkedinJobs}`);
-            console.log(`📋 ZipRecruiter jobs: ${zipRecruiterJobs}`);
-            console.log(`📋 Indeed jobs: ${indeedJobs}`);
-            console.log(`📋 Glassdoor jobs: ${glassdoorJobs}`);
-            console.log(`📋 Manual jobs: ${manualJobs}`);
-            console.log(`📋 Other/Unknown source jobs: ${otherJobs}`);
-            console.log(`✅ Final displayed jobs (with valid URLs): ${displayedJobs.length}`);
+            // Reduce noisy source breakdown logs; keep a simple count
+            console.log(`✅ Jobs after filters: ${displayedJobs.length} / ${allJobs.length}`);
 
             currentPage = 1;
             displayJobs();
@@ -931,7 +914,6 @@
                     ${job.description ? `<div class="job-description">${job.description.substring(0, 120)}...</div>` : ''}
                     <div class="job-details">
                         ${job.salary ? `<span class="job-salary">${job.salary}</span>` : ''}
-                        <span style="background: ${job.source && job.source.toLowerCase().includes('linkedin') ? '#0077b5' : '#1875f0'}; color: white; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem; margin-right: 0.5rem;">${job.source || 'Unknown'}</span>
                         <span style="color: #667eea; font-size: 0.9rem; font-weight: 500;">Click to view details →</span>
                     </div>
                 </div>

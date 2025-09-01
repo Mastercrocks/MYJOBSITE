@@ -7,6 +7,8 @@ const jobSchema = new mongoose.Schema({
   location: String,
   salary: String,
   job_type: String,
+  status: { type: String, default: 'active' },
+  url: String,
   posted_date: { type: Date, default: Date.now },
   employer: { type: mongoose.Schema.Types.ObjectId, ref: 'Employer' }
 });

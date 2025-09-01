@@ -9,9 +9,6 @@ const Parser = require('rss-parser');
 
 // Email configuration for auto campaigns
 const emailConfig = {
-// Add missing closing brackets for any unclosed functions or route handlers
-// (This is a repair for a likely missing bracket in a large file)
-
     host: 'smtp.gmail.com',
     port: 587,
     secure: false,
@@ -183,7 +180,7 @@ async function sendNewJobEmailCampaign(newJob) {
                 
             } catch (error) {
                 failCount++;
-                console.error(`❌ Failed to send to \${subscriber.email}:`, error.message);
+            console.error(`❌ Failed to send to ${'${subscriber.email}'}:`, error.message);
             }
         }
         
@@ -715,10 +712,10 @@ router.put('/applications/status', async (req, res) => {
     }
 });
 
-// Add new job manually
+// Add new job manually (Mongo-backed; admin action)
 router.post('/jobs', async (req, res) => {
     try {
-        const Job = require('../models/Job');
+    const Job = require('../models/Job');
         // Normalize booleans and enums from form
         const toBool = (v) => (typeof v === 'boolean' ? v : String(v).toLowerCase() === 'true');
         const expRaw = (req.body.experience_level || '').toString().toLowerCase();
@@ -1569,7 +1566,7 @@ function generateJobEmailHTML(jobs, customMessage) {
     </html>`;
 }
 
-// ...existing code...
+// --- Scraping helpers (demo) ---
 router.post('/scrape-job-url', async (req, res) => {
     try {
         console.log('Received scrape request:', req.body);
