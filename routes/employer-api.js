@@ -33,6 +33,27 @@ async function writeJsonSafe(file, data) {
   await fsp.writeFile(file, JSON.stringify(data, null, 2));
 }
 
+// Ensure a minimal user record exists in users.json for the authenticated user
+async function ensureJsonUserRecord(authUser) {
+  const users = await readJsonSafe(dataPath('users.json'), []);
+  let idx = users.findIndex(u => u && u.id != null && u.id.toString() === authUser.id.toString());
+  if (idx === -1) {
+    const minimal = {
+      id: authUser.id,
+      email: (authUser.email || '').toLowerCase(),
+      username: authUser.username || (authUser.email ? authUser.email.split('@')[0] : ''),
+      user_type: (authUser.user_type || authUser.userType || 'employer'),
+      status: 'active',
+      plan: 'free',
+      billing: { status: 'none' }
+    };
+    users.push(minimal);
+    await writeJsonSafe(dataPath('users.json'), users);
+    idx = users.length - 1;
+  }
+  return { users, idx };
+}
+
 // Send an email campaign to all subscribers for a new job
 async function sendCampaignForJob(job) {
   try {
@@ -221,9 +242,7 @@ router.post('/plan', authenticateToken, async (req, res) => {
     if (!['free','basic','pro'].includes((plan||'').toLowerCase())) {
       return res.status(400).json({ error: 'Invalid plan' });
     }
-    const users = await readJsonSafe(dataPath('users.json'), []);
-    const idx = users.findIndex(u => u && u.id && u.id.toString() === req.user.id.toString());
-  if (idx === -1) return res.status(404).json({ error: 'User not found' });
+  let { users, idx } = await ensureJsonUserRecord(req.user);
   const status = (users[idx].status || 'active').toString().toLowerCase();
   if (status !== 'active' || (users[idx].user_type || users[idx].userType) !== 'employer') return res.status(403).json({ error: 'Employer access required' });
 
@@ -262,10 +281,8 @@ router.post('/billing/checkout', authenticateToken, async (req, res) => {
     if (!['basic','pro'].includes((plan||'').toLowerCase())) return res.status(400).json({ error: 'Invalid plan' });
   if (!stripe || !PRICE_IDS[plan]) return res.status(400).json({ error: 'Billing not configured' });
 
-    // Load user
-    const users = await readJsonSafe(dataPath('users.json'), []);
-    const idx = users.findIndex(u => u && u.id && u.id.toString() === req.user.id.toString());
-  if (idx === -1) return res.status(404).json({ error: 'User not found' });
+  // Load or create user record in JSON store
+  let { users, idx } = await ensureJsonUserRecord(req.user);
   const status = (users[idx].status || 'active').toString().toLowerCase();
   if (status !== 'active') return res.status(403).json({ error: 'Employer access required' });
     const user = ensureBillingFields(users[idx]);
@@ -290,7 +307,7 @@ router.post('/billing/checkout', authenticateToken, async (req, res) => {
         mode: 'subscription',
         customer: customerId,
         line_items: [{ price: PRICE_IDS[plan], quantity: 1 }],
-        success_url: `${baseUrl}/employer/dashboard?checkout=success`,
+        success_url: `${baseUrl}/employer/dashboard?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${baseUrl}/employer/dashboard?checkout=cancel`,
         metadata: { userId: String(user.id), plan }
       });
@@ -303,7 +320,7 @@ router.post('/billing/checkout', authenticateToken, async (req, res) => {
           mode: 'subscription',
           customer: freshCustomerId,
           line_items: [{ price: PRICE_IDS[plan], quantity: 1 }],
-          success_url: `${baseUrl}/employer/dashboard?checkout=success`,
+          success_url: `${baseUrl}/employer/dashboard?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
           cancel_url: `${baseUrl}/employer/dashboard?checkout=cancel`,
           metadata: { userId: String(user.id), plan }
         });
@@ -326,12 +343,50 @@ router.post('/billing/checkout', authenticateToken, async (req, res) => {
   }
 });
 
+// Fallback confirmation endpoint to finalize upgrades without relying solely on webhooks
+router.get('/billing/confirm', authenticateToken, async (req, res) => {
+  try {
+    if (!stripe) return res.status(400).json({ error: 'Billing not configured' });
+    const sessionId = (req.query.session_id || req.query.sessionId || '').toString().trim();
+    if (!sessionId) return res.status(400).json({ error: 'Missing session_id' });
+
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    if (!session) return res.status(404).json({ error: 'Session not found' });
+
+    const userId = session.metadata && session.metadata.userId;
+    const plan = session.metadata && session.metadata.plan;
+    if (!userId || !plan) return res.status(400).json({ error: 'Invalid session metadata' });
+
+    // Only finalize if the session is complete and has a subscription
+    const paid = (session.payment_status === 'paid' || session.status === 'complete');
+    if (!paid || !session.subscription) {
+      return res.status(400).json({ error: 'Checkout not completed yet' });
+    }
+
+    const users = await readJsonSafe(dataPath('users.json'), []);
+    const idx = users.findIndex(u => u && u.id && u.id.toString() === String(userId));
+    if (idx === -1) return res.status(404).json({ error: 'User not found' });
+
+    users[idx].plan = plan;
+    users[idx].billing = users[idx].billing || {};
+    users[idx].billing.subscriptionId = session.subscription || null;
+    users[idx].billing.status = 'active';
+    users[idx].billing.provider = 'stripe';
+    users[idx].billing.customerId = session.customer || users[idx].billing.customerId || null;
+    users[idx].billing.env = getStripeMode();
+    await writeJsonSafe(dataPath('users.json'), users);
+
+    res.json({ success: true, plan, subscriptionId: session.subscription });
+  } catch (e) {
+    console.error('Billing confirm error:', e?.message || e);
+    res.status(500).json({ error: 'Failed to confirm checkout' });
+  }
+});
+
 // Reset billing customer for current employer (auth required)
 router.post('/billing/reset', authenticateToken, async (req, res) => {
   try {
-    const users = await readJsonSafe(dataPath('users.json'), []);
-    const idx = users.findIndex(u => u && u.id && u.id.toString() === req.user.id.toString());
-    if (idx === -1) return res.status(404).json({ error: 'User not found' });
+  let { users, idx } = await ensureJsonUserRecord(req.user);
     const user = users[idx];
     const uType = (user.user_type || user.userType || '').toString().toLowerCase();
     const uStatus = (user.status || 'active').toString().toLowerCase();

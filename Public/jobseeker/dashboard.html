@@ -449,7 +449,7 @@
                 <div class="content-header">
                     <h2>Recent Job Applications</h2>
                 </div>
-                <div class="content-body">
+                <div class="content-body" id="applicationsContainer">
                     <div class="job-item">
                         <div class="job-info">
                             <h4>Marketing Intern</h4>
@@ -498,6 +498,7 @@
                     <a href="#" class="action-btn">Update Profile</a>
                     <a href="#" class="action-btn">Upload Resume</a>
                     <a href="#" class="action-btn">View Applications</a>
+                    <a href="#" class="action-btn" id="viewSavedBtn">View Saved Jobs</a>
                 </div>
             </div>
         </div>
@@ -571,7 +572,7 @@
         }
 
         // Load recent applications
-        async function loadRecentApplications() {
+    async function loadRecentApplications() {
             if (!currentUser || !currentUser.id) return;
 
             try {
@@ -588,7 +589,7 @@
 
         // Display applications in the dashboard
         function displayApplications(applications) {
-            const contentBody = document.querySelector('.content-body');
+            const contentBody = document.getElementById('applicationsContainer');
             
             if (!applications || applications.length === 0) {
                 contentBody.innerHTML = `
@@ -610,6 +611,38 @@
                 </div>
             `).join('');
         }
+
+                // View saved jobs in a simple modal list
+                async function viewSavedJobs() {
+                        if (!currentUser || !currentUser.id) return;
+                        try {
+                                const resp = await fetch(`/api/saved-jobs/${currentUser.id}`);
+                                const data = await resp.json();
+                                const saved = (data && data.savedJobs) ? data.savedJobs : [];
+                                const modal = document.createElement('div');
+                                modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:2000;';
+                                modal.innerHTML = `
+                                    <div style="background:white;width:90%;max-width:700px;max-height:80vh;overflow:auto;border-radius:12px;padding:1rem 1.5rem;">
+                                        <h3 style="margin:0 0 1rem 0;">Saved Jobs (${saved.length})</h3>
+                                        <div id="savedJobsList">
+                                            ${saved.length === 0 ? '<p style="color:#6b7280">No saved jobs yet.</p>' : saved.map(s => `
+                                                <div style="padding:.75rem 0;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:.75rem;">
+                                                    <span style="font-size:.85rem;color:#6b7280;">ID:</span>
+                                                    <span style="font-family:monospace;">${s.jobId}</span>
+                                                    <span style="margin-left:auto;font-size:.85rem;color:#9ca3af;">${new Date(s.savedAt).toLocaleDateString()}</span>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                        <div style="text-align:right;margin-top:1rem;">
+                                            <button onclick="this.closest('div').parentElement.remove()" style="background:#2563eb;color:white;border:none;border-radius:8px;padding:.5rem 1rem;cursor:pointer;">Close</button>
+                                        </div>
+                                    </div>`;
+                                document.body.appendChild(modal);
+                        } catch (e) {
+                                console.error('Saved jobs error:', e);
+                                alert('Could not load saved jobs.');
+                        }
+                }
 
         // Format date helper
         function formatDate(dateString) {
@@ -867,6 +900,12 @@
                     btn.addEventListener('click', (e) => {
                         e.preventDefault();
                         viewApplications();
+                    });
+                } else if (btn.id === 'viewSavedBtn') {
+                    btn.href = '#';
+                    btn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        viewSavedJobs();
                     });
                 }
             });

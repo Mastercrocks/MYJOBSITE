@@ -228,7 +228,7 @@
       }
     }
 
-    async function loadDashboardData() {
+  async function loadDashboardData() {
       try {
         const profileRes = await fetch('/auth/profile', { credentials: 'include' });
         if (profileRes.ok) {
@@ -256,6 +256,16 @@
           // If plan API fails, keep upgrade visible so user can still change plan
           document.getElementById('upgradeActions').classList.remove('hidden');
         }
+        // Detect Stripe billing configuration and update UI state
+        try {
+          const cfg = await api('/api/employer/billing/config-status');
+          const ub = document.getElementById('upgradeBasic');
+          const up = document.getElementById('upgradePro');
+          if (!cfg || cfg.provider !== 'stripe' || cfg.priceIds.basic === 'missing' || cfg.priceIds.pro === 'missing') {
+            if (ub) { ub.disabled = true; ub.title = 'Billing is not configured'; }
+            if (up) { up.disabled = true; up.title = 'Billing is not configured'; }
+          }
+        } catch (_) {}
       } catch (e) {
         console.error(e);
         // Ensure upgrade buttons are wired even on broader failures
@@ -265,6 +275,21 @@
       const up = document.getElementById('upgradePro');
       if (ub) ub.onclick = () => startPlanUpgrade('basic');
       if (up) up.onclick = () => startPlanUpgrade('pro');
+
+      // If redirected from successful checkout, finalize without waiting for webhook
+      try {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('checkout') === 'success' && params.get('session_id')) {
+          const sid = params.get('session_id');
+          await api(`/api/employer/billing/confirm?session_id=${encodeURIComponent(sid)}`);
+          // Clean params and refresh to show upgraded plan
+          const url = new URL(window.location.href);
+          url.searchParams.delete('checkout');
+          url.searchParams.delete('session_id');
+          window.history.replaceState({}, '', url.toString());
+          setTimeout(() => loadDashboardData(), 200);
+        }
+      } catch (e) { console.warn('Billing confirm failed:', e?.message || e); }
     }
 
     function openPostJob() {
@@ -377,6 +402,7 @@
             <div class="font-semibold">${a.name || a.candidateName || 'Applicant'} — <span class="text-sm text-gray-500">${a.status||'Pending'}</span></div>
             <div class="text-sm text-gray-600">Email: ${a.email || a.candidateEmail || 'N/A'}</div>
             <div class="text-sm text-gray-600">Job ID: ${a.jobId}</div>
+            ${a.resumeFileName ? `<div class="mt-1"><a class="text-indigo-600" href="/uploads/resumes/${encodeURIComponent(a.resumeFileName)}" target="_blank">Download Resume</a> ${a.resumeOriginalName?`<span class="text-xs text-gray-500">(${a.resumeOriginalName})</span>`:''}</div>` : ''}
             <div class="text-xs text-gray-400">${a.appliedAt || a.date || ''}</div>
           </div>`).join('');
       }).catch(e => { body.innerHTML = '<p class="text-red-600">Failed to load applications.</p>'; });

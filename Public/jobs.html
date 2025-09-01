@@ -770,6 +770,38 @@
                     <h3><span class="info-icon">📋</span> Job Description</h3>
                     <div id="modalJobDescription">Job description will appear here...</div>
                 </div>
+                <div id="onSiteApplySection" class="job-description-section" style="display:none;">
+                    <h3><span class="info-icon">📝</span> Apply On-Site</h3>
+                    <p class="text-sm" style="color:#4b5563;margin-bottom:0.75rem;">No external link provided. Apply directly here and we'll send your application to the employer.</p>
+                    <form id="onSiteApplyForm" class="space-y-3">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+                            <div>
+                                <label class="block text-sm text-gray-600">Full Name</label>
+                                <input type="text" name="name" id="applyName" class="search-input" placeholder="Your name" required />
+                            </div>
+                            <div>
+                                <label class="block text-sm text-gray-600">Email</label>
+                                <input type="email" name="email" id="applyEmail" class="search-input" placeholder="you@example.com" required />
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-600">Phone (optional)</label>
+                            <input type="text" name="phone" id="applyPhone" class="search-input" placeholder="(555) 555-5555" />
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-600">Resume (PDF/DOC/DOCX)</label>
+                            <input type="file" name="resume" id="applyResume" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-600">Cover Letter</label>
+                            <textarea name="coverLetter" id="applyCover" rows="5" class="search-input" placeholder="Briefly explain why you're a good fit" required></textarea>
+                        </div>
+                        <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+                            <button type="submit" id="submitOnSiteApply" class="apply-btn">Submit Application</button>
+                        </div>
+                        <div id="applyStatus" class="text-sm" style="display:none;margin-top:0.5rem;"></div>
+                    </form>
+                </div>
                 <div class="job-modal-actions">
                     <button id="applyJobBtn" class="apply-btn">Apply Now</button>
                     <button class="save-job-btn">Save Job</button>
@@ -1028,11 +1060,89 @@
 
             // Set up apply button
             const applyBtn = document.getElementById('applyJobBtn');
+            const onSiteApply = document.getElementById('onSiteApplySection');
+            const onSiteForm = document.getElementById('onSiteApplyForm');
+            const applyStatus = document.getElementById('applyStatus');
+
             if (job.url) {
+                // External apply
+                onSiteApply.style.display = 'none';
                 applyBtn.onclick = () => window.open(job.url, '_blank');
                 applyBtn.style.display = 'inline-block';
             } else {
+                // On-site apply
                 applyBtn.style.display = 'none';
+                onSiteApply.style.display = 'block';
+
+                // Prefill name/email if logged in
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                if (user && user.name) document.getElementById('applyName').value = user.name;
+                if (user && user.email) document.getElementById('applyEmail').value = user.email;
+
+                onSiteForm.onsubmit = async (e) => {
+                    e.preventDefault();
+                    try {
+                        // Client-side validation for resume file
+                        const applyStatusEl = applyStatus;
+                        applyStatusEl.style.display = 'none';
+                        const file = document.getElementById('applyResume').files[0];
+                        if (file) {
+                            const allowed = [
+                                'application/pdf',
+                                'application/msword',
+                                'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+                            ];
+                            if (!allowed.includes(file.type)) {
+                                applyStatusEl.style.display = 'block';
+                                applyStatusEl.style.color = '#b91c1c';
+                                applyStatusEl.textContent = 'Only PDF, DOC, and DOCX files are allowed.';
+                                return;
+                            }
+                            if (file.size > 5 * 1024 * 1024) {
+                                applyStatusEl.style.display = 'block';
+                                applyStatusEl.style.color = '#b91c1c';
+                                applyStatusEl.textContent = 'Resume file too large (max 5MB).';
+                                return;
+                            }
+                        }
+
+                        // Disable submit while uploading
+                        const submitBtn = document.getElementById('submitOnSiteApply');
+                        const originalText = submitBtn.textContent;
+                        submitBtn.disabled = true;
+                        submitBtn.textContent = 'Submitting...';
+
+                        const userId = (user && user.id) ? String(user.id) : '';
+                        const fd = new FormData(onSiteForm);
+                        fd.append('userId', userId);
+                        const jobId = String(job.id || job._id || job.url || job.title);
+                        const resp = await fetch(`/api/jobs/${encodeURIComponent(jobId)}/apply-on-site`, {
+                            method: 'POST',
+                            body: fd
+                        });
+                        let data = {};
+                        try { data = await resp.json(); }
+                        catch { try { const txt = await resp.text(); data = { success: false, message: txt?.slice(0,200) || 'Unknown error' }; } catch { data = { success: false }; } }
+                        applyStatus.style.display = 'block';
+                        if (resp.ok && data && data.success) {
+                            applyStatus.style.color = '#166534';
+                            applyStatus.textContent = 'Application submitted. We notified the employer.';
+                            onSiteForm.reset();
+                        } else {
+                            applyStatus.style.color = '#b91c1c';
+                            applyStatus.textContent = (data && data.message) ? data.message : 'Failed to submit application.';
+                        }
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = originalText;
+                    } catch (err) {
+                        applyStatus.style.display = 'block';
+                        applyStatus.style.color = '#b91c1c';
+                        applyStatus.textContent = 'Network error. Please try again.';
+                        const submitBtn = document.getElementById('submitOnSiteApply');
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Submit Application';
+                    }
+                };
             }
 
             // Show modal
@@ -1064,9 +1174,38 @@
                 }
             });
 
-            // Save job functionality (placeholder)
-            document.querySelector('.save-job-btn').onclick = function() {
-                alert('Job saved! (This is a placeholder - implement save functionality as needed)');
+            // Save/Unsave job functionality
+            document.querySelector('.save-job-btn').onclick = async function() {
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+                if (!isLoggedIn || !user.id) {
+                    window.location.href = '/login.html';
+                    return;
+                }
+
+                const job = (() => {
+                    const title = document.getElementById('modalJobTitle').textContent;
+                    return displayedJobs.find(j => j.title === title) || null;
+                })();
+                if (!job) { alert('Unable to identify job.'); return; }
+
+                try {
+                    const jobId = String(job.id || job._id || job.url || job.title);
+                    const resp = await fetch(`/api/jobs/${encodeURIComponent(jobId)}/save`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId: String(user.id) })
+                    });
+                    const result = await resp.json();
+                    if (result && result.success) {
+                        alert(result.saved ? 'Job saved!' : 'Removed from saved jobs');
+                    } else {
+                        alert('Could not save job.');
+                    }
+                } catch (e) {
+                    console.error('Save job error:', e);
+                    alert('Network error. Please try again.');
+                }
             };
 
             loadJobs();
