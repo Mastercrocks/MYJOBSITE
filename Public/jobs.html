@@ -1065,8 +1065,10 @@
 
             // console.log display only for debugging; no public banners
 
-            container.innerHTML = jobsToShow.map((job, index) => `
-                <div class="job-item" onclick="openJobModal(${index})" style="cursor: pointer;">
+            container.innerHTML = jobsToShow.map((job, index) => {
+                const id = encodeURIComponent(String(job.id || job._id || index));
+                return `
+                <a class="job-item" href="/job.html?jobId=${id}" style="cursor: pointer; text-decoration:none; color:inherit;">
                     <div class="job-title" style="color: #2563eb; font-weight: 600; margin-bottom: 0.5rem;">${job.title}</div>
                     <div class="job-company">${job.company}</div>
                     <div class="job-location">${job.location}</div>
@@ -1075,8 +1077,8 @@
                         ${job.salary ? `<span class="job-salary">${job.salary}</span>` : ''}
                         <span style="color: #667eea; font-size: 0.9rem; font-weight: 500;">Click to view details →</span>
                     </div>
-                </div>
-            `).join('');
+                </a>`;
+            }).join('');
 
             // Hide load more button since we're showing all jobs
             document.getElementById('loadMore').style.display = 'none';

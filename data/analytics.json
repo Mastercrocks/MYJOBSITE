@@ -1,6 +1,6 @@
 {
   "pageViews": {
-    "total": 687,
+    "total": 693,
     "daily": {
       "2025-08-11": 5,
       "2025-08-12": 12,
@@ -16,11 +16,12 @@
       "2025-08-25": 13,
       "2025-08-26": 1,
       "2025-08-31": 7,
-      "2025-09-01": 150
+      "2025-09-01": 150,
+      "2025-09-02": 6
     },
     "pages": {
-      "/": 123,
-      "/jobs": 107,
+      "/": 124,
+      "/jobs": 112,
       "/register": 7,
       "/login": 16,
       "/employers": 45,
@@ -39,7 +40,7 @@
     }
   },
   "visitors": {
-    "unique": 655,
+    "unique": 661,
     "returning": 7,
     "sessions": {
       "session_new_1755400605624_0": {
@@ -3316,8 +3317,38 @@
         "firstVisit": "2025-09-01T22:16:52.014Z",
         "lastVisit": "2025-09-01T22:16:52.014Z",
         "pageViews": 1
+      },
+      "Oi6D91_t84yoP712qHNzVUqYBE33DltW": {
+        "firstVisit": "2025-09-02T02:22:50.033Z",
+        "lastVisit": "2025-09-02T02:22:50.033Z",
+        "pageViews": 1
+      },
+      "_etA-ElznsXHryBdBXxd54F94HKufnWX": {
+        "firstVisit": "2025-09-02T02:22:53.896Z",
+        "lastVisit": "2025-09-02T02:22:53.896Z",
+        "pageViews": 1
+      },
+      "7MQG6gT10GuOs6lhFKWmvtrQFtqrBOuZ": {
+        "firstVisit": "2025-09-02T02:25:48.744Z",
+        "lastVisit": "2025-09-02T02:25:48.744Z",
+        "pageViews": 1
+      },
+      "zBJhgZOaYMXBFQGqERsXq1ZvJiNZUcoz": {
+        "firstVisit": "2025-09-02T02:32:58.818Z",
+        "lastVisit": "2025-09-02T02:32:58.818Z",
+        "pageViews": 1
+      },
+      "I2Ow0P6umxCvSZVXOj8WI4Xe8-cAz1m2": {
+        "firstVisit": "2025-09-02T02:35:37.200Z",
+        "lastVisit": "2025-09-02T02:35:37.200Z",
+        "pageViews": 1
+      },
+      "D9Vid2LLy-GZ9384S2NzuQKWxfiqXhYL": {
+        "firstVisit": "2025-09-02T02:41:02.876Z",
+        "lastVisit": "2025-09-02T02:41:02.876Z",
+        "pageViews": 1
       }
     }
   },
-  "lastUpdated": "2025-09-01T22:16:52.014Z"
+  "lastUpdated": "2025-09-02T02:41:02.876Z"
 }

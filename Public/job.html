@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Job Details | TalentSync</title>
+  <meta name="description" content="View job details and apply." />
+  <meta name="robots" content="index,follow" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:'Inter',system-ui,Segoe UI,Roboto,Arial;background:#fff;color:#111827;line-height:1.6}
+    .container{max-width:1000px;margin:0 auto;padding:16px}
+    header{border-bottom:1px solid #e5e7eb;background:#fff}
+    .logo{font-weight:700;color:#2563eb;text-decoration:none;font-size:20px}
+    .back{color:#6b7280;text-decoration:none}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px}
+    .title{font-size:24px;font-weight:700;margin:8px 0}
+    .meta{display:flex;gap:14px;flex-wrap:wrap;color:#6b7280;font-size:14px}
+    .chips{display:flex;gap:8px;margin:12px 0}
+    .chip{border:1px solid #e5e7eb;border-radius:999px;padding:4px 10px;font-size:12px;background:#f9fafb;color:#374151}
+    .actions{display:flex;gap:10px;align-items:center;margin:14px 0}
+    .btn{background:#374151;color:#fff;border:none;border-radius:8px;padding:10px 14px;cursor:pointer}
+    .btn.primary{background:#2563eb}
+    .muted{color:#6b7280}
+    .divider{border-top:1px solid #e5e7eb;margin:16px 0}
+    .desc{white-space:pre-wrap}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container" style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;">
+      <a href="/" class="logo">TalentSync</a>
+      <a href="/jobs" class="back">← Back to Jobs</a>
+    </div>
+  </header>
+  <main class="container">
+    <div id="jobCard" class="card">
+      <div class="title" id="jobTitle">Loading...</div>
+      <div class="meta">
+        <div id="jobCompany">—</div>
+        <div id="jobLocation">—</div>
+        <div id="jobPosted">—</div>
+      </div>
+      <div class="chips">
+        <span class="chip" id="jobType">—</span>
+        <span class="chip" id="jobRemote">—</span>
+      </div>
+      <div class="actions">
+        <button class="btn primary" id="applyBtn">Apply Now</button>
+        <button class="btn" id="saveBtn" title="Save">♡ Save</button>
+        <button class="btn" id="flagBtn" title="Flag">⚑ Flag</button>
+      </div>
+      <div id="onSiteApply" class="card" style="display:none; padding:0; border:none; background:transparent;">
+        <div style="border:1px solid #e5e7eb; border-radius:12px; overflow:hidden;">
+          <div style="padding:12px 14px; background:linear-gradient(135deg,#2563eb,#3b82f6); color:#fff; display:flex; align-items:center; gap:8px;">
+            <span>📝</span>
+            <div style="font-weight:600">Quick Apply (No external link)</div>
+          </div>
+          <div style="padding:14px">
+            <p class="muted" style="margin:0 0 10px 0">We’ll send your application to the employer. Resume is optional.</p>
+            <form id="applyForm">
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <div>
+                  <label style="display:block; color:#6b7280; font-size:12px; margin-bottom:4px;">Full Name</label>
+                  <input id="aName" name="name" class="" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:8px;" required />
+                </div>
+                <div>
+                  <label style="display:block; color:#6b7280; font-size:12px; margin-bottom:4px;">Email</label>
+                  <input id="aEmail" name="email" type="email" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:8px;" required />
+                </div>
+              </div>
+              <div style="margin-top:10px;">
+                <label style="display:block; color:#6b7280; font-size:12px; margin-bottom:4px;">Resume (optional, PDF/DOC/DOCX, max 5MB)</label>
+                <input id="aResume" name="resume" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+              </div>
+              <div style="margin-top:10px;">
+                <label style="display:block; color:#6b7280; font-size:12px; margin-bottom:4px;">Message (optional)</label>
+                <textarea id="aCover" name="coverLetter" rows="4" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:8px;"></textarea>
+              </div>
+              <div style="display:flex; gap:10px; justify-content:flex-end; align-items:center; margin-top:12px;">
+                <button id="aSubmit" type="submit" class="btn primary">Send Application</button>
+              </div>
+              <div id="aStatus" style="display:none; margin-top:8px;"></div>
+            </form>
+          </div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div id="jobDescription" class="desc muted">Loading description...</div>
+      <div class="divider"></div>
+      <div style="display:flex;justify-content:center">
+        <button class="btn primary" id="applyBtnBottom" style="min-width:180px">Apply Now</button>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Utilities
+    function qs(k){return new URLSearchParams(location.search).get(k)}
+    const esc = s => (s??'').toString()
+      .replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+    function makeSafeJobId(job, idx){
+      const raw = String(job.id || job._id || (job.title && job.company ? `${job.title}-${job.company}` : (job.title || job.company || `job-${idx}`)));
+      return raw.toLowerCase().replace(/[^a-z0-9\-\s_]/g,'-').replace(/[\s_]+/g,'-').replace(/-+/g,'-').substring(0,120);
+    }
+    function fmtPosted(d){ try{ const t=new Date(d); if(!isNaN(t)) return t.toLocaleDateString(); }catch{} return '—'; }
+
+    const jobId = qs('jobId') || location.pathname.split('/').pop();
+    let job = null;
+
+    async function fetchJobViaApi(id){
+      try{ const r=await fetch(`/api/jobs/${encodeURIComponent(id)}`); if(!r.ok) return null; return await r.json(); }catch{ return null; }
+    }
+    async function findJobFromFeeds(id){
+      // Legacy feed
+      try{
+        const r=await fetch('/api/fresh?includeScraped=true');
+        const txt=await r.text();
+        let d; try{ d=JSON.parse(txt); }catch{ d=null; }
+        const arr=(d&&Array.isArray(d.jobs))?d.jobs:[];
+        let found = arr.find(j => String(j.id||j._id||'')===String(id));
+        if(!found){
+          found = arr.find((j,idx)=> makeSafeJobId(j, idx)===String(id));
+        }
+        if(found) return found;
+      }catch{}
+      // Mongo v2 fallback: scan first few pages
+      try{
+        let page=1; const limit=100; let all=[]; let totalPages=1; do{
+          const r=await fetch(`/api/jobs-v2?limit=${limit}&page=${page}`);
+          const d=await r.json().catch(()=>null); if(!d||d.success===false) break;
+          all = all.concat(Array.isArray(d.jobs)?d.jobs:[]);
+          totalPages = d.totalPages||1; page++;
+          if(page>3) break; // cap to 3 pages for speed
+        }while(page<=totalPages);
+        let found = all.find(j => String(j.id||j._id||'')===String(id));
+        if(!found){ found = all.find((j,idx)=> makeSafeJobId(j, idx)===String(id)); }
+        return found||null;
+      }catch{ return null; }
+    }
+
+    function renderJob(j){
+      document.getElementById('jobTitle').textContent = j.title || 'Job';
+      document.getElementById('jobCompany').textContent = j.company || '—';
+      document.getElementById('jobLocation').textContent = j.location || '—';
+      document.getElementById('jobPosted').textContent = fmtPosted(j.posted_date || j.datePosted || j.created_at || j.createdAt);
+      document.getElementById('jobType').textContent = j.job_type || '—';
+      document.getElementById('jobRemote').textContent = (j.remote ? 'Remote' : 'Onsite');
+      const desc = j.description || j.summary || 'No description available.';
+      document.getElementById('jobDescription').innerHTML = esc(desc).replace(/\n/g,'\n');
+
+      const ab = document.getElementById('applyBtn');
+      const abb = document.getElementById('applyBtnBottom');
+      const onSite = document.getElementById('onSiteApply');
+      if(j.url && /^https?:\/\//i.test(j.url)){
+        const openApply = () => window.open(j.url, '_blank');
+        ab.onclick = openApply; abb.onclick = openApply;
+        onSite.style.display = 'none';
+      } else {
+        // No external link: show on-site application form
+        onSite.style.display = 'block';
+        ab.style.display = 'none';
+        abb.style.display = 'none';
+        // Prefill from local storage if available
+        try {
+          const user = JSON.parse(localStorage.getItem('user')||'{}');
+          if (user && user.name) document.getElementById('aName').value = user.name;
+          if (user && user.email) document.getElementById('aEmail').value = user.email;
+        } catch {}
+      }
+    }
+
+    async function main(){
+      if(!jobId){ location.href='/jobs'; return; }
+      document.title = 'Job Details | TalentSync';
+      job = await fetchJobViaApi(jobId);
+      if(!job) job = await findJobFromFeeds(jobId);
+      if(!job){
+        document.getElementById('jobTitle').textContent = 'Job not found';
+        document.getElementById('jobDescription').textContent = 'We couldn\'t find that job. It might have been removed.';
+        document.getElementById('applyBtn').style.display='none';
+        document.getElementById('applyBtnBottom').style.display='none';
+        return;
+      }
+      renderJob(job);
+      // Handle on-site apply submission if enabled
+      const onSite = document.getElementById('onSiteApply');
+      if (onSite && onSite.style.display !== 'none') {
+        const form = document.getElementById('applyForm');
+        const statusEl = document.getElementById('aStatus');
+        form.onsubmit = async (e) => {
+          e.preventDefault();
+          // Client-side file validation
+          const file = document.getElementById('aResume').files[0];
+          if (file) {
+            const allowed = new Set([
+              'application/pdf',
+              'application/msword',
+              'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            ]);
+            const nameLower = (file.name || '').toLowerCase();
+            const okExt = nameLower.endsWith('.pdf') || nameLower.endsWith('.doc') || nameLower.endsWith('.docx');
+            if (!allowed.has(file.type) && !okExt) {
+              statusEl.style.display='block'; statusEl.style.color='#b91c1c'; statusEl.textContent='Only PDF, DOC, and DOCX files are allowed.'; return;
+            }
+            if (file.size > 5 * 1024 * 1024) { statusEl.style.display='block'; statusEl.style.color='#b91c1c'; statusEl.textContent='Resume file too large (max 5MB).'; return; }
+          }
+          const submitBtn = document.getElementById('aSubmit');
+          const original = submitBtn.textContent; submitBtn.disabled = true; submitBtn.textContent = 'Submitting...';
+          statusEl.style.display='none';
+          try {
+            const fd = new FormData(form);
+            const user = JSON.parse(localStorage.getItem('user')||'{}');
+            if (user && user.id) fd.append('userId', String(user.id));
+            const resp = await fetch(`/api/jobs/${encodeURIComponent(jobId)}/apply-on-site`, { method:'POST', body: fd });
+            let data={}; try { data = await resp.json(); } catch { data = { success:false, message:'Unknown response' }; }
+            statusEl.style.display='block';
+            if (resp.ok && data.success) {
+              statusEl.style.color='#166534'; statusEl.textContent='Thanks! Your application was sent to the employer.'; form.reset();
+            } else {
+              statusEl.style.color='#b91c1c'; statusEl.textContent = data.message || 'Failed to submit application.';
+            }
+          } catch (err) {
+            statusEl.style.display='block'; statusEl.style.color='#b91c1c'; statusEl.textContent='Network error. Please try again.';
+          } finally {
+            const submitBtn = document.getElementById('aSubmit'); submitBtn.disabled = false; submitBtn.textContent = original;
+          }
+        };
+      }
+    }
+    main();
+  </script>
+</body>
+</html>
