@@ -507,6 +507,30 @@
       $('#emktAdd').addEventListener('click', async ()=>{ const email=$('#emktNewEmail').value.trim(); if(!email) return; const name=$('#emktNewName').value.trim(); const r=await api.add(email,name); if(r.error){ setDiag(r.error); } else { setDiag('Added '+email); $('#emktNewEmail').value=''; $('#emktNewName').value=''; loadEmails(); }});
       const drop=$('#emktDrop'), csv=$('#emktCsv'); drop.addEventListener('click',()=>csv.click()); drop.addEventListener('dragover',e=>{e.preventDefault(); drop.classList.add('drag');}); drop.addEventListener('dragleave',()=>drop.classList.remove('drag')); drop.addEventListener('drop',e=>{ e.preventDefault(); drop.classList.remove('drag'); handleFiles(e.dataTransfer.files);}); csv.addEventListener('change',e=>handleFiles(e.target.files)); function handleFiles(list){ const f=[...list][0]; if(!f) return; if(!/\.csv$/i.test(f.name)){ setDiag('Upload CSV'); return;} const reader=new FileReader(); reader.onload=()=>{ const rows=reader.result.split(/\r?\n/).map(r=>r.trim()).filter(Boolean); const parsed=[]; rows.forEach(r=>{ const parts=r.split(',').map(s=>s.trim()); if(parts[0]&&parts[0].includes('@')) parsed.push({email:parts[0], name:parts[1]||''}); }); if(!parsed.length){ setDiag('No valid rows'); return;} $('#emktImportMsg').textContent=`Parsed ${parsed.length}`; api.import(parsed).then(r=>{ setDiag(r.error||r.message); loadEmails(); }); }; reader.readAsText(f); }
       async function sendCampaign(testOne=false){ if(selectedJobs.size===0){ setDiag('Select jobs'); return;} let targets=[...selectedEmails]; if(testOne){ const first=emails.find(e=> (e.status||'active')==='active'); if(!first){ setDiag('No active email'); return;} targets=[first.id]; } if(!targets.length){ setDiag('Select emails'); return;} const payload={ jobIds:[...selectedJobs], emailIds:targets, subject:$('#emktSubject').value.trim(), customMessage:$('#emktMsg').value.trim() }; const r=await api.send(payload); if(r.preview) previewHtml=r.preview; setDiag(r.error||r.message||'Sent'); loadEmails(); }
+      // Toast utility
+      function emktToast(msg,type='info'){ let box=document.getElementById('emktToastBox'); if(!box){ box=document.createElement('div'); box.id='emktToastBox'; box.style.cssText='position:fixed;top:12px;right:12px;z-index:9999;display:flex;flex-direction:column;gap:6px;'; document.body.appendChild(box);} const t=document.createElement('div'); t.textContent=msg; t.style.cssText='background:'+(type==='error'?'#dc2626':type==='warn'?'#f59e0b':'#334155')+';color:#fff;padding:8px 12px;border-radius:6px;font:500 12px system-ui;box-shadow:0 4px 12px rgba(0,0,0,.3);opacity:0;transform:translateY(-4px);transition:all .25s'; box.appendChild(t); requestAnimationFrame(()=>{t.style.opacity='1'; t.style.transform='translateY(0)';}); setTimeout(()=>{ t.style.opacity='0'; t.style.transform='translateY(-4px)'; setTimeout(()=>t.remove(),300); }, 3500); }
+      async function sendCampaign(testOne=false){
+        try{
+          const btn = testOne? $('#emktQuick') : $('#emktSendBtn');
+          if(selectedJobs.size===0){ emktToast('Pick at least one job','warn'); setDiag('Select jobs'); return; }
+          let targets=[...selectedEmails];
+          if(testOne){ const first=emails.find(e=> (e.status||'active')==='active'); if(!first){ emktToast('No active email subscriber','error'); setDiag('No active email'); return;} targets=[first.id]; }
+          if(!targets.length){ emktToast('Select or import emails first','warn'); setDiag('Select emails'); return; }
+          const subj=$('#emktSubject').value.trim(); const msg=$('#emktMsg').value.trim();
+          if(!subj){ emktToast('Add a subject','warn'); setDiag('Subject required'); return; }
+          const payload={ jobIds:[...selectedJobs], emailIds:targets, subject:subj, customMessage:msg };
+          btn && (btn.disabled=true, btn.dataset.prev=btn.textContent, btn.textContent='Sending...');
+          emktToast(testOne?'Sending test email...':'Sending campaign...','info');
+          const r=await api.send(payload).catch(err=>({ error: err.message||'Network error' }));
+          if(r.preview) previewHtml=r.preview;
+          if(r.error){ emktToast(r.error,'error'); setDiag(r); }
+          else { emktToast(r.message||'Sent','info'); setDiag(r.message||'Sent'); }
+          loadEmails();
+        } finally {
+          const b1=$('#emktSendBtn'); const b2=$('#emktQuick');
+          [b1,b2].forEach(b=>{ if(b && b.dataset.prev){ b.textContent=b.dataset.prev; b.disabled=false; delete b.dataset.prev; }});
+        }
+      }
       $('#emktSendBtn').addEventListener('click',()=>sendCampaign(false)); $('#emktSendAll').addEventListener('click',()=>sendCampaign(false)); $('#emktQuick').addEventListener('click',()=>sendCampaign(true));
       $('#emktPreviewBtn').addEventListener('click',()=>{ if(!previewHtml){ setDiag('Send test or campaign first for preview'); } $('#emktPreview').innerHTML=previewHtml||'<em>No preview</em>'; $('#emktPreviewWrap').style.display='flex'; }); $('#emktClosePrev').addEventListener('click',()=> $('#emktPreviewWrap').style.display='none');
       $('#emktVerify').addEventListener('click', async ()=>{ setDiag('Verifying...'); const r=await api.verify(); setDiag(r); }); $('#emktLast').addEventListener('click', async ()=>{ setDiag('Loading last...'); const r=await api.last(); setDiag(r); });
