@@ -9,15 +9,34 @@ function buildTransport() {
     console.warn('✉️  Ignoring invalid SMTP_HOST', invalidHost, '— falling back to Gmail service. Remove it from env to silence this message.');
   }
   if (hasSmtp) {
-    return nodemailer.createTransport({
+    const transport = nodemailer.createTransport({
       host: usingEnvHost,
       port: Number(process.env.SMTP_PORT || 587),
       secure: String(process.env.SMTP_SECURE || 'false').toLowerCase() === 'true',
+      connectionTimeout: 8000, // 8s connect timeout
+      greetingTimeout: 8000,
+      socketTimeout: 12000,
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS?.replace(/[\s-]/g, '')
       }
     });
+    // Wrap send to auto-fallback if connection timeout occurs
+    const originalSend = transport.send.bind(transport);
+    transport.send = function(mail, callback){
+      originalSend(mail, function(err, info){
+        if(err && /timeout/i.test(err.message||'')){
+          console.warn('✉️  SMTP timeout – auto-falling back to Gmail service for this send.');
+          const fallback = nodemailer.createTransport({
+            service: 'gmail',
+            auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS?.replace(/[\s-]/g,'') }
+          });
+          return fallback.send(mail, callback);
+        }
+        callback(err, info);
+      });
+    };
+    return transport;
   }
   return nodemailer.createTransport({
     service: 'gmail',
