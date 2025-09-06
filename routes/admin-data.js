@@ -913,6 +913,18 @@ router.post('/email/test', async (req, res) => {
     }
 });
 
+// Fetch last campaign debug info
+router.get('/email/last-campaign', async (req, res) => {
+    try {
+        const filePath = path.join(__dirname, '../data', 'last_email_campaign.json');
+        if (!require('fs').existsSync(filePath)) return res.json({ found:false });
+        const raw = await fs.readFile(filePath, 'utf8');
+        return res.json({ found:true, data: JSON.parse(raw) });
+    } catch (e) {
+        return res.status(500).json({ error:'read_failed' });
+    }
+});
+
 // Update application status
 router.put('/applications/status', async (req, res) => {
     try {

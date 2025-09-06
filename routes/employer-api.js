@@ -107,12 +107,14 @@ async function sendCampaignForJob(job) {
   try {
     if (!isEmailConfigured()) {
       console.warn('Email not configured (missing EMAIL_USER/EMAIL_PASS). Skipping job campaign.');
+  try { await writeJsonSafe(dataPath('last_email_campaign.json'), { source:'employer', at:new Date().toISOString(), jobTitle: job.title, reason:'not_configured', configured:false }); } catch(_){}
       return { sent: 0, failed: 0 };
     }
     // Verify transport/auth once to avoid repeating failures for each recipient
     const ok = await verifyEmailTransport();
     if (!ok) {
       console.warn('Skipping job campaign due to invalid email credentials.');
+  try { await writeJsonSafe(dataPath('last_email_campaign.json'), { source:'employer', at:new Date().toISOString(), jobTitle: job.title, reason:'verify_failed', configured:true }); } catch(_){}
       return { sent: 0, failed: 0 };
     }
     let emails = await readJsonSafe(dataPath('email_list.json'), []);
@@ -129,6 +131,7 @@ async function sendCampaignForJob(job) {
     });
     if (recipients.length === 0) {
       console.log('No subscribers found; skipping job campaign');
+  try { await writeJsonSafe(dataPath('last_email_campaign.json'), { source:'employer', at:new Date().toISOString(), jobTitle: job.title, reason:'no_subscribers', configured:true }); } catch(_){}
       return { sent: 0, failed: 0 };
     }
 
@@ -164,9 +167,11 @@ async function sendCampaignForJob(job) {
     console.log(`Job campaign completed. Sent=${sent}, Failed=${failed}`);
     // Persist updated email_list.json counters
     try { await writeJsonSafe(dataPath('email_list.json'), emails); } catch (_) {}
+  try { await writeJsonSafe(dataPath('last_email_campaign.json'), { source:'employer', at:new Date().toISOString(), jobTitle: job.title, sent, failed, recipientCount: recipients.length, subject, internalLink: applyUrl }); } catch(_){}
     return { sent, failed };
   } catch (e) {
     console.error('Campaign send error:', e);
+  try { await writeJsonSafe(dataPath('last_email_campaign.json'), { source:'employer', at:new Date().toISOString(), jobTitle: job?.title, error: e?.message || String(e) }); } catch(_){}
     return { sent: 0, failed: 0 };
   }
 }
