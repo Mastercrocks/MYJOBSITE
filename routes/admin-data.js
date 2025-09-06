@@ -41,6 +41,11 @@ async function writeJSONFile(filename, data) {
 async function sendNewJobEmailCampaign(newJob) {
     try {
         console.log(`📧 Starting auto email campaign for: ${newJob.title}`);
+        const debugFile = path.join(__dirname, '../data', 'last_email_campaign.json');
+        async function writeDebug(obj){
+            try { await fs.writeFile(debugFile, JSON.stringify({ source:'admin', ...obj }, null, 2)); } catch(_){ }
+        }
+        await writeDebug({ at:new Date().toISOString(), jobTitle:newJob.title, status:'starting' });
         
     // Get email list: all active subscribers (do not restrict to a specific type)
     let emailList = await readJSONFile('email_list.json');
@@ -49,16 +54,19 @@ async function sendNewJobEmailCampaign(newJob) {
         
         if (!emailList || emailList.length === 0) {
             console.log('📭 No email subscribers found - skipping auto campaign');
+            await writeDebug({ at:new Date().toISOString(), jobTitle:newJob.title, reason:'no_subscribers', status:'skipped' });
             return;
         }
 
         if (!isEmailConfigured()) {
             console.warn('✉️  Email not configured. Skipping job campaign.');
+            await writeDebug({ at:new Date().toISOString(), jobTitle:newJob.title, reason:'not_configured', status:'skipped' });
             return { success: false, sent: 0, failed: 0, reason: 'not_configured' };
         }
         const ok = await verifyEmailTransport();
         if (!ok) {
             console.warn('✉️  Email transport verification failed. Skipping job campaign.');
+            await writeDebug({ at:new Date().toISOString(), jobTitle:newJob.title, reason:'verify_failed', status:'skipped' });
             return { success: false, sent: 0, failed: 0, reason: 'verify_failed' };
         }
 
@@ -211,6 +219,7 @@ async function sendNewJobEmailCampaign(newJob) {
         console.log(`   ✅ Sent successfully: ${successCount}`);
         console.log(`   ❌ Failed: ${failCount}`);
         console.log(`   📧 Total subscribers: ${emailList.length}`);
+    await writeDebug({ at:new Date().toISOString(), jobTitle:newJob.title, sent:successCount, failed:failCount, recipientCount:emailList.length, subject:emailSubject, deepLink });
         
     // Log the campaign
     const campaigns = await readJSONFile('email_campaigns.json');
@@ -247,6 +256,7 @@ async function sendNewJobEmailCampaign(newJob) {
         
     } catch (error) {
         console.error('❌ Auto email campaign error:', error);
+    try { const debugFile = path.join(__dirname, '../data', 'last_email_campaign.json'); await fs.writeFile(debugFile, JSON.stringify({ source:'admin', at:new Date().toISOString(), jobTitle:newJob?.title, error:error?.message||String(error) }, null, 2)); } catch(_){}
         throw error;
     }
 }
