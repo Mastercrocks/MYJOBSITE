@@ -264,6 +264,15 @@
                 <div class="pillx active" data-type="student">Students</div>
                 <div class="pillx" data-type="employer">Employers</div>
                 <div class="pillx" data-type="all">All</div>
+              <div class="panel">
+                <h4>Email Logs</h4>
+                <div class="muted" style="font-size:12px">Last 100 email events (auto-refresh when opened)</div>
+                <div style="display:flex;gap:6px;margin:8px 0 6px">
+                  <button id="emktBtnLoadLogs" class="btn-secondary">Refresh Logs</button>
+                  <button id="emktBtnClearLogs" class="btn-secondary" title="Clears only in-browser view">Clear View</button>
+                </div>
+                <div id="emktLogs" style="max-height:160px;overflow:auto;font-size:11px;line-height:1.3;background:#0f172a;padding:8px;border-radius:6px;color:#f1f5f9"></div>
+              </div>
               </div>
               <div class="scroll"><table><thead><tr><th style="width:22px"><input type="checkbox" id="emktAll"></th><th>Email</th><th>T</th><th>S</th><th>Sent</th></tr></thead><tbody id="emktEmails"><tr><td colspan="5" style="padding:10px;text-align:center;color:#64748b">Loading...</td></tr></tbody></table></div>
               <div class="actions"><span style="font-size:10px;color:#60a5fa;font-weight:600" id="emktSelStats">0 selected</span><button id="emktPause">Pause</button><button id="emktAct">Activate</button><button id="emktDel">Delete</button></div>
@@ -481,7 +490,8 @@
         jobs:()=>fetch('/api/admin/jobs').then(r=>r.json()),
         send:(p)=>fetch('/api/admin/send-job-emails',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)}).then(r=>r.json()),
         verify:()=>fetch('/api/admin/email/diagnostics').then(r=>r.json()),
-        last:()=>fetch('/api/admin/email/last-campaign').then(r=>r.json())
+        last:()=>fetch('/api/admin/email/last-campaign').then(r=>r.json()),
+        logs:()=>fetch('/api/admin/email/logs').then(r=>r.json())
       };
       function setDiag(msg){ const box=$('#emktDiag'); if(box) box.textContent= (typeof msg==='string')?msg: JSON.stringify(msg,null,2);} 
       function renderEmails(){ const body=$('#emktEmails'); if(!body) return; if(!emails.length){ body.innerHTML='<tr><td colspan="5" style="padding:10px;text-align:center;color:#64748b">No emails</td></tr>'; updCounts(); return;} body.innerHTML=emails.map(e=>`<tr><td><input type="checkbox" data-id="${e.id}" ${selectedEmails.has(e.id)?'checked':''} ${(e.status||'active')!=='active'?'disabled':''}></td><td>${e.email}</td><td><span class="badge">${e.type||'student'}</span></td><td><span class="status ${(e.status||'active')==='active'?'active':'inactive'}">${e.status||'active'}</span></td><td>${e.totalEmailsSent||0}</td></tr>`).join(''); updCounts(); }
@@ -500,7 +510,13 @@
       $('#emktSendBtn').addEventListener('click',()=>sendCampaign(false)); $('#emktSendAll').addEventListener('click',()=>sendCampaign(false)); $('#emktQuick').addEventListener('click',()=>sendCampaign(true));
       $('#emktPreviewBtn').addEventListener('click',()=>{ if(!previewHtml){ setDiag('Send test or campaign first for preview'); } $('#emktPreview').innerHTML=previewHtml||'<em>No preview</em>'; $('#emktPreviewWrap').style.display='flex'; }); $('#emktClosePrev').addEventListener('click',()=> $('#emktPreviewWrap').style.display='none');
       $('#emktVerify').addEventListener('click', async ()=>{ setDiag('Verifying...'); const r=await api.verify(); setDiag(r); }); $('#emktLast').addEventListener('click', async ()=>{ setDiag('Loading last...'); const r=await api.last(); setDiag(r); });
-      $('#emktPause').addEventListener('click',()=>{ emails.filter(e=>selectedEmails.has(e.id)).forEach(e=>e.status='inactive'); renderEmails(); setDiag('Locally paused'); });
+  $('#emktPause').addEventListener('click',()=>{ emails.filter(e=>selectedEmails.has(e.id)).forEach(e=>e.status='inactive'); renderEmails(); setDiag('Locally paused'); });
+  // Email logs UI handlers if panel exists
+  const logsBox=document.getElementById('emktLogs');
+  async function loadEmailLogs(){ if(!logsBox) return; logsBox.innerHTML='<div class="muted">Loading...</div>'; try{ const r=await api.logs(); if(!r.success){ logsBox.innerHTML='<div class="muted">Failed</div>'; return;} if(!r.logs.length){ logsBox.innerHTML='<div class="muted">No events</div>'; return;} logsBox.innerHTML=r.logs.map(l=>`<div><span style=\"color:#38bdf8\">${new Date(l.time).toLocaleTimeString()}</span> <span style=\"color:${l.level==='warn'?'#fbbf24':'#94a3b8'}\">${l.level}</span> <span>${(l.msg||'').replace(/</g,'&lt;')}</span></div>`).join(''); }catch{ logsBox.innerHTML='<div class="muted">Error</div>'; } }
+  const btnLog=document.getElementById('emktBtnLoadLogs'); if(btnLog) btnLog.addEventListener('click',loadEmailLogs);
+  const btnClear=document.getElementById('emktBtnClearLogs'); if(btnClear) btnClear.addEventListener('click',()=>{ if(logsBox) logsBox.innerHTML='<div class="muted">Cleared</div>'; });
+  if(logsBox) loadEmailLogs();
       $('#emktAct').addEventListener('click',()=>{ emails.filter(e=>selectedEmails.has(e.id)).forEach(e=>e.status='active'); renderEmails(); setDiag('Locally activated'); });
       $('#emktDel').addEventListener('click',()=>{ emails=emails.filter(e=>!selectedEmails.has(e.id)); selectedEmails.clear(); renderEmails(); setDiag('Locally removed'); });
       // When email tab activated first time load data
