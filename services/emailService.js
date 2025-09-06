@@ -29,6 +29,7 @@ function buildTransport() {
   });
 }
 
+let lastVerifyError = null;
 const transporter = buildTransport();
 
 function isEmailConfigured() {
@@ -87,12 +88,15 @@ async function sendJobMarketingEmail({ to, subject, text, html }) {
 async function verifyEmailTransport() {
   try {
     // nodemailer verify attempts to connect and authenticate
-    await transporter.verify();
-    return true;
+  await transporter.verify();
+  lastVerifyError = null;
+  return true;
   } catch (e) {
     console.warn('✉️  Email transport verify failed:', e?.message || e);
+  lastVerifyError = e?.message || String(e);
     return false;
   }
 }
+function getLastVerifyError(){ return lastVerifyError; }
 
-module.exports = { sendAccountEmail, sendJobMarketingEmail, isEmailConfigured, getEmailStatus, verifyEmailTransport };
+module.exports = { sendAccountEmail, sendJobMarketingEmail, isEmailConfigured, getEmailStatus, verifyEmailTransport, getLastVerifyError };

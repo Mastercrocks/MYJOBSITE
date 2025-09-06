@@ -885,6 +885,7 @@ router.get('/email/diagnostics', async (req, res) => {
     try {
         const configured = isEmailConfigured();
         let transportOk = false;
+        const { getLastVerifyError } = require('../services/emailService');
         if (configured) {
             try { transportOk = await verifyEmailTransport(); } catch (_) { transportOk = false; }
         }
@@ -896,7 +897,8 @@ router.get('/email/diagnostics', async (req, res) => {
             subscribers: active.length,
             sample: active.slice(0,5).map(e => e.email),
             adminNotifySet: !!process.env.ADMIN_NOTIFY_EMAIL,
-            mode: process.env.SMTP_HOST ? 'smtp' : 'gmail'
+            mode: process.env.SMTP_HOST ? 'smtp' : 'gmail',
+            verifyError: transportOk ? null : getLastVerifyError()
         });
     } catch (e) {
         res.status(500).json({ error: 'diag_failed' });
