@@ -202,16 +202,113 @@
                     </section>
 
                     <section id="s-email" class="section">
-                        <div class="card">
-                            <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px">
-                                <div style="font-weight:600">Email Marketing</div>
-                                <div class="toolbar"><button class="btn" id="btnTest" onclick="testEmail()">Send Test Email</button></div>
+                        <div class="card" style="padding:0; border:none; background:transparent;">
+                            <style>
+                                /* Integrated Email Marketing Styles (scoped by #emailMarketingApp) */
+                                #emailMarketingApp{display:grid;gap:14px}
+                                #emailMarketingApp .emkt-grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
+                                #emailMarketingApp .emkt-panel{background:#0f172a;border:1px solid #1f2937;border-radius:14px;padding:16px;position:relative}
+                                #emailMarketingApp h3{margin:0 0 10px;font-size:13px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:#94a3b8}
+                                #emailMarketingApp .emkt-pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+                                #emailMarketingApp .emkt-pill{background:#1e293b;color:#cbd5e1;padding:6px 12px;border-radius:999px;font-size:12px;cursor:pointer;font-weight:500}
+                                #emailMarketingApp .emkt-pill.active{background:#3b82f6;color:#fff}
+                                #emailMarketingApp table{width:100%;border-collapse:collapse;font-size:12px}
+                                #emailMarketingApp th,#emailMarketingApp td{padding:6px 8px;border-bottom:1px solid #1f2937;text-align:left}
+                                #emailMarketingApp th{font-weight:600;color:#94a3b8;background:#0b1220;position:sticky;top:0}
+                                #emailMarketingApp tbody tr:hover td{background:#0b1626}
+                                #emailMarketingApp .emkt-scroll{max-height:300px;overflow:auto;border:1px solid #1f2937;border-radius:10px}
+                                #emailMarketingApp input, #emailMarketingApp textarea{background:#0b1220;border:1px solid #1f2937;color:#e5e7eb;border-radius:8px;padding:8px;font:inherit;width:100%}
+                                #emailMarketingApp textarea{min-height:80px;resize:vertical}
+                                #emailMarketingApp button{cursor:pointer;border:1px solid #1f2937;background:#132033;color:#e5e7eb;border-radius:8px;padding:8px 12px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+                                #emailMarketingApp button.primary{background:#2563eb;border-color:#2563eb}
+                                #emailMarketingApp button.primary:hover{background:#1d4ed8}
+                                #emailMarketingApp button.outline{background:transparent;border-color:#2563eb;color:#3b82f6}
+                                #emailMarketingApp button.outline:hover{background:#0b1626}
+                                #emailMarketingApp .emkt-badge{background:#1e293b;color:#93c5fd;padding:2px 6px;font-size:10px;border-radius:6px;text-transform:uppercase}
+                                #emailMarketingApp .status{padding:3px 6px;border-radius:6px;font-size:10px;font-weight:600}
+                                #emailMarketingApp .status.active{background:#065f46;color:#bbf7d0}
+                                #emailMarketingApp .status.inactive{background:#7f1d1d;color:#fecaca}
+                                #emailMarketingApp .job-list{max-height:300px;overflow:auto;border:1px solid #1f2937;border-radius:10px;padding:6px;display:flex;flex-direction:column;gap:6px}
+                                #emailMarketingApp .job-item{border:1px solid #1f2937;border-radius:10px;padding:10px;background:#0b1220;cursor:pointer;font-size:12px;line-height:1.3}
+                                #emailMarketingApp .job-item:hover{background:#132033}
+                                #emailMarketingApp .job-item.selected{border-color:#2563eb;background:#10274b}
+                                #emailMarketingApp .emkt-flex{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+                                #emailMarketingApp .emkt-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+                                #emailMarketingApp .file-drop{border:2px dashed #334155;border-radius:12px;padding:18px;text-align:center;font-size:12px;color:#94a3b8;cursor:pointer}
+                                #emailMarketingApp .file-drop.drag{background:#10274b;border-color:#2563eb;color:#93c5fd}
+                                #emailMarketingApp .emkt-stats{font-size:11px;color:#60a5fa;font-weight:600}
+                                #emailMarketingApp .diag{background:#0b1220;border:1px solid #1f2937;border-radius:10px;padding:10px;font-size:11px;white-space:pre-wrap;max-height:220px;overflow:auto;color:#e5e7eb}
+                                #emailMarketingApp .preview-wrap{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-start;justify-content:center;padding:40px;z-index:100}
+                                #emailMarketingApp .preview{background:#0f172a;border:1px solid #1f2937;border-radius:16px;max-width:760px;width:100%;max-height:80vh;overflow:auto;padding:24px;position:relative}
+                                #emailMarketingApp .close-btn{position:absolute;top:10px;right:10px;background:#1e293b}
+                            </style>
+                            <div id="emailMarketingApp">
+                                <div class="emkt-flex" style="justify-content:space-between;align-items:center">
+                                    <div>
+                                        <h3 style="margin:0;font-size:15px;letter-spacing:0;text-transform:none;color:#e5e7eb">📧 Email Marketing Suite</h3>
+                                        <div style="font-size:12px;color:#94a3b8">Manage subscribers, pick jobs, compose & send</div>
+                                    </div>
+                                    <div class="emkt-flex">
+                                        <button class="outline" id="emktVerifyBtn">🔐 Verify Login</button>
+                                        <button class="primary" id="emktSendBtn">🚀 Send Campaign</button>
+                                    </div>
+                                </div>
+                                <div class="emkt-grid" style="margin-top:8px" id="emktTopGrid">
+                                    <div class="emkt-panel" id="emktAudiencePanel">
+                                        <h3>Audience</h3>
+                                        <div class="emkt-pills" id="emktSegPills">
+                                            <div class="emkt-pill active" data-type="student">Students</div>
+                                            <div class="emkt-pill" data-type="employer">Employers</div>
+                                            <div class="emkt-pill" data-type="all">All</div>
+                                        </div>
+                                        <div class="emkt-scroll"><table><thead><tr><th style="width:26px"><input type="checkbox" id="emktSelectAll"></th><th>Email</th><th>Type</th><th>Status</th><th>Sent</th></tr></thead><tbody id="emktEmailBody"><tr><td colspan="5" style="padding:14px;text-align:center;color:#64748b">Loading...</td></tr></tbody></table></div>
+                                        <div class="emkt-actions">
+                                            <span class="emkt-stats" id="emktEmailStats">0 selected</span>
+                                            <button id="emktPauseBtn">Pause</button>
+                                            <button id="emktActivateBtn">Activate</button>
+                                            <button id="emktDeleteBtn">Delete</button>
+                                        </div>
+                                        <div style="margin-top:10px;border-top:1px solid #1f2937;padding-top:10px">
+                                            <div class="emkt-flex" style="width:100%">
+                                                <input type="email" id="emktNewEmail" placeholder="student@example.com" style="flex:1" />
+                                                <input type="text" id="emktNewName" placeholder="Name" style="flex:1" />
+                                                <button class="primary" id="emktAddBtn">Add</button>
+                                            </div>
+                                            <div class="file-drop" id="emktFileDrop" style="margin-top:10px">Drop CSV or Click (email,name)</div>
+                                            <input type="file" id="emktCsvInput" accept=".csv" style="display:none" />
+                                            <div style="font-size:11px;color:#64748b;margin-top:6px" id="emktImportMsg"></div>
+                                        </div>
+                                    </div>
+                                    <div class="emkt-panel" id="emktJobsPanel">
+                                        <h3>Jobs (Pick up to 5)</h3>
+                                        <div class="job-list" id="emktJobList"><div style="padding:6px;font-size:12px;color:#64748b">Loading jobs...</div></div>
+                                    </div>
+                                    <div class="emkt-panel" id="emktComposerPanel" style="grid-column:span 2">
+                                        <h3>Composer</h3>
+                                        <label style="font-size:11px;font-weight:600;color:#93c5fd;display:block;margin-bottom:4px">Subject</label>
+                                        <input id="emktSubject" placeholder="Exciting new roles just posted" />
+                                        <label style="font-size:11px;font-weight:600;color:#93c5fd;display:block;margin:10px 0 4px">Intro Message (optional)</label>
+                                        <textarea id="emktMessage" placeholder="Short intro paragraph..."></textarea>
+                                        <div class="emkt-flex" style="justify-content:space-between;margin-top:10px">
+                                            <div class="emkt-stats" id="emktCounts">0 emails • 0 jobs</div>
+                                            <div class="emkt-flex">
+                                                <button class="outline" id="emktPreviewBtn">👁 Preview</button>
+                                                <button class="primary" id="emktSendBtn2">🚀 Send Now</button>
+                                            </div>
+                                        </div>
+                                        <div style="margin-top:10px;font-size:11px;color:#64748b">Verify login first if you previously had credential errors.</div>
+                                    </div>
+                                    <div class="emkt-panel" id="emktDiagPanel" style="grid-column:span 2">
+                                        <h3>Diagnostics</h3>
+                                        <div class="emkt-flex" style="margin-bottom:6px">
+                                            <button id="emktLastCampaignBtn">📄 Last Campaign Log</button>
+                                            <button id="emktQuickTestBtn">⚡ Quick Test</button>
+                                        </div>
+                                        <div class="diag" id="emktDiagBox">Click Verify Login...</div>
+                                    </div>
+                                </div>
+                                <div class="preview-wrap" id="emktPreviewWrap"><div class="preview"><button class="close-btn" id="emktClosePreview">✕</button><div id="emktPreviewContent" style="font-size:12px;color:#e5e7eb">Generating preview...</div></div></div>
                             </div>
-                            <div class="row">
-                                <div class="card" style="flex:1"><div class="kpi"><div class="lbl">Student Subscribers</div><div class="val" id="kStudents">0</div></div></div>
-                                <div class="card" style="flex:1"><div class="kpi"><div class="lbl">Employer Subscribers</div><div class="val" id="kEmployers">0</div></div></div>
-                            </div>
-                            <div id="emailMsg" class="muted" style="margin-top:8px">Use Send Test Email to verify setup.</div>
                         </div>
                     </section>
 
@@ -4401,5 +4498,50 @@ ${app.coverLetter || 'No cover letter provided'}
             }
         };
     </script>
+        <script>
+        // --- Integrated Email Marketing Suite Logic ---
+        (function(){
+            const sel=e=>document.querySelector(e); const all=e=>Array.from(document.querySelectorAll(e));
+            // Only run if section exists
+            if(!document.getElementById('emailMarketingApp')) return;
+            let currentType='student'; let emails=[]; let selectedEmailIds=new Set(); let jobs=[]; let selectedJobIds=new Set(); let lastPreviewHtml='';
+            const api={
+                list:(type)=>fetch(`/api/admin/email-list${type&&type!=='all'?`?type=${type}`:''}`).then(r=>r.json()),
+                add:(email,name)=>fetch('/api/admin/email-list',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,name,type:'student'})}).then(r=>r.json()),
+                import:(rows)=>fetch('/api/admin/email-list/import',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({emails:rows,type:'student'})}).then(r=>r.json()),
+                jobs:()=>fetch('/api/admin/jobs').then(r=>r.json()),
+                send:(payload)=>fetch('/api/admin/send-job-emails',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).then(r=>r.json()),
+                verify:()=>fetch('/api/admin/email/diagnostics').then(r=>r.json()),
+                last:()=>fetch('/api/admin/email/last-campaign').then(r=>r.json())
+            };
+            function stats(msg,ok=true){ const box=sel('#emktDiagBox'); if(box){ box.textContent=(typeof msg==='string')?msg:JSON.stringify(msg,null,2);} if(!ok) console.warn(msg); }
+            function renderEmails(){ const body=sel('#emktEmailBody'); if(!body) return; if(!emails.length){ body.innerHTML='<tr><td colspan="5" style="padding:14px;text-align:center;color:#64748b">No emails</td></tr>'; updateCounts(); return;} body.innerHTML=emails.map(e=>`<tr data-id="${e.id}"><td><input type="checkbox" data-id="${e.id}" ${selectedEmailIds.has(e.id)?'checked':''} ${(e.status||'active')!=='active'?'disabled':''}></td><td>${e.email}</td><td><span class="emkt-badge">${e.type||'student'}</span></td><td><span class="status ${(e.status||'active')==='active'?'active':'inactive'}">${e.status||'active'}</span></td><td>${e.totalEmailsSent||0}</td></tr>`).join(''); updateCounts(); }
+            function renderJobs(){ const list=sel('#emktJobList'); if(!list) return; if(!jobs.length){ list.innerHTML='<div style="padding:6px;font-size:12px;color:#64748b">No jobs</div>'; updateCounts(); return;} list.innerHTML=jobs.slice(-60).reverse().map(j=>`<div class="job-item ${selectedJobIds.has(String(j.id))?'selected':''}" data-id="${j.id}"><strong>${j.title}</strong><br><span style="opacity:.7">${j.company} • ${j.location}</span></div>`).join(''); updateCounts(); }
+            function updateCounts(){ const c=sel('#emktCounts'); const es=sel('#emktEmailStats'); const emailsCount=selectedEmailIds.size; const jobsCount=selectedJobIds.size; if(c) c.textContent=`${emailsCount} emails • ${jobsCount} jobs`; if(es) es.textContent=`${emailsCount} selected`; }
+            async function loadEmails(){ const data=await api.list(currentType); emails=(data.emails||[]); selectedEmailIds.clear(); renderEmails(); }
+            async function loadJobs(){ const data=await api.jobs(); jobs=(data.jobs||[]).filter(j=>j.status==='active'); renderJobs(); }
+            // Events
+            sel('#emktSegPills').addEventListener('click',e=>{ const pill=e.target.closest('.emkt-pill'); if(!pill) return; all('#emktSegPills .emkt-pill').forEach(p=>p.classList.remove('active')); pill.classList.add('active'); currentType=pill.dataset.type; loadEmails(); });
+            sel('#emktEmailBody').addEventListener('change',e=>{ if(e.target.type==='checkbox'){ const id=e.target.dataset.id; if(e.target.checked) selectedEmailIds.add(id); else selectedEmailIds.delete(id); updateCounts(); }});
+            sel('#emktSelectAll').addEventListener('change',e=>{ if(e.target.checked){ emails.filter(e=> (e.status||'active')==='active').forEach(e=>selectedEmailIds.add(e.id)); } else { selectedEmailIds.clear(); } renderEmails(); });
+            sel('#emktJobList').addEventListener('click',e=>{ const item=e.target.closest('.job-item'); if(!item) return; const id=String(item.dataset.id); if(selectedJobIds.has(id)) selectedJobIds.delete(id); else { if(selectedJobIds.size>=5){ stats('Max 5 jobs per campaign',false); return;} selectedJobIds.add(id);} renderJobs(); });
+            sel('#emktAddBtn').addEventListener('click', async ()=>{ const email=sel('#emktNewEmail').value.trim(); if(!email) return; const name=sel('#emktNewName').value.trim(); const r=await api.add(email,name); if(r.error){ stats(r.error,false);} else { stats('Added '+email); sel('#emktNewEmail').value=''; sel('#emktNewName').value=''; loadEmails(); }});
+            function parseCsv(text){ const rows=text.split(/\r?\n/).map(r=>r.trim()).filter(Boolean); const out=[]; rows.forEach(line=>{ const parts=line.split(',').map(s=>s.trim()); if(parts[0]&&parts[0].includes('@')) out.push({email:parts[0], name:parts[1]||''}); }); return out; }
+            const fileDrop=sel('#emktFileDrop'); const csvInput=sel('#emktCsvInput'); fileDrop.addEventListener('click',()=>csvInput.click()); fileDrop.addEventListener('dragover',e=>{e.preventDefault(); fileDrop.classList.add('drag');}); fileDrop.addEventListener('dragleave',()=>fileDrop.classList.remove('drag')); fileDrop.addEventListener('drop',e=>{ e.preventDefault(); fileDrop.classList.remove('drag'); handleFiles(e.dataTransfer.files);}); csvInput.addEventListener('change',e=>handleFiles(e.target.files)); function handleFiles(list){ const f=[...list][0]; if(!f) return; if(!/\.csv$/i.test(f.name)){ stats('Upload a CSV',false); return;} const reader=new FileReader(); reader.onload=()=>{ const parsed=parseCsv(reader.result); if(!parsed.length){ stats('No valid rows',false); return;} sel('#emktImportMsg').textContent=`Parsed ${parsed.length} emails`; api.import(parsed).then(r=>{ if(r.error) stats(r.error,false); else { stats(r.message); loadEmails(); }}); }; reader.readAsText(f);} 
+            async function sendCampaign(testSingle=false){ if(selectedJobIds.size===0){ stats('Select at least 1 job',false); return;} let targetIds=[...selectedEmailIds]; if(testSingle){ if(!emails.length){ stats('No emails',false); return;} const first=emails.find(e=> (e.status||'active')==='active'); if(!first){ stats('No active email',false); return;} targetIds=[first.id]; }
+                if(targetIds.length===0){ stats('Select at least 1 email',false); return;} const payload={ jobIds:[...selectedJobIds], emailIds:targetIds, subject: sel('#emktSubject').value.trim(), customMessage: sel('#emktMessage').value.trim() }; const resp=await api.send(payload); if(resp.preview) lastPreviewHtml=resp.preview; stats(resp.error?resp.error:resp.message||'Sent'); loadEmails(); }
+            sel('#emktSendBtn').addEventListener('click',()=>sendCampaign(false)); sel('#emktSendBtn2').addEventListener('click',()=>sendCampaign(false)); sel('#emktQuickTestBtn').addEventListener('click',()=>sendCampaign(true));
+            sel('#emktPreviewBtn').addEventListener('click', async ()=>{ if(!lastPreviewHtml){ if(selectedJobIds.size===0){ stats('Pick jobs first',false); return;} await sendCampaign(true); } sel('#emktPreviewContent').innerHTML= lastPreviewHtml || '<em>No preview</em>'; sel('#emktPreviewWrap').style.display='flex'; }); sel('#emktClosePreview').addEventListener('click',()=> sel('#emktPreviewWrap').style.display='none');
+            sel('#emktVerifyBtn').addEventListener('click', async ()=>{ stats('Verifying...'); const r=await api.verify(); stats(r); }); sel('#emktLastCampaignBtn').addEventListener('click', async ()=>{ stats('Loading last campaign...'); const r=await api.last(); stats(r); });
+            // Local pause/activate/delete (non-persistent bulk UI actions for now)
+            sel('#emktPauseBtn').addEventListener('click',()=>{ emails.filter(e=>selectedEmailIds.has(e.id)).forEach(e=>e.status='inactive'); renderEmails(); stats('Locally paused (not saved)'); });
+            sel('#emktActivateBtn').addEventListener('click',()=>{ emails.filter(e=>selectedEmailIds.has(e.id)).forEach(e=>e.status='active'); renderEmails(); stats('Locally activated (not saved)'); });
+            sel('#emktDeleteBtn').addEventListener('click',()=>{ emails=emails.filter(e=>!selectedEmailIds.has(e.id)); selectedEmailIds.clear(); renderEmails(); stats('Locally removed (not saved)'); });
+            // Initial load when dashboard email section first shown
+            const observer=new MutationObserver(()=>{ const sec=document.getElementById('s-email'); if(sec && sec.classList.contains('active')){ observer.disconnect(); loadEmails(); loadJobs(); } }); observer.observe(document.body,{subtree:true,attributes:true,attributeFilter:['class']});
+            // If already active (direct anchor)
+            if(document.getElementById('s-email').classList.contains('active')){ loadEmails(); loadJobs(); }
+        })();
+        </script>
 </body>
 </html>

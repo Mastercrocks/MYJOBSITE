@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TalentSync Admin - Email Marketing</title>
+<style>
+ body {font-family: system-ui, Arial, sans-serif; margin:0; background:#f1f5f9; color:#0f172a;}
+ header {background:#0f172a; color:white; padding:18px 24px; display:flex; justify-content:space-between; align-items:center;}
+ h1 {font-size:20px; margin:0; font-weight:600;}
+ main {max-width:1200px; margin:0 auto; padding:24px;}
+ .grid {display:grid; gap:20px; grid-template-columns:repeat(auto-fit,minmax(300px,1fr));}
+ .panel {background:white; border:1px solid #e2e8f0; border-radius:12px; padding:20px; position:relative; box-shadow:0 1px 2px rgba(0,0,0,0.04);} 
+ .panel h2 {margin:0 0 12px; font-size:16px; font-weight:600; letter-spacing:.5px; text-transform:uppercase; color:#334155;}
+ label {display:block; font-size:12px; font-weight:600; text-transform:uppercase; color:#475569; letter-spacing:.5px; margin:12px 0 4px;}
+ input[type=text], input[type=email], textarea, select {width:100%; padding:10px 12px; border:1px solid #cbd5e1; border-radius:8px; font:inherit; background:#f8fafc;}
+ textarea {min-height:90px; resize:vertical;}
+ button {cursor:pointer; border:none; font:inherit; font-weight:600; border-radius:8px; padding:10px 16px; display:inline-flex; align-items:center; gap:6px; line-height:1.2;}
+ button.primary {background:#2563eb; color:white;} button.primary:hover {background:#1d4ed8;}
+ button.outline {background:white; border:1px solid #2563eb; color:#2563eb;} button.outline:hover {background:#eff6ff;}
+ button.danger {background:#dc2626; color:white;} button.danger:hover {background:#b91c1c;}
+ .small {font-size:12px; color:#64748b;}
+ table {width:100%; border-collapse:collapse; margin-top:12px;}
+ th, td {padding:8px 10px; border-bottom:1px solid #eef2f7; font-size:13px; text-align:left;}
+ th {background:#f1f5f9; font-weight:600; color:#475569; position:sticky; top:0;}
+ tr:hover td {background:#f8fafc;}
+ .status-badge {padding:4px 8px; border-radius:999px; font-size:11px; font-weight:600; background:#e2e8f0; color:#475569; display:inline-block;}
+ .status-active {background:#dcfce7; color:#166534;}
+ .status-inactive {background:#fee2e2; color:#991b1b;}
+ .flex {display:flex; gap:10px; flex-wrap:wrap; align-items:center;}
+ .actions {margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;}
+ .scroll {max-height:380px; overflow:auto; border:1px solid #e2e8f0; border-radius:8px; background:white;}
+ .pill-filter {background:#e2e8f0; color:#334155; padding:6px 12px; border-radius:999px; font-size:12px; cursor:pointer; font-weight:500;} .pill-filter.active {background:#2563eb; color:white;}
+ .divider {height:1px; background:#e2e8f0; margin:16px 0;}
+ .inline {display:inline-block;}
+ .file-drop {border:2px dashed #94a3b8; border-radius:12px; padding:24px; text-align:center; background:#f8fafc; cursor:pointer; transition:.2s;} .file-drop.dragover {background:#e0f2fe; border-color:#2563eb;}
+ .toast {position:fixed; bottom:20px; right:20px; background:#0f172a; color:white; padding:14px 18px; border-radius:10px; font-size:14px; box-shadow:0 8px 24px -4px rgba(0,0,0,0.25); display:none; max-width:320px;}
+ .select-count {font-size:12px; font-weight:600; color:#2563eb;}
+ .badge {background:#2563eb; color:white; font-size:11px; padding:2px 6px; border-radius:6px;}
+ .job-list {max-height:300px; overflow:auto; border:1px solid #e2e8f0; border-radius:8px; background:white; padding:8px;}
+ .job-item {border:1px solid #e2e8f0; border-radius:8px; padding:10px; margin:6px 0; background:#f8fafc; cursor:pointer; transition:.15s;} .job-item:hover {background:#eff6ff;}
+ .job-item.selected {border-color:#2563eb; background:#dbeafe;}
+ .danger-zone {background:#fff1f2; border:1px solid #fecdd3; padding:16px; border-radius:12px;}
+ .skeleton {background:linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 37%,#f1f5f9 63%); background-size:400% 100%; animation:shimmer 1.4s ease infinite; border-radius:6px; height:14px;}
+ @keyframes shimmer {0%{background-position:100% 0}100%{background-position:-100% 0}}
+</style>
+</head>
+<body>
+  <header>
+    <h1>📧 Email Marketing</h1>
+    <div class="flex">
+      <button class="outline" id="refreshBtn">🔄 Refresh</button>
+      <button class="primary" id="sendCampaignBtn">🚀 Send Campaign</button>
+    </div>
+  </header>
+  <main>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(360px,1fr));">
+      <section class="panel" id="segmentPanel">
+        <h2>Audience & Segments</h2>
+        <div class="flex" id="segmentFilters">
+          <div class="pill-filter active" data-type="student">Students</div>
+          <div class="pill-filter" data-type="employer">Employers</div>
+          <div class="pill-filter" data-type="all">All</div>
+        </div>
+        <div class="divider"></div>
+        <div class="small">Select subscribers below. Only active emails are selectable. Use CSV import to bulk add student emails.</div>
+        <div class="scroll" style="margin-top:12px;" id="emailTableWrap">
+          <table>
+            <thead><tr><th><input type="checkbox" id="selectAllEmails" /></th><th>Email</th><th>Type</th><th>Status</th><th>Sent</th></tr></thead>
+            <tbody id="emailTbody"><tr><td colspan="5" class="small">Loading...</td></tr></tbody>
+          </table>
+        </div>
+        <div class="actions">
+          <span class="select-count" id="emailSelectCount">0 selected</span>
+          <button class="outline" id="deactivateBtn">Pause Selected</button>
+          <button class="outline" id="activateBtn">Activate</button>
+          <button class="danger" id="deleteBtn">Delete</button>
+        </div>
+        <div class="divider"></div>
+        <h3 style="margin:4px 0 8px;font-size:13px; text-transform:uppercase; letter-spacing:.5px; color:#475569;">Add Student Email</h3>
+        <form id="addEmailForm" class="flex" style="gap:6px;">
+          <input type="email" id="newEmail" placeholder="student@example.com" required />
+          <input type="text" id="newName" placeholder="Name (opt)" />
+          <button class="primary" type="submit">Add</button>
+        </form>
+        <div class="divider"></div>
+        <h3 style="margin:4px 0 8px;font-size:13px; text-transform:uppercase; letter-spacing:.5px; color:#475569;">CSV Import</h3>
+        <div id="fileDrop" class="file-drop">Drop CSV file here or click to select<br><span class="small">Columns: email,name (header optional)</span></div>
+        <input type="file" id="csvInput" accept=".csv" style="display:none;" />
+        <div class="small" id="importSummary"></div>
+      </section>
+
+      <section class="panel" id="jobsPanel">
+        <h2>Jobs To Include</h2>
+        <div class="small">Select 1–5 jobs to highlight in this campaign.</div>
+        <div class="job-list" id="jobList"><div class="small" style="padding:8px;">Loading jobs...</div></div>
+      </section>
+
+      <section class="panel" id="composerPanel" style="grid-column:span 2;">
+        <h2>Campaign Composer</h2>
+        <label>Subject</label>
+        <input type="text" id="subject" placeholder="Exciting New Tech Roles Just Posted" />
+        <label>Intro Message (optional)</label>
+        <textarea id="customMessage" placeholder="Brief intro shown above jobs..." ></textarea>
+        <div class="divider"></div>
+        <div class="flex" style="justify-content:space-between;">
+          <div class="small">Selected Emails: <span id="selectedEmailsCount">0</span> • Selected Jobs: <span id="selectedJobsCount">0</span></div>
+          <div class="flex">
+            <button class="outline" id="previewBtn">👁 Preview HTML</button>
+            <button class="primary" id="sendNowBtn">🚀 Send Now</button>
+          </div>
+        </div>
+        <div id="previewModal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,.65); backdrop-filter:blur(4px); padding:40px; overflow:auto; z-index:50;">
+          <div style="max-width:760px; margin:0 auto; background:white; border-radius:16px; padding:30px; position:relative;">
+            <button style="position:absolute; top:12px; right:12px; background:#0f172a; color:white;" id="closePreview">✕</button>
+            <h2 style="margin-top:0;">Preview</h2>
+            <div id="previewContent" style="max-height:70vh; overflow:auto; border:1px solid #e2e8f0; border-radius:12px; padding:20px; background:#f8fafc;"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" id="historyPanel" style="grid-column:span 2;">
+        <h2>Recent Activity & Diagnostics</h2>
+        <div class="flex" style="gap:10px; flex-wrap:wrap;">
+          <button class="outline" id="testTransportBtn">🔐 Verify Login</button>
+          <button class="outline" id="loadLastCampaignBtn">📄 Last Campaign Log</button>
+          <button class="outline" id="quickTestCampaignBtn">⚡ Quick Test (1 email)</button>
+        </div>
+        <pre id="diagnostics" style="margin-top:12px; background:#0f172a; color:#e2e8f0; padding:16px; border-radius:12px; max-height:260px; overflow:auto; font-size:12px;">
+Click Verify Login to test email credentials...
+        </pre>
+      </section>
+    </div>
+  </main>
+  <div class="toast" id="toast"></div>
+<script>
+const api = {
+  list: (type='student') => fetch(`/api/admin/email-list${type && type!=='all'?`?type=${type}`:''}`).then(r=>r.json()),
+  add: (email,name) => fetch('/api/admin/email-list',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,name,type:'student'})}).then(r=>r.json()),
+  import: (emails) => fetch('/api/admin/email-list/import',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({emails,type:'student'})}).then(r=>r.json()),
+  send: (payload) => fetch('/api/admin/send-job-emails',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).then(r=>r.json()),
+  jobs: () => fetch('/api/admin/jobs').then(r=>r.json()),
+  verify: () => fetch('/api/admin/email/diagnostics').then(r=>r.json()),
+  lastCampaign: () => fetch('/api/admin/email/last-campaign').then(r=>r.json())
+};
+
+let currentType = 'student';
+let emails = [];
+let selectedEmailIds = new Set();
+let jobs = [];
+let selectedJobIds = new Set();
+
+function toast(msg, ok=true){const t=document.getElementById('toast'); t.textContent=msg; t.style.background= ok?'#0f172a':'#991b1b'; t.style.display='block'; setTimeout(()=>t.style.display='none',4000);}
+
+function renderEmailTable(){const tbody=document.getElementById('emailTbody'); if(!emails.length){tbody.innerHTML='<tr><td colspan="5" class="small">No emails found.</td></tr>'; return;} tbody.innerHTML=emails.map(e=>`<tr data-id="${e.id}" class="email-row"><td><input type="checkbox" data-id="${e.id}" ${selectedEmailIds.has(e.id)?'checked':''} ${e.status!=='active'?'disabled':''}></td><td>${e.email}</td><td><span class="badge">${e.type||'student'}</span></td><td><span class="status-badge status-${e.status==='active'?'active':'inactive'}">${e.status}</span></td><td>${e.totalEmailsSent||0}</td></tr>`).join(''); updateCounts();}
+
+function renderJobs(){const jl=document.getElementById('jobList'); if(!jobs.length){jl.innerHTML='<div class="small" style="padding:8px;">No jobs.</div>'; return;} jl.innerHTML=jobs.slice(0,100).map(j=>`<div class="job-item ${selectedJobIds.has(String(j.id))?'selected':''}" data-id="${j.id}"><strong>${j.title}</strong><br><span class="small">${j.company} • ${j.location}</span></div>`).join(''); updateCounts();}
+
+function updateCounts(){ document.getElementById('emailSelectCount').textContent=`${selectedEmailIds.size} selected`; document.getElementById('selectedEmailsCount').textContent=selectedEmailIds.size; document.getElementById('selectedJobsCount').textContent=selectedJobIds.size; }
+
+async function loadEmails(){ const data=await api.list(currentType); emails = data.emails||[]; selectedEmailIds.clear(); renderEmailTable(); }
+async function loadJobs(){ const data=await api.jobs(); jobs=(data.jobs||[]).filter(j=>j.status==='active').slice(-50).reverse(); renderJobs(); }
+
+// Segment switching
+ document.getElementById('segmentFilters').addEventListener('click',e=>{const pill=e.target.closest('.pill-filter'); if(!pill) return; document.querySelectorAll('.pill-filter').forEach(p=>p.classList.remove('active')); pill.classList.add('active'); currentType=pill.dataset.type; loadEmails();});
+
+// Email selection
+ document.getElementById('emailTbody').addEventListener('change',e=>{if(e.target.type==='checkbox'){const id=e.target.dataset.id; if(e.target.checked) selectedEmailIds.add(id); else selectedEmailIds.delete(id); updateCounts();}});
+ document.getElementById('selectAllEmails').addEventListener('change',e=>{ if(e.target.checked){ emails.filter(e=>e.status==='active').forEach(e=>selectedEmailIds.add(e.id)); } else { selectedEmailIds.clear(); } renderEmailTable(); });
+
+// Job selection
+ document.getElementById('jobList').addEventListener('click',e=>{const item=e.target.closest('.job-item'); if(!item) return; const id=String(item.dataset.id); if(selectedJobIds.has(id)) selectedJobIds.delete(id); else { if(selectedJobIds.size>=5){ toast('Max 5 jobs per campaign', false); return;} selectedJobIds.add(id);} renderJobs();});
+
+// Add single email
+ document.getElementById('addEmailForm').addEventListener('submit', async e=>{e.preventDefault(); const email=document.getElementById('newEmail').value.trim(); const name=document.getElementById('newName').value.trim(); if(!email) return; const resp=await api.add(email,name); if(resp.error){ toast(resp.error,false);} else { toast('Added'); document.getElementById('addEmailForm').reset(); loadEmails(); }});
+
+// CSV Import logic
+ const fileDrop=document.getElementById('fileDrop'); const csvInput=document.getElementById('csvInput'); fileDrop.addEventListener('click',()=>csvInput.click()); fileDrop.addEventListener('dragover',e=>{e.preventDefault(); fileDrop.classList.add('dragover');}); fileDrop.addEventListener('dragleave',()=>fileDrop.classList.remove('dragover')); fileDrop.addEventListener('drop',e=>{e.preventDefault(); fileDrop.classList.remove('dragover'); handleFiles(e.dataTransfer.files);}); csvInput.addEventListener('change',e=>handleFiles(e.target.files));
+ function handleFiles(fileList){ const file=[...fileList][0]; if(!file) return; if(!/\.csv$/i.test(file.name)){ toast('Upload a .csv file', false); return;} const reader=new FileReader(); reader.onload=()=>{ const rows=reader.result.split(/\r?\n/).map(r=>r.trim()).filter(Boolean); const emailsParsed=[]; rows.forEach((row,i)=>{ const parts=row.split(',').map(s=>s.trim()); if(parts[0] && parts[0].includes('@')){ emailsParsed.push({email:parts[0], name:parts[1]||''}); }}); if(!emailsParsed.length){ toast('No valid rows', false); return;} document.getElementById('importSummary').textContent=`Parsed ${emailsParsed.length} emails`; api.import(emailsParsed).then(r=>{ if(r.error) toast(r.error,false); else { toast(r.message); loadEmails(); }}); }; reader.readAsText(file); }
+
+// Send campaign
+ async function sendCampaign(){ if(selectedEmailIds.size===0){ toast('Select at least 1 email', false); return;} if(selectedJobIds.size===0){ toast('Select at least 1 job', false); return;} const payload={ jobIds:[...selectedJobIds], emailIds:[...selectedEmailIds], subject: document.getElementById('subject').value.trim(), customMessage: document.getElementById('customMessage').value.trim() }; const resp= await api.send(payload); if(resp.error){ toast(resp.error,false); } else { toast(resp.message || 'Campaign sent'); if(resp.preview){ window._lastPreview=resp.preview; } loadEmails(); }}
+ document.getElementById('sendNowBtn').addEventListener('click', sendCampaign); document.getElementById('sendCampaignBtn').addEventListener('click', sendCampaign);
+
+// Preview
+ document.getElementById('previewBtn').addEventListener('click', async ()=>{ if(selectedJobIds.size===0){ toast('Pick jobs first', false); return;} if(!window._lastPreview){ // Build a temporary preview by fake call with first email id to not actually send? We'll reuse send endpoint w/out to list.
+   const payload={ jobIds:[...selectedJobIds], emailIds:[...selectedEmailIds].slice(0,1), subject: document.getElementById('subject').value.trim()||'Preview', customMessage: document.getElementById('customMessage').value.trim() };
+   const resp= await api.send(payload); if(resp.preview){ window._lastPreview=resp.preview; toast('Preview generated'); }
+ }
+ document.getElementById('previewContent').innerHTML = window._lastPreview || '<em>No preview</em>'; document.getElementById('previewModal').style.display='block';});
+ document.getElementById('closePreview').addEventListener('click', ()=>{ document.getElementById('previewModal').style.display='none';});
+
+// Diagnostics
+ document.getElementById('testTransportBtn').addEventListener('click', async ()=>{ const d=document.getElementById('diagnostics'); d.textContent='Verifying...'; const resp= await api.verify(); d.textContent= JSON.stringify(resp,null,2); if(resp && resp.transport && resp.transport.verified){ toast('Login OK'); } else { toast('Login failed', false);} });
+ document.getElementById('loadLastCampaignBtn').addEventListener('click', async ()=>{ const d=document.getElementById('diagnostics'); d.textContent='Loading last campaign...'; const resp= await api.lastCampaign(); d.textContent= JSON.stringify(resp,null,2); });
+ document.getElementById('quickTestCampaignBtn').addEventListener('click', async ()=>{ if(emails.length===0){ toast('Need at least 1 email', false); return;} if(selectedJobIds.size===0){ toast('Pick a job first', false); return;} const first=emails.find(e=>e.status==='active'); if(!first){ toast('No active email', false); return;} const payload={ jobIds:[...selectedJobIds].slice(0,1), emailIds:[first.id], subject:'Test Job Alert', customMessage:'Quick test send' }; const resp= await api.send(payload); const d=document.getElementById('diagnostics'); d.textContent= JSON.stringify(resp,null,2); if(resp.error){ toast('Test failed', false);} else { toast('Test sent'); } });
+
+// Activate / Deactivate / Delete (local quick actions)
+ document.getElementById('deactivateBtn').addEventListener('click',()=>{ emails.filter(e=>selectedEmailIds.has(e.id)).forEach(e=>e.status='inactive'); renderEmailTable(); toast('Locally paused (not saved)'); });
+ document.getElementById('activateBtn').addEventListener('click',()=>{ emails.filter(e=>selectedEmailIds.has(e.id)).forEach(e=>e.status='active'); renderEmailTable(); toast('Locally activated (not saved)'); });
+ document.getElementById('deleteBtn').addEventListener('click',()=>{ emails = emails.filter(e=>!selectedEmailIds.has(e.id)); selectedEmailIds.clear(); renderEmailTable(); toast('Locally removed (not saved)'); });
+
+// Initial load
+ loadEmails(); loadJobs();
+ document.getElementById('refreshBtn').addEventListener('click',()=>{ loadEmails(); loadJobs(); toast('Refreshed'); });
+</script>
+</body>
+</html>
