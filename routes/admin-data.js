@@ -870,6 +870,49 @@ router.get('/billing/overview', async (req, res) => {
     }
 });
 
+// Email diagnostics (no secrets) - GET /api/admin/email/diagnostics
+router.get('/email/diagnostics', async (req, res) => {
+    try {
+        const configured = isEmailConfigured();
+        let transportOk = false;
+        if (configured) {
+            try { transportOk = await verifyEmailTransport(); } catch (_) { transportOk = false; }
+        }
+        const list = await readJSONFile('email_list.json');
+        const active = (list||[]).filter(e => e.status === 'active');
+        res.json({
+            configured,
+            transportOk,
+            subscribers: active.length,
+            sample: active.slice(0,5).map(e => e.email),
+            adminNotifySet: !!process.env.ADMIN_NOTIFY_EMAIL,
+            mode: process.env.SMTP_HOST ? 'smtp' : 'gmail'
+        });
+    } catch (e) {
+        res.status(500).json({ error: 'diag_failed' });
+    }
+});
+
+// Quick test send (single email) - POST /api/admin/email/test { to }
+router.post('/email/test', async (req, res) => {
+    try {
+        if (!isEmailConfigured()) return res.status(400).json({ error: 'not_configured' });
+        const ok = await verifyEmailTransport();
+        if (!ok) return res.status(400).json({ error: 'verify_failed' });
+        const to = (req.body && req.body.to) || process.env.ADMIN_NOTIFY_EMAIL;
+        if (!to) return res.status(400).json({ error: 'no_recipient' });
+        await sendJobMarketingEmail({
+            to,
+            subject: 'TalentSync Email Test',
+            text: 'This is a test email to confirm job notifications work.',
+            html: '<p>This is a <strong>test email</strong> to confirm job notifications work.</p>'
+        });
+        res.json({ success: true, to });
+    } catch (e) {
+        res.status(500).json({ error: 'send_failed', message: e?.message || String(e) });
+    }
+});
+
 // Update application status
 router.put('/applications/status', async (req, res) => {
     try {
