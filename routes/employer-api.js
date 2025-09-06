@@ -135,7 +135,9 @@ async function sendCampaignForJob(job) {
   const subject = `New Job: ${job.title} at ${job.company}`;
   const baseUrl = (process.env.PUBLIC_BASE_URL || process.env.SITE_URL || 'https://talentsync.shop').replace(/\/$/, '');
   const jobId = String(job.id || job._id || '').trim();
-  const applyUrl = job.url || (jobId ? `${baseUrl}/jobs?jobId=${encodeURIComponent(jobId)}` : `${baseUrl}/jobs`);
+  // Use new dedicated job detail page if internal
+  const internalLink = jobId ? `${baseUrl}/job.html?jobId=${encodeURIComponent(jobId)}` : `${baseUrl}/jobs`;
+  const applyUrl = job.url || internalLink;
     const text = `New Job Alert\n\n${job.title} at ${job.company}\nLocation: ${job.location}\nType: ${job.job_type || 'Full-time'}\n\nApply: ${applyUrl}`;
     const html = generateSimpleJobHTML(job, applyUrl);
 
@@ -630,11 +632,25 @@ router.post('/jobs', authenticateToken, async (req, res) => {
       await writeJsonSafe(dataPath('jobs.json'), jobs);
     }
 
-    // Trigger email campaign to subscribers
+    // Trigger email campaign to subscribers + admin notification
     try {
       await sendCampaignForJob(job);
     } catch (e) {
       console.warn('Job email campaign failed:', e?.message || e);
+    }
+    if (process.env.ADMIN_NOTIFY_EMAIL && isEmailConfigured()) {
+      try {
+        const linkBase = (process.env.PUBLIC_BASE_URL || process.env.SITE_URL || '').replace(/\/$/, '') || 'https://talentsync.shop';
+        const detailLink = `${linkBase}/job.html?jobId=${encodeURIComponent(String(job.id || job._id || ''))}`;
+        await sendAccountEmail({
+          to: process.env.ADMIN_NOTIFY_EMAIL,
+          subject: `Employer Posted Job: ${job.title}`,
+          text: `A new job was posted.\nTitle: ${job.title}\nCompany: ${job.company}\nLocation: ${job.location}\nType: ${job.job_type}\nLink: ${detailLink}`,
+          html: `<p>A new employer job was posted:</p><ul><li><strong>Title:</strong> ${job.title}</li><li><strong>Company:</strong> ${job.company}</li><li><strong>Location:</strong> ${job.location}</li><li><strong>Type:</strong> ${job.job_type}</li></ul><p><a href="${detailLink}" target="_blank">View Job</a></p>`
+        });
+      } catch (e) {
+        console.warn('Admin notify email failed (employer job):', e?.message || e);
+      }
     }
 
   res.json({ success: true, job });

@@ -65,7 +65,7 @@ async function sendNewJobEmailCampaign(newJob) {
     // Base URL for deep-links to job modal
     const baseUrl = (process.env.PUBLIC_BASE_URL || process.env.SITE_URL || 'https://talentsync.shop').replace(/\/$/, '');
     const jobId = String(newJob.id || newJob._id || '').trim();
-    const deepLink = jobId ? `${baseUrl}/jobs?jobId=${encodeURIComponent(jobId)}` : `${baseUrl}/jobs`;
+    const deepLink = jobId ? `${baseUrl}/job.html?jobId=${encodeURIComponent(jobId)}` : `${baseUrl}/jobs`;
 
     // Create professional email template
         const emailSubject = `🚀 New Job Alert: ${newJob.title} at ${newJob.company}`;
@@ -231,6 +231,18 @@ async function sendNewJobEmailCampaign(newJob) {
     // Persist email_list counters updates
     try { await writeJSONFile('email_list.json', emailList); } catch (_) {}
         
+    // Optional admin notification (summary) if configured
+    try {
+        if (process.env.ADMIN_NOTIFY_EMAIL && isEmailConfigured()) {
+            const summary = `Job: ${newJob.title} (${newJob.company})\nSent: ${successCount}\nFailed: ${failCount}`;
+            await sendJobMarketingEmail({
+                to: process.env.ADMIN_NOTIFY_EMAIL,
+                subject: `Job Campaign Sent: ${newJob.title}`,
+                text: summary + `\nLink: ${deepLink}`,
+                html: `<p><strong>Job Campaign Sent</strong></p><p>${newJob.title} at ${newJob.company}</p><p>Sent: ${successCount} | Failed: ${failCount}</p><p><a href="${deepLink}" target="_blank">View Job</a></p>`
+            });
+        }
+    } catch (e) { console.warn('Admin campaign summary email failed:', e?.message || e); }
     return { success: true, sent: successCount, failed: failCount };
         
     } catch (error) {
