@@ -1,15 +1,20 @@
 const nodemailer = require('nodemailer');
 
 function buildTransport() {
-  const hasSmtp = !!process.env.SMTP_HOST;
+  // Treat this specific unknown host as invalid & fall back
+  const invalidHost = 'smtp.talentsync.shop';
+  const usingEnvHost = process.env.SMTP_HOST && process.env.SMTP_HOST.trim();
+  const hasSmtp = !!usingEnvHost && usingEnvHost !== invalidHost;
+  if (usingEnvHost === invalidHost) {
+    console.warn('✉️  Ignoring invalid SMTP_HOST', invalidHost, '— falling back to Gmail service. Remove it from env to silence this message.');
+  }
   if (hasSmtp) {
     return nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
+      host: usingEnvHost,
       port: Number(process.env.SMTP_PORT || 587),
       secure: String(process.env.SMTP_SECURE || 'false').toLowerCase() === 'true',
       auth: {
         user: process.env.EMAIL_USER,
-        // Strip spaces and hyphens to accommodate copied app passwords
         pass: process.env.EMAIL_PASS?.replace(/[\s-]/g, '')
       }
     });
